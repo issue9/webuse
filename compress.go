@@ -22,6 +22,11 @@ type compressWriter struct {
 }
 
 func (cw *compressWriter) Write(bs []byte) (int, error) {
+	h := cw.rw.Header()
+	if h.Get("Content-Type") == "" {
+		h.Set("Content-Type", http.DetectContentType(bs))
+	}
+
 	return cw.gzw.Write(bs)
 }
 
@@ -43,7 +48,9 @@ type compress struct {
 
 // 支持gzip或是deflate功能的handler。
 // 根据客户端请求内容自动匹配相应的压缩算法，优先匹配gzip。
-func NewCompress(h http.Handler) http.Handler {
+//
+// 经过压缩的内容，可能需要重新指定Content-Type，系统检测的类型未必正确。
+func NewCompress(h http.Handler) *compress {
 	return &compress{h: h}
 }
 
@@ -58,7 +65,7 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var encoding string
 	encodings := strings.Split(r.Header.Get("Accept-Encoding"), ",")
 	for _, encoding = range encodings {
-		encoding = strings.ToLower(encoding)
+		encoding = strings.ToLower(strings.TrimSpace(encoding))
 
 		if encoding == "gzip" {
 			gzw = gzip.NewWriter(w)
