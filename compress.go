@@ -50,8 +50,12 @@ type compress struct {
 // 根据客户端请求内容自动匹配相应的压缩算法，优先匹配gzip。
 //
 // 经过压缩的内容，可能需要重新指定Content-Type，系统检测的类型未必正确。
-func NewCompress(h http.Handler) *compress {
+func Compress(h http.Handler) *compress {
 	return &compress{h: h}
+}
+
+func CompressFunc(f func(http.ResponseWriter, *http.Request)) *compress {
+	return &compress{h: http.HandlerFunc(f)}
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
