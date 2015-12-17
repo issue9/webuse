@@ -24,18 +24,18 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	a.Equal(http.StatusText(404)+"\n", w.Body.String())
 }
 
-func TestNewRecovery(t *testing.T) {
+func TestRecovery(t *testing.T) {
 	a := assert.New(t)
 
 	// h参数传递空值
 	a.Panic(func() {
-		NewRecovery(nil, nil)
+		Recovery(nil, nil)
 	})
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// 指定fun参数为nil，能正确设置其值
-	r := NewRecovery(h, nil)
+	r := Recovery(h, nil)
 	a.NotNil(r.recoverFunc)
 }
 
