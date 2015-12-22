@@ -19,7 +19,7 @@ type RecoverFunc func(w http.ResponseWriter, msg interface{})
 //
 // 为一个简单的500错误信息。不会输出msg参数的内容。
 func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
 // RecoverFunc类型的实现。方便NewRecovery在调度期间将函数的调用信息输出到w。
@@ -51,7 +51,7 @@ type recovery struct {
 // 当将rf指定为nil时，将使用默认的处理函数，仅仅向客户端输出500的错误信息，没有具体内容。
 func Recovery(h http.Handler, rf RecoverFunc) *recovery {
 	if h == nil {
-		panic("NewRecovery:参数h不能为空")
+		panic("handlers.Recovery:参数h不能为空")
 	}
 
 	if rf == nil {
