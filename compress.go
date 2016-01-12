@@ -85,6 +85,9 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			break
 		}
+	} // end for
+	if gzw == nil { // 不支持的压缩格式
+		return
 	}
 
 	w.Header().Set("Content-Encoding", encoding)
