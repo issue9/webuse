@@ -61,7 +61,8 @@ func CompressFunc(f func(http.ResponseWriter, *http.Request)) *compress {
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hj, ok := w.(http.Hijacker)
 	if !ok {
-		hj = nil
+		c.h.ServeHTTP(w, r)
+		return
 	}
 
 	var gzw io.WriteCloser
