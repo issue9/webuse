@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-// 同时实现了http.ResponseWriter和http.Hijacker接口。
+// 同时实现了 http.ResponseWriter 和 http.Hijacker 接口。
 type compressWriter struct {
 	gzw io.Writer
 	rw  http.ResponseWriter
@@ -46,14 +46,16 @@ type compress struct {
 	h http.Handler
 }
 
-// 支持gzip或是deflate功能的handler。
-// 根据客户端请求内容自动匹配相应的压缩算法，优先匹配gzip。
+// Compress 构建一个支持压缩的中间件。
+// 支持 gzip 或是 deflate 功能的 handler。
+// 根据客户端请求内容自动匹配相应的压缩算法，优先匹配 gzip。
 //
-// 经过压缩的内容，可能需要重新指定Content-Type，系统检测的类型未必正确。
+// NOTE: 经过压缩的内容，可能需要重新指定 Content-Type，系统检测的类型未必正确。
 func Compress(h http.Handler) *compress {
 	return &compress{h: h}
 }
 
+// ComporessFunc 将一个 http.HandlerFunc 封装成 http.Handler 实例
 func CompressFunc(f func(http.ResponseWriter, *http.Request)) *compress {
 	return &compress{h: http.HandlerFunc(f)}
 }
@@ -98,9 +100,9 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		hj:  hj,
 	}
 
-	// 只要gzw!=nil的，必须会执行到此处。
+	// 只要 gzw!=nil 的，必须会执行到此处。
 	defer gzw.Close()
 
-	// 此处可能panic，所以得保证在panic之前，gzw变量已经Close
+	// 此处可能 panic，所以得保证在 panic 之前，gzw 变量已经 Close
 	c.h.ServeHTTP(cw, r)
 }
