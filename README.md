@@ -3,6 +3,11 @@ handlers [![Build Status](https://travis-ci.org/issue9/handlers.svg?branch=maste
 
 handlers 是对 http.Handler 接口的一系列实现，提供了大部分实用的功能。
 
+- version 匹配从 Accept 报头中的版本号信息；
+- comporess 对内容进行压缩；
+- host 匹配指定的域名；
+- recovery 对 Panic 的处理；
+
 
 ### 安装
 
