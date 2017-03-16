@@ -11,15 +11,6 @@ type host struct {
 	handler http.Handler
 }
 
-func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.domain != r.URL.Host {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	h.handler.ServeHTTP(w, r)
-}
-
 // Host 声明一个限定域名的 handler
 func Host(h http.Handler, domain string) *host {
 	return &host{
@@ -31,4 +22,13 @@ func Host(h http.Handler, domain string) *host {
 // HostFunc 将一个 http.HandlerFunc 包装成 http.Handler
 func HostFunc(f func(http.ResponseWriter, *http.Request), domain string) *host {
 	return Host(http.HandlerFunc(f), domain)
+}
+
+func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.domain != r.URL.Host {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	h.handler.ServeHTTP(w, r)
 }

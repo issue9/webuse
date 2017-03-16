@@ -57,7 +57,7 @@ func Compress(h http.Handler) *compress {
 
 // ComporessFunc 将一个 http.HandlerFunc 封装成 http.Handler 实例
 func CompressFunc(f func(http.ResponseWriter, *http.Request)) *compress {
-	return &compress{h: http.HandlerFunc(f)}
+	return Compress(http.HandlerFunc(f))
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
