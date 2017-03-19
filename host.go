@@ -7,28 +7,30 @@ package handlers
 import "net/http"
 
 type host struct {
-	domain  string
+	domains []string
 	handler http.Handler
 }
 
 // Host 声明一个限定域名的 handler
-func Host(h http.Handler, domain string) *host {
+func Host(h http.Handler, domains ...string) *host {
 	return &host{
-		domain:  domain,
+		domains: domains,
 		handler: h,
 	}
 }
 
 // HostFunc 将一个 http.HandlerFunc 包装成 http.Handler
-func HostFunc(f func(http.ResponseWriter, *http.Request), domain string) *host {
-	return Host(http.HandlerFunc(f), domain)
+func HostFunc(f func(http.ResponseWriter, *http.Request), domains ...string) *host {
+	return Host(http.HandlerFunc(f), domains...)
 }
 
 func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.domain != r.URL.Host {
-		w.WriteHeader(http.StatusNotFound)
-		return
+	for _, domain := range h.domains {
+		if domain == r.URL.Host {
+			h.handler.ServeHTTP(w, r)
+			return
+		}
 	}
 
-	h.handler.ServeHTTP(w, r)
+	w.WriteHeader(http.StatusNotFound)
 }
