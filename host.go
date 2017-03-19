@@ -11,7 +11,10 @@ type host struct {
 	handler http.Handler
 }
 
-// Host 声明一个限定域名的 handler
+// Host 声明一个限定域名的 handler。
+//
+// 若请求的域名不允许，会返回 403 错误。
+// 若 domains 为空，则任何请求都将返回 403。
 func Host(h http.Handler, domains ...string) *host {
 	return &host{
 		domains: domains,
@@ -32,5 +35,5 @@ func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.WriteHeader(http.StatusNotFound)
+	http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 }

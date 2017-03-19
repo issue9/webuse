@@ -20,6 +20,8 @@ type version struct {
 // Version 构建一个支持版本号的中间件。
 // 从请求报头的 Accept 中解析相应的版本号，不区分大小写。
 //
+// 当版本号不匹配时，返回 403 错误信息。
+//
 // v 只有与此匹配的版本号，才能运行 h；
 // strict 在没有指定版本号时的处理方式，为 false 时，请求头无版本号
 // 表示可以匹配；为 true 时，请求头无版本号表示不匹配。
@@ -40,9 +42,17 @@ func (v *version) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ver := findVersionNumber(r.Header.Get("Accept"))
 
 	if len(ver) == 0 {
-		if !v.strict { // 非 strict 模式下，空的版本号也可适配
+		if v.strict { // strict 模式下
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		} else {
 			v.handler.ServeHTTP(w, r)
 		}
+
+		return
+	}
+
+	if ver != v.version {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 

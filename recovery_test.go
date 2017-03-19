@@ -24,7 +24,7 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	a.Equal(http.StatusText(http.StatusInternalServerError)+"\n", w.Body.String())
 }
 
-func TestRecovery(t *testing.T) {
+func TestRecoveryFunc(t *testing.T) {
 	a := assert.New(t)
 
 	// h参数传递空值
@@ -32,11 +32,25 @@ func TestRecovery(t *testing.T) {
 		Recovery(nil, nil)
 	})
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	// 指定 fun 参数为 nil值，可以正常使用
+	h := RecoveryFunc(h1, nil)
+	a.NotNil(h.recoverFunc)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	a.NotNil(w).NotNil(r)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 
-	// 指定fun参数为nil，能正确设置其值
-	r := Recovery(h, nil)
-	a.NotNil(r.recoverFunc)
+	// 触发 panic
+	h = RecoveryFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("test")
+	}), nil)
+	a.NotNil(h.recoverFunc)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	a.NotNil(w).NotNil(r)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
 func TestPrintDebug(t *testing.T) {
