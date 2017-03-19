@@ -25,7 +25,7 @@ type version struct {
 // v 只有与此匹配的版本号，才能运行 h；
 // strict 在没有指定版本号时的处理方式，为 false 时，请求头无版本号
 // 表示可以匹配；为 true 时，请求头无版本号表示不匹配。
-func Version(h http.Handler, v string, strict bool) *version {
+func Version(h http.Handler, v string, strict bool) http.Handler {
 	return &version{
 		handler: h,
 		version: v,
@@ -34,7 +34,7 @@ func Version(h http.Handler, v string, strict bool) *version {
 }
 
 // VersionFunc 同 Version 函数，说明也可参考 Version 函数。
-func VersionFunc(f func(http.ResponseWriter, *http.Request), v string, strict bool) *version {
+func VersionFunc(f func(http.ResponseWriter, *http.Request), v string, strict bool) http.Handler {
 	return Version(http.HandlerFunc(f), v, strict)
 }
 

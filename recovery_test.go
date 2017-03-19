@@ -34,10 +34,9 @@ func TestRecoveryFunc(t *testing.T) {
 
 	// 指定 fun 参数为 nil值，可以正常使用
 	h := RecoveryFunc(h1, nil)
-	a.NotNil(h.recoverFunc)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	a.NotNil(w).NotNil(r)
+	a.NotNil(h).NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
@@ -45,10 +44,9 @@ func TestRecoveryFunc(t *testing.T) {
 	h = RecoveryFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("test")
 	}), nil)
-	a.NotNil(h.recoverFunc)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	a.NotNil(w).NotNil(r)
+	a.NotNil(h).NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusInternalServerError)
 }

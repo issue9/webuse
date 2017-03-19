@@ -1,7 +1,7 @@
 handlers [![Build Status](https://travis-ci.org/issue9/handlers.svg?branch=master)](https://travis-ci.org/issue9/handlers)
 ======
 
-handlers 是对 http.Handler 接口的一系列实现，提供了大部分实用的功能。
+handlers 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
 
 - version 匹配从 Accept 报头中的版本号信息；
 - comporess 对内容进行压缩；

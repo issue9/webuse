@@ -50,7 +50,7 @@ type recovery struct {
 // 当 h 参数为空时，将直接 panic。
 // rf 参数用于指定处理 panic 信息的函数，其原型为 RecoverFunc，
 // 当将 rf 指定为 nil 时，将使用默认的处理函数，仅仅向客户端输出 500 的错误信息，没有具体内容。
-func Recovery(h http.Handler, rf RecoverFunc) *recovery {
+func Recovery(h http.Handler, rf RecoverFunc) http.Handler {
 	if h == nil {
 		panic("handlers.Recovery:参数h不能为空")
 	}
@@ -66,11 +66,10 @@ func Recovery(h http.Handler, rf RecoverFunc) *recovery {
 }
 
 // RecoveryFunc 将一个 http.HandlerFunc 包装成 http.Handler
-func RecoveryFunc(f func(http.ResponseWriter, *http.Request), rf RecoverFunc) *recovery {
+func RecoveryFunc(f func(http.ResponseWriter, *http.Request), rf RecoverFunc) http.Handler {
 	return Recovery(http.HandlerFunc(f), rf)
 }
 
-// implement net/http.Handler.ServeHTTP(...)
 func (r *recovery) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {

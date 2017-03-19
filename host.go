@@ -15,7 +15,7 @@ type host struct {
 //
 // 若请求的域名不允许，会返回 403 错误。
 // 若 domains 为空，则任何请求都将返回 403。
-func Host(h http.Handler, domains ...string) *host {
+func Host(h http.Handler, domains ...string) http.Handler {
 	return &host{
 		domains: domains,
 		handler: h,
@@ -23,7 +23,7 @@ func Host(h http.Handler, domains ...string) *host {
 }
 
 // HostFunc 将一个 http.HandlerFunc 包装成 http.Handler
-func HostFunc(f func(http.ResponseWriter, *http.Request), domains ...string) *host {
+func HostFunc(f func(http.ResponseWriter, *http.Request), domains ...string) http.Handler {
 	return Host(http.HandlerFunc(f), domains...)
 }
 
