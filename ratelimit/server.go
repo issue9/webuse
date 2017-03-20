@@ -34,8 +34,8 @@ func NewServer(store Store, capacity int64, rate time.Duration, fn func(*http.Re
 	}
 }
 
-// Allow 当前请求是否被允许。
-func (srv *Server) Allow(r *http.Request) (*Bucket, bool, error) {
+// 当前请求是否被允许。
+func (srv *Server) allow(r *http.Request) (*Bucket, bool, error) {
 	name := srv.getName(r)
 	b, found := srv.store.Get(name)
 	if !found {

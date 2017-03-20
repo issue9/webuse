@@ -2,18 +2,16 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+package ratelimit
 
 import (
 	"log"
 	"net/http"
-
-	"github.com/issue9/handlers/ratelimit"
 )
 
 type rateLimiter struct {
 	handler http.Handler
-	srv     ratelimit.Server
+	srv     *Server
 	errlog  *log.Logger
 }
 
@@ -22,7 +20,7 @@ type rateLimiter struct {
 // X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
 // X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
 // X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
-func RateLimit(h http.Handler, srv ratelimit.Server, errlog *log.Logger) http.Handler {
+func (srv *Server) RateLimit(h http.Handler, errlog *log.Logger) http.Handler {
 	return &rateLimiter{
 		handler: h,
 		srv:     srv,
@@ -31,12 +29,12 @@ func RateLimit(h http.Handler, srv ratelimit.Server, errlog *log.Logger) http.Ha
 }
 
 // RateLimitFunc 限制单一用户的 HTTP 请求数量。
-func RateLimitFunc(f func(w http.ResponseWriter, r *http.Request), srv ratelimit.Server, errlog *log.Logger) http.Handler {
-	return RateLimit(http.HandlerFunc(f), srv, errlog)
+func (srv *Server) RateLimitFunc(f func(w http.ResponseWriter, r *http.Request), errlog *log.Logger) http.Handler {
+	return srv.RateLimit(http.HandlerFunc(f), errlog)
 }
 
 func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b, allow, err := l.srv.Allow(r)
+	b, allow, err := l.srv.allow(r)
 
 	if err != nil {
 		if l.errlog != nil {
@@ -47,7 +45,7 @@ func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b.SetHeader(w)
+	b.setHeader(w)
 
 	if allow {
 		l.handler.ServeHTTP(w, r)
