@@ -16,10 +16,10 @@ import (
 // 此处稍作修改：去掉自动分发令牌功能，集中在次拿令牌时，
 // 一次性补全之前缺的令牌数量。
 type Bucket struct {
-	Capacity int64         // 上限
-	Rate     time.Duration // 每隔 rate 添加一个令牌
-	Tokens   int64         // 可用令牌数量
-	Last     time.Time     // 最后次添加令牌的时间
+	Capacity int64         `json:"cap"`    // 上限
+	Rate     time.Duration `json:"rate"`   // 每隔 rate 添加一个令牌
+	Tokens   int64         `json:"tokens"` // 可用令牌数量
+	Last     time.Time     `json:"last"`   // 最后次添加令牌的时间
 }
 
 // 生成一个新的令牌桶，新的令牌桶中令牌数量为满格。
@@ -39,34 +39,37 @@ func newBucket(capacity int64, rate time.Duration) *Bucket {
 func (b *Bucket) allow(n int64) bool {
 	now := time.Now()
 
+	// 超过最大值
 	if n > b.Capacity {
-		b.Tokens = 0
-		b.Last = now
 		return false
 	}
 
-	dur := now.Sub(b.Last)     // 从上次存储到现在的时间
-	cnt := int64(dur / b.Rate) // 需要增加的次数
-
-	b.Last = now
+	dur := now.Sub(b.Last)     // 从上次拿令牌到现在的时间
+	cnt := int64(dur / b.Rate) // 计算这段时间内需要增加的令牌
 	b.Tokens += cnt
 	if b.Tokens > b.Capacity {
 		b.Tokens = b.Capacity
 	}
 
+	// 不够
+	if b.Tokens < n {
+		return false
+	}
+
+	b.Last = now
 	b.Tokens -= n
 	return true
 }
 
-// 获取 x-rate-reset 的值。
-func (b *Bucket) resetSize() int64 {
-	size := (b.Capacity - b.Tokens) * int64(b.Rate.Seconds())
-	return time.Now().Unix() + size
+// 获取 X-Rate-Limit-Reset 的值。
+func (b *Bucket) resetTime() int64 {
+	t := (b.Capacity - b.Tokens) * int64(b.Rate.Seconds())
+	return time.Now().Unix() + t
 }
 
 // 根据当前 Bucket 的情况设置报头
 func (b *Bucket) setHeader(w http.ResponseWriter) {
 	w.Header().Set("X-Rate-Limit-Limit", strconv.FormatInt(b.Capacity, 10))
 	w.Header().Set("X-Rate-Limit-Remaining", strconv.FormatInt(b.Tokens, 10))
-	w.Header().Set("X-Rate-Limit-Reset", strconv.FormatInt(b.resetSize(), 10))
+	w.Header().Set("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(), 10))
 }

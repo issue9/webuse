@@ -2,6 +2,10 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package ratelimit 提供了对 X-Rate-Limit 功能的支持：
+//  store := NewMemory(...)
+//  srv := NewServer(store)
+//  h = srv.RateLimit(h, logs.ERROR())
 package ratelimit
 
 import (
@@ -16,10 +20,9 @@ type rateLimiter struct {
 }
 
 // RateLimit 限制单一用户的 HTTP 请求数量。会向报头输出以下内容：
-//
-// X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-// X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-// X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
+//  X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
+//  X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
+//  X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
 func (srv *Server) RateLimit(h http.Handler, errlog *log.Logger) http.Handler {
 	return &rateLimiter{
 		handler: h,
