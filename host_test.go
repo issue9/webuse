@@ -30,6 +30,12 @@ func TestHostFunc(t *testing.T) {
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
+	a.NotNil(w).NotNil(r)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+
 	// 访问不允许的域名
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
