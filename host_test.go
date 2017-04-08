@@ -24,14 +24,23 @@ func TestHostFunc(t *testing.T) {
 	h := HostFunc(f1, "caixw.io", "caixw.oi")
 	a.NotNil(h)
 
+	// HTTP
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
+	// HTTPS
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
+	a.NotNil(w).NotNil(r)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+
+	// 带端口
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io:88/test", nil)
 	a.NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)

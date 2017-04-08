@@ -15,6 +15,8 @@ type host struct {
 //
 // 若请求的域名不允许，会返回 403 错误。
 // 若 domains 为空，则任何请求都将返回 403。
+//
+// 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
 func Host(h http.Handler, domains ...string) http.Handler {
 	return &host{
 		domains: domains,
@@ -28,8 +30,9 @@ func HostFunc(f func(http.ResponseWriter, *http.Request), domains ...string) htt
 }
 
 func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	hostname := r.URL.Hostname()
 	for _, domain := range h.domains {
-		if domain == r.URL.Host {
+		if domain == hostname {
 			h.handler.ServeHTTP(w, r)
 			return
 		}
