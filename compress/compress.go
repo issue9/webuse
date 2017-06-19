@@ -2,7 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+// Package compress 提供一个支持内容压缩的中间件。
+package compress
 
 import (
 	"bufio"
@@ -46,18 +47,13 @@ type compress struct {
 	h http.Handler
 }
 
-// Compress 构建一个支持压缩的中间件。
+// New 构建一个支持压缩的中间件。
 // 支持 gzip 或是 deflate 功能的 handler。
 // 根据客户端请求内容自动匹配相应的压缩算法，优先匹配 gzip。
 //
 // NOTE: 经过压缩的内容，可能需要重新指定 Content-Type，系统检测的类型未必正确。
-func Compress(h http.Handler) http.Handler {
-	return &compress{h: h}
-}
-
-// CompressFunc 将一个 http.HandlerFunc 封装成 http.Handler 实例
-func CompressFunc(f func(http.ResponseWriter, *http.Request)) http.Handler {
-	return Compress(http.HandlerFunc(f))
+func New(next http.Handler) http.Handler {
+	return &compress{h: next}
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
