@@ -2,5 +2,5 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package handlers 包提供了一系列 http.Handler 接口的实现。
-package handlers
+// Package middleware 包含了一系列 http.Handler 接口的中间件。
+package middleware

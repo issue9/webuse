@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package ratelimit 提供了对 X-Rate-Limit 功能的支持：
+// Package ratelimit 提供了对 X-Rate-Limit 功能的中间件：
 //  store := NewMemory(...)
 //  srv := NewServer(store)
 //  h = srv.RateLimit(h, logs.ERROR())
