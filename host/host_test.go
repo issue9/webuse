@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+package host
 
 import (
 	"net/http"
@@ -18,10 +18,10 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 
 var h1 = http.HandlerFunc(f1)
 
-func TestHostFunc(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	h := HostFunc(f1, "caixw.io", "caixw.oi")
+	h := New(h1, "caixw.io", "caixw.oi")
 	a.NotNil(h)
 
 	// HTTP
@@ -53,10 +53,10 @@ func TestHostFunc(t *testing.T) {
 	a.Equal(w.Code, http.StatusForbidden)
 }
 
-func TestHostFunc_empty_domains(t *testing.T) {
+func TestNew_empty_domains(t *testing.T) {
 	a := assert.New(t)
 
-	h := HostFunc(f1)
+	h := New(h1)
 	a.NotNil(h)
 
 	w := httptest.NewRecorder()

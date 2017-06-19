@@ -2,9 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package recovery 用于在发生 panic 时的处理操作。
-//
-// NOTE: recovery 应该处在所有 http.Handler 的最外层，用于处理所有没有被处理的 panic。
+// Package recovery 提供了处理 panic 操作的中间件。
 package recovery
 
 import (
@@ -25,7 +23,7 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-// PrintDebug 是 RecoverFunc 类型的实现。方便 NewRecovery 在调度期间将函数的调用信息输出到 w。
+// PrintDebug 是 RecoverFunc 类型的实现。方便 NewRecovery 在调试期间将函数的调用信息输出到 w。
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintln(w, msg)
@@ -39,7 +37,7 @@ func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	}
 }
 
-// New 向 next 附加当前的中间件。
+// New 声明一个处理 panic 操作的中间件。
 // next 参数中发生的 panic 将被截获并处理，不会再向上级反映。
 //
 // 当 next 参数为空时，将直接 panic。
