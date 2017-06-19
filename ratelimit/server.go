@@ -40,21 +40,19 @@ func NewServer(store Store, capacity int64, rate time.Duration, fn func(*http.Re
 	}
 }
 
-// 当前请求是否被允许。
-func (srv *Server) allow(r *http.Request) (*Bucket, bool, error) {
+// 获取与前请求相对应的令牌桶。
+func (srv *Server) bucket(r *http.Request) (*Bucket, error) {
 	name := srv.getName(r)
+
 	b, found := srv.store.Get(name)
 	if !found {
 		b = newBucket(srv.capacity, srv.rate)
+		if err := srv.store.Set(name, b); err != nil {
+			return nil, err
+		}
 	}
 
-	allow := b.allow(1)
-
-	if err := srv.store.Set(name, b); err != nil {
-		return nil, false, err
-	}
-
-	return b, allow, nil
+	return b, nil
 }
 
 // Transfer 将 oldName 的数据传送给 newName。

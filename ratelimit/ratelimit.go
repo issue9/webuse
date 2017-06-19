@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package ratelimit 提供了对 X-Rate-Limit 功能的中间件：
+// Package ratelimit 提供了 X-Rate-Limit 功能的中间件：
 //  store := NewMemory(...)
 //  srv := NewServer(store)
 //  h = srv.RateLimit(h, logs.ERROR())
@@ -32,7 +32,7 @@ func (srv *Server) RateLimit(h http.Handler, errlog *log.Logger) http.Handler {
 }
 
 func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b, allow, err := l.srv.allow(r)
+	b, err := l.srv.bucket(r)
 
 	if err != nil {
 		if l.errlog != nil {
@@ -44,8 +44,7 @@ func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b.setHeader(w)
-
-	if allow {
+	if b.allow(1) {
 		l.handler.ServeHTTP(w, r)
 		return
 	}
