@@ -31,11 +31,6 @@ func (srv *Server) RateLimit(h http.Handler, errlog *log.Logger) http.Handler {
 	}
 }
 
-// RateLimitFunc 限制单一用户的 HTTP 请求数量。
-func (srv *Server) RateLimitFunc(f func(w http.ResponseWriter, r *http.Request), errlog *log.Logger) http.Handler {
-	return srv.RateLimit(http.HandlerFunc(f), errlog)
-}
-
 func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b, allow, err := l.srv.allow(r)
 

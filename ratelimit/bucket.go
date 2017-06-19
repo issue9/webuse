@@ -37,13 +37,11 @@ func newBucket(capacity int64, rate time.Duration) *Bucket {
 
 // 是否允许拿走 n 块令牌。
 func (b *Bucket) allow(n int64) bool {
-	now := time.Now()
-
-	// 超过最大值
-	if n > b.Capacity {
+	if n > b.Capacity { // 超过最大值
 		return false
 	}
 
+	now := time.Now()
 	dur := now.Sub(b.Last)     // 从上次拿令牌到现在的时间
 	cnt := int64(dur / b.Rate) // 计算这段时间内需要增加的令牌
 	b.Tokens += cnt
@@ -51,8 +49,7 @@ func (b *Bucket) allow(n int64) bool {
 		b.Tokens = b.Capacity
 	}
 
-	// 不够
-	if b.Tokens < n {
+	if b.Tokens < n { // 不够
 		return false
 	}
 

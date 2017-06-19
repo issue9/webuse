@@ -11,8 +11,13 @@ import (
 
 // Store 存储 Bucket 的接口
 type Store interface {
+	// 设置或是添加指定名称的令牌桶
 	Set(name string, val *Bucket) error
+
+	// 删除指定的令牌桶
 	Delete(name string) error
+
+	// 获取指定的令牌桶
 	Get(name string) (b *Bucket, found bool)
 }
 
@@ -25,6 +30,7 @@ type Server struct {
 }
 
 // NewServer 声明一个新的 Server
+// fn 为令牌桶名称的产生方法。
 func NewServer(store Store, capacity int64, rate time.Duration, fn func(*http.Request) string) *Server {
 	return &Server{
 		store:    store,
