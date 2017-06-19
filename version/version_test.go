@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+package version
 
 import (
 	"net/http"
@@ -12,10 +12,16 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestVersionFunc_strict(t *testing.T) {
+var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(1)
+}
+
+var h1 = http.HandlerFunc(f1)
+
+func TestNew_strict(t *testing.T) {
 	a := assert.New(t)
 
-	h := VersionFunc(f1, "1.0", true)
+	h := New(h1, "1.0", true)
 	a.NotNil(h)
 
 	// 相同版本号
@@ -43,10 +49,10 @@ func TestVersionFunc_strict(t *testing.T) {
 	a.Equal(w.Code, http.StatusForbidden)
 }
 
-func TestVersionFunc_nostrict(t *testing.T) {
+func TestNew_nostrict(t *testing.T) {
 	a := assert.New(t)
 
-	h := VersionFunc(f1, "1.0", false)
+	h := New(h1, "1.0", false)
 	a.NotNil(h)
 
 	// 相同版本号
