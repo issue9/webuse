@@ -14,8 +14,8 @@ type host struct {
 
 // New 声明一个限定域名的中间件.
 //
-// 若请求的域名不允许，会返回 403 错误。
-// 若 domains 为空，则任何请求都将返回 403。
+// 若请求的域名不允许，会返回 404 错误。
+// 若 domains 为空，则任何请求都将返回 404。
 //
 // 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
 func New(next http.Handler, domains ...string) http.Handler {
@@ -34,5 +34,5 @@ func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
