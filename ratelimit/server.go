@@ -5,12 +5,13 @@
 package ratelimit
 
 import (
+	"errors"
 	"net/http"
 	"time"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数
-type GenFunc func(*http.Request) string
+type GenFunc func(*http.Request) (string, error)
 
 // Store 存储 Bucket 的接口
 type Store interface {
@@ -32,8 +33,11 @@ type Server struct {
 	genFunc  GenFunc
 }
 
-func genIP(r *http.Request) string {
-	return r.RemoteAddr
+func genIP(r *http.Request) (string, error) {
+	if len(r.RemoteAddr) == 0 {
+		return "", errors.New("无法获取请求端的 IP 地址")
+	}
+	return r.RemoteAddr, nil
 }
 
 // NewServer 声明一个新的 Server。
@@ -53,7 +57,10 @@ func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Ser
 
 // 获取与前请求相对应的令牌桶。
 func (srv *Server) bucket(r *http.Request) (*Bucket, error) {
-	name := srv.genFunc(r)
+	name, err := srv.genFunc(r)
+	if err != nil {
+		return nil, err
+	}
 
 	b := srv.store.Get(name)
 	if b == nil {
