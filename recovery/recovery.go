@@ -2,7 +2,10 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+// Package recovery 用于在发生 panic 时的处理操作。
+//
+// NOTE: recovery 应该处在所有 http.Handler 的最外层，用于处理所有没有被处理的 panic。
+package recovery
 
 import (
 	"fmt"
@@ -36,46 +39,28 @@ func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	}
 }
 
-// 捕获并处理 panic 信息。
-type recovery struct {
-	handler     http.Handler
-	recoverFunc RecoverFunc
-}
-
-// Recovery 用于处理当发生 panic 时的处理的 handler。
-// h 参数中发生的panic将被截获并处理，不会再向上级反映。
+// New 向 next 附加当前的中间件。
+// next 参数中发生的 panic 将被截获并处理，不会再向上级反映。
 //
-// Recovery 应该处在所有 http.Handler 的最外层，用于处理所有没有被处理的 panic。
-//
-// 当 h 参数为空时，将直接 panic。
+// 当 next 参数为空时，将直接 panic。
 // rf 参数用于指定处理 panic 信息的函数，其原型为 RecoverFunc，
 // 当将 rf 指定为 nil 时，将使用默认的处理函数，仅仅向客户端输出 500 的错误信息，没有具体内容。
-func Recovery(h http.Handler, rf RecoverFunc) http.Handler {
-	if h == nil {
-		panic("handlers.Recovery:参数h不能为空")
+func New(next http.Handler, rf RecoverFunc) http.Handler {
+	if next == nil {
+		panic("参数 h 不能为空")
 	}
 
 	if rf == nil {
 		rf = defaultRecoverFunc
 	}
 
-	return &recovery{
-		handler:     h,
-		recoverFunc: rf,
-	}
-}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				rf(w, err)
+			}
+		}()
 
-// RecoveryFunc 将一个 http.HandlerFunc 包装成 http.Handler
-func RecoveryFunc(f func(http.ResponseWriter, *http.Request), rf RecoverFunc) http.Handler {
-	return Recovery(http.HandlerFunc(f), rf)
-}
-
-func (r *recovery) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	defer func() {
-		if err := recover(); err != nil {
-			r.recoverFunc(w, err)
-		}
-	}()
-
-	r.handler.ServeHTTP(w, req)
+		next.ServeHTTP(w, r)
+	})
 }

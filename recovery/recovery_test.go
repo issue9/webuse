@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package handlers
+package recovery
 
 import (
 	"net/http"
@@ -15,6 +15,12 @@ import (
 var _ RecoverFunc = defaultRecoverFunc
 var _ RecoverFunc = PrintDebug
 
+var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(1)
+}
+
+var h1 = http.HandlerFunc(f1)
+
 func TestDefaultRecoverFunc(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
@@ -24,16 +30,16 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	a.Equal(http.StatusText(http.StatusInternalServerError)+"\n", w.Body.String())
 }
 
-func TestRecoveryFunc(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t)
 
 	// h参数传递空值
 	a.Panic(func() {
-		Recovery(nil, nil)
+		New(nil, nil)
 	})
 
 	// 指定 fun 参数为 nil值，可以正常使用
-	h := RecoveryFunc(h1, nil)
+	h := New(h1, nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
@@ -41,7 +47,7 @@ func TestRecoveryFunc(t *testing.T) {
 	a.Equal(w.Code, 1)
 
 	// 触发 panic
-	h = RecoveryFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h = New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("test")
 	}), nil)
 	w = httptest.NewRecorder()
