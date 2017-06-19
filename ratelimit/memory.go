@@ -34,10 +34,10 @@ func (mem *memory) Delete(name string) error {
 	return nil
 }
 
-func (mem *memory) Get(name string) (*Bucket, bool) {
-	mem.lock.Lock()
-	b, found := mem.buckets[name]
-	mem.lock.Unlock()
+func (mem *memory) Get(name string) *Bucket {
+	mem.lock.RLock()
+	b := mem.buckets[name]
+	mem.lock.RUnlock()
 
-	return b, found
+	return b
 }

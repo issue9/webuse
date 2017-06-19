@@ -50,20 +50,20 @@ func (mem *memcache) Delete(name string) error {
 	return mem.client.Delete(mem.prefix + name)
 }
 
-func (mem *memcache) Get(name string) (*Bucket, bool) {
+func (mem *memcache) Get(name string) *Bucket {
 	item, err := mem.client.Get(mem.prefix + name)
 	if err != nil {
 		if mem.errlog != nil {
 			mem.errlog.Println(err)
 		}
-		return nil, false
+		return nil
 	}
 
 	b := &Bucket{}
 	if err = json.Unmarshal(item.Value, b); err != nil {
 		mem.errlog.Println(err)
-		return nil, false
+		return nil
 	}
 
-	return b, true
+	return b
 }
