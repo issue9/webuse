@@ -1,7 +1,7 @@
-handlers [![Build Status](https://travis-ci.org/issue9/handlers.svg?branch=master)](https://travis-ci.org/issue9/handlers)
+middleware [![Build Status](https://travis-ci.org/issue9/middleware.svg?branch=master)](https://travis-ci.org/issue9/middleware)
 ======
 
-handlers 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
+middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
 
 - version 匹配从 Accept 报头中的版本号信息；
 - comporess 对内容进行压缩；
@@ -12,14 +12,14 @@ handlers 是实现 http.Handler 接口的中间件，提供了大部分实用的
 ### 安装
 
 ```shell
-go get github.com/issue9/handlers
+go get github.com/issue9/middleware
 ```
 
 
 ### 文档
 
-[![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/handlers)
-[![GoDoc](https://godoc.org/github.com/issue9/handlers?status.svg)](https://godoc.org/github.com/issue9/handlers)
+[![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/middleware)
+[![GoDoc](https://godoc.org/github.com/issue9/middleware?status.svg)](https://godoc.org/github.com/issue9/middleware)
 
 
 ### 版权
