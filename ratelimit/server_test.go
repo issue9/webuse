@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ GenFunc = genIP
+var _ GenFunc = GenIP
 
 func TestServer_bucket(t *testing.T) {
 	a := assert.New(t)

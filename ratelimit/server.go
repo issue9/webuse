@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// GenFunc 用于生成用户唯一 ID 的函数
+// GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户。
 type GenFunc func(*http.Request) (string, error)
 
 // Store 存储 Bucket 的接口
@@ -33,7 +33,8 @@ type Server struct {
 	genFunc  GenFunc
 }
 
-func genIP(r *http.Request) (string, error) {
+// GenIP 用于生成区分令牌桶的 IP 地址。
+func GenIP(r *http.Request) (string, error) {
 	if len(r.RemoteAddr) == 0 {
 		return "", errors.New("无法获取请求端的 IP 地址")
 	}
@@ -44,7 +45,7 @@ func genIP(r *http.Request) (string, error) {
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
 func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Server {
 	if fn == nil {
-		fn = genIP
+		fn = GenIP
 	}
 
 	return &Server{
