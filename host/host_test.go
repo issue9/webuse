@@ -50,7 +50,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	h.ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
 func TestNew_empty_domains(t *testing.T) {
@@ -63,12 +63,12 @@ func TestNew_empty_domains(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 
 	// 访问不允许的域名
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	h.ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }

@@ -46,7 +46,7 @@ func TestNew_strict(t *testing.T) {
 	r.Header.Set("Accept", "application/json; version=2")
 	h.ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
 func TestNew_nostrict(t *testing.T) {
@@ -77,7 +77,7 @@ func TestNew_nostrict(t *testing.T) {
 	r.Header.Set("Accept", "application/json; version=2")
 	h.ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
 func TestFindVersionNumber(t *testing.T) {
