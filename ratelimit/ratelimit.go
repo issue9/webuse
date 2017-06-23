@@ -43,9 +43,12 @@ func (l *rateLimiter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b.setHeader(w)
-	if b.allow(1) {
-		l.handler.ServeHTTP(w, r)
+	allow := b.allow(1) // 先拿走令牌
+	b.setHeader(w)      // 再设置报头
+
+	if !allow {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
+	l.handler.ServeHTTP(w, r)
 }
