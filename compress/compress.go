@@ -10,6 +10,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -44,7 +45,8 @@ func (cw *compressWriter) WriteHeader(code int) {
 }
 
 type compress struct {
-	h http.Handler
+	h      http.Handler
+	errlog *log.Logger
 }
 
 // New 构建一个支持压缩的中间件。
@@ -52,8 +54,11 @@ type compress struct {
 // 根据客户端请求内容自动匹配相应的压缩算法，优先匹配 gzip。
 //
 // NOTE: 经过压缩的内容，可能需要重新指定 Content-Type，系统检测的类型未必正确。
-func New(next http.Handler) http.Handler {
-	return &compress{h: next}
+func New(next http.Handler, errlog *log.Logger) http.Handler {
+	return &compress{
+		h:      next,
+		errlog: errlog,
+	}
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +83,7 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			var err error
 			gzw, err = flate.NewWriter(w, flate.DefaultCompression)
 			if err != nil { // 若出错，不压缩，直接返回
+				c.errlog.Println(err)
 				c.h.ServeHTTP(w, r)
 				return
 			}
