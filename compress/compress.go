@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-// 同时实现了 http.ResponseWriter 和 http.Hijacker 接口。
+// 实现了 http.ResponseWriter 接口。
 type compressWriter struct {
 	gzw io.Writer
 	rw  http.ResponseWriter
@@ -32,16 +32,23 @@ func (cw *compressWriter) Write(bs []byte) (int, error) {
 	return cw.gzw.Write(bs)
 }
 
-func (cw *compressWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	return cw.hj.Hijack()
-}
-
 func (cw *compressWriter) Header() http.Header {
 	return cw.rw.Header()
 }
 
 func (cw *compressWriter) WriteHeader(code int) {
+	// https://github.com/golang/go/issues/14975
+	cw.rw.Header().Del("Content-Length")
+
 	cw.rw.WriteHeader(code)
+}
+
+func (cw *compressWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if cw.hj != nil {
+		return cw.hj.Hijack()
+	}
+
+	panic("未实现 http.Hijacker")
 }
 
 type compress struct {
@@ -62,12 +69,6 @@ func New(next http.Handler, errlog *log.Logger) http.Handler {
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	hj, ok := w.(http.Hijacker)
-	if !ok {
-		c.h.ServeHTTP(w, r)
-		return
-	}
-
 	var gzw io.WriteCloser
 	var encoding string
 	encodings := strings.Split(r.Header.Get("Accept-Encoding"), ",")
@@ -99,11 +100,12 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cw := &compressWriter{
 		gzw: gzw,
 		rw:  w,
-		hj:  hj,
+	}
+	if hj, ok := w.(http.Hijacker); ok { // http2 没有实现该接口
+		cw.hj = hj
 	}
 
-	// 只要 gzw!=nil 的，必须会执行到此处。
-	defer gzw.Close()
+	defer gzw.Close() // 只要 gzw!=nil 的，必须会执行到此处。
 
 	// 此处可能 panic，所以得保证在 panic 之前，gzw 变量已经 Close
 	c.h.ServeHTTP(cw, r)
