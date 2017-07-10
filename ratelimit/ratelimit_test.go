@@ -35,7 +35,7 @@ func TestRateLimit(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/test", nil)
 	h = srv.RateLimit(h1, nil)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusTooManyRequests)
 	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
 	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
 }
