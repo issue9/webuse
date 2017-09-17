@@ -7,6 +7,7 @@ middleware 是实现 http.Handler 接口的中间件，提供了大部分实用�
 - comporess 对内容进行压缩；
 - host 匹配指定的域名；
 - recovery 对 Panic 的处理；
+- header 输出指定的报头；
 
 
 ### 安装
