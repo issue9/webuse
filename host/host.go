@@ -5,7 +5,10 @@
 // Package host 提供了限定访问域名的中间件。
 package host
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 type host struct {
 	domains []string
@@ -26,7 +29,13 @@ func New(next http.Handler, domains ...string) http.Handler {
 }
 
 func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	hostname := r.URL.Hostname()
+	// r.URL.Hostname() 可能是空值
+	hostname := r.Host
+	index := strings.IndexByte(hostname, ':')
+	if index >= 0 {
+		hostname = hostname[:index]
+	}
+
 	for _, domain := range h.domains {
 		if domain == hostname {
 			h.handler.ServeHTTP(w, r)

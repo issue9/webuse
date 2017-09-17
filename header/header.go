@@ -8,8 +8,8 @@ package header
 import "net/http"
 
 type header struct {
-	headers     map[string]string
-	headersFunc map[string]func() string
+	headers     map[string]string        // 静态内容
+	headersFunc map[string]func() string // 动态生成的内容
 	handler     http.Handler
 }
 
@@ -33,7 +33,6 @@ func (h *header) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		for k, v := range h.headersFunc {
 			w.Header().Set(k, v())
 		}
-
 	}
 
 	h.handler.ServeHTTP(w, r)
