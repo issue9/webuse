@@ -6,7 +6,6 @@
 package recovery
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/issue9/utils"
@@ -27,8 +26,7 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 // PrintDebug 是 RecoverFunc 类型的实现。方便 NewRecovery 在调试期间将函数的调用信息输出到 w。
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintln(w, msg)
-	utils.TraceStack(w, 2)
+	utils.TraceStack(w, msg, 2)
 }
 
 // New 声明一个处理 panic 操作的中间件。
