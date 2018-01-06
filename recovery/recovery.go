@@ -8,7 +8,8 @@ package recovery
 import (
 	"fmt"
 	"net/http"
-	"runtime"
+
+	"github.com/issue9/utils"
 )
 
 // RecoverFunc 错误处理函数。Recovery 需要此函数作为出错时的处理。
@@ -27,14 +28,7 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintln(w, msg)
-	for i := 1; true; i++ {
-		_, file, line, ok := runtime.Caller(i)
-		if !ok {
-			return
-		}
-
-		fmt.Fprintf(w, "@ %v:%v\n", file, line)
-	}
+	utils.TraceStack(w, 2)
 }
 
 // New 声明一个处理 panic 操作的中间件。
