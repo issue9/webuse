@@ -28,12 +28,12 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 
-	msg, err := utils.TraceStack(msg, 2)
+	data, err := utils.TraceStack(msg, 2)
 	if err != nil {
 		panic(err)
 	}
 
-	if _, err = fmt.Fprint(w, msg); err != nil {
+	if _, err = fmt.Fprint(w, string(data)); err != nil {
 		panic(err)
 	}
 }
