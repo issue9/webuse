@@ -1,9 +1,18 @@
 language: go
 
+os:
+  - linux
+  - osx
+
 go:
-    - tip
-    - 1.9
-    - 1.8
+  - tip
+  - "1.10"
+  - 1.9
+  - 1.8
+
+install:
+  - go get github.com/issue9/assert
+  - go get github.com/issue9/utils
 
 services:
-    - memcached
+  - memcached
