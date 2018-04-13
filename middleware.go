@@ -4,3 +4,8 @@
 
 // Package middleware 包含了一系列 http.Handler 接口的中间件。
 package middleware
+
+import "net/http"
+
+// Middleware 将一个 http.Handler 封装成另一个 http.Handler
+type Middleware func(http.Handler) http.Handler
