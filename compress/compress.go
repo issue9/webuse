@@ -8,6 +8,7 @@ package compress
 import (
 	"compress/flate"
 	"compress/gzip"
+	"compress/lzw"
 	"io"
 	"log"
 	"net/http"
@@ -15,9 +16,28 @@ import (
 	"github.com/issue9/middleware/compress/accept"
 )
 
+// BuildCompressWriter 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
+type BuildCompressWriter func(w io.Writer) (io.WriteCloser, error)
+
+// NewGzip 表示支持 gzip 格式的压缩
+func NewGzip(w io.Writer) (io.WriteCloser, error) {
+	return gzip.NewWriter(w), nil
+}
+
+// NewDeflate 表示支持 deflate 压缩
+func NewDeflate(w io.Writer) (io.WriteCloser, error) {
+	return flate.NewWriter(w, flate.DefaultCompression)
+}
+
+// NewCompress 用于支持 compress 压缩算法
+func NewCompress(w io.Writer) (io.WriteCloser, error) {
+	return lzw.NewWriter(w, lzw.LSB, 8), nil
+}
+
 type compress struct {
 	h      http.Handler
 	errlog *log.Logger
+	funcs  map[string]BuildCompressWriter
 }
 
 // New 构建一个支持压缩的中间件。
@@ -25,10 +45,13 @@ type compress struct {
 // 根据客户端请求内容自动匹配相应的压缩算法，优先匹配 gzip。
 //
 // NOTE: 经过压缩的内容，可能需要重新指定 Content-Type，系统检测的类型未必正确。
-func New(next http.Handler, errlog *log.Logger) http.Handler {
+//
+// 注意 funcs 键名的大小写。
+func New(next http.Handler, errlog *log.Logger, funcs map[string]BuildCompressWriter) http.Handler {
 	return &compress{
 		h:      next,
 		errlog: errlog,
+		funcs:  funcs,
 	}
 }
 
@@ -43,22 +66,24 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var gzw io.WriteCloser
 	var accept *accept.Accept
 	for _, accept = range accepts {
-		if accept.Value == "gzip" {
-			gzw = gzip.NewWriter(w)
+		// 不支持压缩
+		if accept.Value == "identity" || accept.Value == "*" {
 			break
 		}
 
-		if accept.Value == "deflate" {
-			var err error
-			gzw, err = flate.NewWriter(w, flate.DefaultCompression)
-			if err != nil { // 若出错，不压缩，直接返回
-				c.errlog.Println(err)
-				c.h.ServeHTTP(w, r)
-				return
-			}
-			break
+		f, found := c.funcs[accept.Value]
+		if !found {
+			continue
+		}
+
+		gzw, err = f(w)
+		if err != nil { // 若出错，不压缩，直接返回
+			c.errlog.Println(err)
+			c.h.ServeHTTP(w, r)
+			return
 		}
 	} // end for
+
 	if gzw == nil { // 不支持的压缩格式
 		return
 	}
