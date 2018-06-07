@@ -8,7 +8,6 @@ package compress
 import (
 	"compress/flate"
 	"compress/gzip"
-	"compress/lzw"
 	"io"
 	"log"
 	"net/http"
@@ -27,11 +26,6 @@ func NewGzip(w io.Writer) (io.WriteCloser, error) {
 // NewDeflate 表示支持 deflate 压缩
 func NewDeflate(w io.Writer) (io.WriteCloser, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
-}
-
-// NewCompress 用于支持 compress 压缩算法
-func NewCompress(w io.Writer) (io.WriteCloser, error) {
-	return lzw.NewWriter(w, lzw.LSB, 8), nil
 }
 
 type compress struct {
@@ -82,9 +76,11 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			c.h.ServeHTTP(w, r)
 			return
 		}
+		break // 找到需要的，则退出当前 for
 	} // end for
 
 	if gzw == nil { // 不支持的压缩格式
+		c.h.ServeHTTP(w, r)
 		return
 	}
 
