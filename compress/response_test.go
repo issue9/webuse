@@ -8,5 +8,7 @@ import (
 	"net/http"
 )
 
-var _ http.ResponseWriter = &compressWriter{}
-var _ http.Hijacker = &compressWriter{}
+var (
+	_ http.ResponseWriter = &response{}
+	_ http.Hijacker       = &response{}
+)
