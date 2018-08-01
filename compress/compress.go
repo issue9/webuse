@@ -91,7 +91,16 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rw:  w,
 	}
 
-	defer gzw.Close() // 只要 gzw!=nil 的，必须会执行到此处。
+	defer func() {
+		// BUG(caixw):gzw.Close() 在执行时，可能会调用 w.Write() 进行输出，
+		// 而 w.Write() 又有可能隐性调用 w.WriteHeader() 输出报头。
+		//
+		// 所以如果在 c.h 中进行 panic，并让外层接收后作报头输出，可能会出错，
+		// 比如 issue9/web/internal/errors.Exit() 函数。
+		if err := gzw.Close(); err != nil {
+			c.errlog.Println(err)
+		}
+	}()
 
 	// 此处可能 panic，所以得保证在 panic 之前，gzw 变量已经 Close
 	c.h.ServeHTTP(resp, r)

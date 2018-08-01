@@ -3,8 +3,6 @@
 // license that can be found in the LICENSE file.
 
 // Package accept 用于处理 accpet 系列的报头。
-//
-// NOTE: 从 github.com/issue9/web 中复制而来
 package accept
 
 import (
@@ -22,68 +20,100 @@ type Accept struct {
 	Q     float32
 }
 
-// 将 Content 的内容解析到 Value 和 Q 中
-func (a *Accept) parse() error {
-	index := strings.IndexByte(a.Content, ';')
-	if index < 0 {
-		a.Value = a.Content
-		a.Q = 1.0
-		return nil
-	}
-
-	if index >= 0 {
-		a.Value = a.Content[:index]
-	}
-
-	index = strings.LastIndex(a.Content, ";q=")
-	if index >= 0 {
-		q, err := strconv.ParseFloat(a.Content[index+3:], 32)
-		if err != nil {
-			return err
-		}
-		a.Q = float32(q)
-	} else {
-		a.Q = 1.0
-	}
-
-	return nil
+func (accept *Accept) hasWildcard() bool {
+	return strings.HasSuffix(accept.Value, "/*")
 }
 
-// Parse 将报头内容解析为 []*Accept
+// 将 Content 的内容解析到 Value 和 Q 中
+func parseAccept(v string) (val string, q float32, err error) {
+	q = 1 // 设置为默认值
+
+	index := strings.IndexByte(v, ';')
+	if index < 0 { // 没有 q 的内容
+		return v, q, nil
+	}
+
+	val = v[:index]
+	if index = strings.LastIndex(v, ";q="); index >= 0 {
+		qq, err := strconv.ParseFloat(v[index+3:], 32)
+		if err != nil {
+			return "", 0, err
+		}
+		q = float32(qq)
+	}
+
+	return val, q, nil
+}
+
+// Parse 将报头内容解析为 []*Accept，并对内容进行排序之后返回。
+//
+//
+// 排序方式如下:
+//
+// Q 值大的靠前，如果 Q 值相同，则全名的比带通配符的靠前，*/* 最后。
+//
+// q 值为 0 的数据将被过滤，比如：
+//  application/*;q=0.1,application/xml;q=0.1,text/html;q=0
+// 其中的 text/html 不会被返回，application/xml 的优先级会高于 applicatioon/*
 func Parse(header string) ([]*Accept, error) {
 	accepts := make([]*Accept, 0, strings.Count(header, ",")+1)
 
 	for {
 		index := strings.IndexByte(header, ',')
-		if index == -1 {
-			if header != "" {
-				accepts = append(accepts, &Accept{Content: header})
-			}
-			break
-		}
-
-		if index == 0 {
+		if index == 0 { // 过滤掉空值
 			header = header[1:]
 			continue
 		}
 
-		val := header[:index]
-		if val != "" {
-			accepts = append(accepts, &Accept{Content: header[:index]})
+		if index == -1 { // 最后一条数据
+			if header != "" {
+				val, q, err := parseAccept(header)
+				if err != nil {
+					return nil, err
+				}
+				if q > 0 {
+					accepts = append(accepts, &Accept{Content: header, Value: val, Q: q})
+				}
+			}
+			break
+		}
+
+		// 由上面的两个 if 保证，此处 v 肯定不为空
+		v := header[:index]
+		val, q, err := parseAccept(v)
+		if err != nil {
+			return nil, err
+		}
+		if q > 0 {
+			accepts = append(accepts, &Accept{Content: v, Value: val, Q: q})
 		}
 
 		header = header[index+1:]
 	}
 
-	for _, accept := range accepts {
-		if err := accept.parse(); err != nil {
-			return nil, err
-		}
-	}
-
-	sort.SliceStable(accepts, func(i, j int) bool {
-		return accepts[i].Q > accepts[j].Q
-	})
+	sortAccepts(accepts)
 
 	return accepts, nil
+}
+
+func sortAccepts(accepts []*Accept) {
+	sort.SliceStable(accepts, func(i, j int) bool {
+		ii := accepts[i]
+		jj := accepts[j]
+
+		if ii.Q != jj.Q {
+			return ii.Q > jj.Q
+		}
+
+		switch {
+		case ii.Value == "*/*":
+			return false
+		case jj.Value == "*/*":
+			return true
+		case ii.hasWildcard():
+			return false
+		default: // !ii.hasWildcard()
+			return jj.hasWildcard()
+		}
+	})
 }
