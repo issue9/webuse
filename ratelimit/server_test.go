@@ -15,6 +15,29 @@ import (
 
 var _ GenFunc = GenIP
 
+func TestGenIP(t *testing.T) {
+	a := assert.New(t)
+	ip4 := "1.1.1.1"
+	ip6 := "[::0]"
+
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.RemoteAddr = ip4
+	ip, err := GenIP(r)
+	a.NotError(err).Equal(ip, ip4)
+
+	r.RemoteAddr = ip4 + ":8080"
+	ip, err = GenIP(r)
+	a.NotError(err).Equal(ip, ip4)
+
+	r.RemoteAddr = ip6
+	ip, err = GenIP(r)
+	a.NotError(err).Equal(ip, ip6)
+
+	r.RemoteAddr = ip6 + ":8080"
+	ip, err = GenIP(r)
+	a.NotError(err).Equal(ip, ip6)
+}
+
 func TestServer_bucket(t *testing.T) {
 	a := assert.New(t)
 	srv := NewServer(NewMemory(10), 10, 50*time.Second, nil)

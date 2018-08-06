@@ -41,12 +41,16 @@ func GenIP(r *http.Request) (string, error) {
 	}
 
 	if r.RemoteAddr[0] == '[' { // IPv6 带端口
-		index := strings.Index(r.RemoteAddr, "]:")
-		return r.RemoteAddr[:index+1], nil
+		if index := strings.Index(r.RemoteAddr, "]:"); index > 0 {
+			return r.RemoteAddr[:index+1], nil
+		}
+		return r.RemoteAddr, nil
 	}
 
-	index := strings.IndexByte(r.RemoteAddr, ':')
-	return r.RemoteAddr[:index], nil
+	if index := strings.IndexByte(r.RemoteAddr, ':'); index > 0 {
+		return r.RemoteAddr[:index], nil
+	}
+	return r.RemoteAddr, nil
 }
 
 // NewServer 声明一个新的 Server。
