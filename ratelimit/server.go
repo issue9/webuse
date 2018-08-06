@@ -7,6 +7,7 @@ package ratelimit
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -38,10 +39,18 @@ func GenIP(r *http.Request) (string, error) {
 	if len(r.RemoteAddr) == 0 {
 		return "", errors.New("无法获取请求端的 IP 地址")
 	}
-	return r.RemoteAddr, nil
+
+	if r.RemoteAddr[0] == '[' { // IPv6 带端口
+		index := strings.Index(r.RemoteAddr, "]:")
+		return r.RemoteAddr[:index+1], nil
+	}
+
+	index := strings.IndexByte(r.RemoteAddr, ':')
+	return r.RemoteAddr[:index], nil
 }
 
 // NewServer 声明一个新的 Server。
+// rate 拿令牌的频率
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
 func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Server {
 	if fn == nil {
@@ -56,7 +65,7 @@ func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Ser
 	}
 }
 
-// 获取与前请求相对应的令牌桶。
+// 获取与当前请求相对应的令牌桶。
 func (srv *Server) bucket(r *http.Request) (*Bucket, error) {
 	name, err := srv.genFunc(r)
 	if err != nil {
