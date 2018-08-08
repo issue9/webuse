@@ -1,5 +1,8 @@
 language: go
 
+services:
+  - memcached
+
 os:
   - linux
   - osx
@@ -7,13 +10,20 @@ os:
 go:
   - tip
   - "1.10"
-  - 1.9
-  - 1.8
 
 install:
   - go get github.com/issue9/assert
   - go get github.com/issue9/utils
   - go get github.com/bradfitz/gomemcache/memcache
 
-services:
-  - memcached
+script:
+  - go vet -v $(go list ./...| grep -v /vendor/)
+
+  - go test -v $(go list ./...| grep -v /vendor/)
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+matrix:
+  allow_failures:
+    - go: tip
