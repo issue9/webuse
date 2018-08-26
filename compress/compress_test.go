@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	_ BuildCompressWriter = NewDeflate
-	_ BuildCompressWriter = NewGzip
+	_ WriterFunc = NewDeflate
+	_ WriterFunc = NewGzip
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 
 func TestCompress(t *testing.T) {
 	a := assert.New(t)
-	srv := New(http.HandlerFunc(f1), log.New(os.Stderr, "", log.LstdFlags), map[string]BuildCompressWriter{
+	srv := New(http.HandlerFunc(f1), log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
 		"gzip":    NewGzip,
 		"deflate": NewDeflate,
 	})

@@ -15,8 +15,8 @@ import (
 	"github.com/issue9/middleware/compress/accept"
 )
 
-// BuildCompressWriter 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
-type BuildCompressWriter func(w io.Writer) (io.WriteCloser, error)
+// WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
+type WriterFunc func(w io.Writer) (io.WriteCloser, error)
 
 // NewGzip 表示支持 gzip 格式的压缩
 func NewGzip(w io.Writer) (io.WriteCloser, error) {
@@ -31,17 +31,13 @@ func NewDeflate(w io.Writer) (io.WriteCloser, error) {
 type compress struct {
 	h      http.Handler
 	errlog *log.Logger
-	funcs  map[string]BuildCompressWriter
+	funcs  map[string]WriterFunc
 }
 
 // New 构建一个支持压缩的中间件。
-// 支持 gzip 或是 deflate 功能的 handler。
-// 根据客户端请求内容自动匹配相应的压缩算法，优先匹配 gzip。
-//
-// NOTE: 经过压缩的内容，可能需要重新指定 Content-Type，系统检测的类型未必正确。
 //
 // 注意 funcs 键名的大小写。
-func New(next http.Handler, errlog *log.Logger, funcs map[string]BuildCompressWriter) http.Handler {
+func New(next http.Handler, errlog *log.Logger, funcs map[string]WriterFunc) http.Handler {
 	return &compress{
 		h:      next,
 		errlog: errlog,

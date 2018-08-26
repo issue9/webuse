@@ -9,6 +9,7 @@ os:
 
 go:
   - tip
+  - 1.11
   - "1.10"
 
 install:
@@ -17,9 +18,7 @@ install:
   - go get github.com/bradfitz/gomemcache/memcache
 
 script:
-  - go vet -v $(go list ./...| grep -v /vendor/)
-
-  - go test -v $(go list ./...| grep -v /vendor/)
+  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
