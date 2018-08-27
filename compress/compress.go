@@ -9,7 +9,6 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/issue9/middleware/compress/accept"
@@ -29,31 +28,31 @@ func NewDeflate(w io.Writer) (io.WriteCloser, error) {
 }
 
 type compress struct {
-	h      http.Handler
-	errlog *log.Logger
-	mgr    *Manager
+	h   http.Handler
+	opt *Options
 }
 
 // New 构建一个支持压缩的中间件。
 //
-// 注意 funcs 键名的大小写。
-func (mgr *Manager) New(next http.Handler, errlog *log.Logger) http.Handler {
+// 将 opt 传递给 New 之后，再修改 opt 中的值，将不再启作用。
+func New(next http.Handler, opt *Options) http.Handler {
+	opt.build()
+
 	return &compress{
-		h:      next,
-		errlog: errlog,
-		mgr:    mgr,
+		h:   next,
+		opt: opt,
 	}
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !c.mgr.canCompressed(w, c.errlog) {
+	if !c.opt.canCompressed(w) {
 		c.h.ServeHTTP(w, r)
 		return
 	}
 
 	accepts, err := accept.Parse(r.Header.Get("Accept-Encoding"))
 	if err != nil {
-		c.errlog.Println(err)
+		c.opt.ErrorLog.Println(err)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
@@ -66,14 +65,14 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		f, found := c.mgr.funcs[accept.Value]
+		f, found := c.opt.Funcs[accept.Value]
 		if !found {
 			continue
 		}
 
 		gzw, err = f(w)
 		if err != nil { // 若出错，不压缩，直接返回
-			c.errlog.Println(err)
+			c.opt.ErrorLog.Println(err)
 			c.h.ServeHTTP(w, r)
 			return
 		}
@@ -99,7 +98,7 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// 所以如果在 c.h 中进行 panic，并让外层接收后作报头输出，可能会出错，
 		// 比如 issue9/web/internal/errors.Exit() 函数。
 		if err := gzw.Close(); err != nil {
-			c.errlog.Println(err)
+			c.opt.ErrorLog.Println(err)
 		}
 	}()
 

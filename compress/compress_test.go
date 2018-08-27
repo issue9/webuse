@@ -27,11 +27,16 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 
 func TestCompress(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager(map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, []string{"text/*"}, 0)
-	srv := mgr.New(http.HandlerFunc(f1), log.New(os.Stderr, "", log.LstdFlags))
+	opt := &Options{
+		Funcs: map[string]WriterFunc{
+			"gzip":    NewGzip,
+			"deflate": NewDeflate,
+		},
+		Types:    []string{"text/*"},
+		Size:     0,
+		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
+	}
+	srv := New(http.HandlerFunc(f1), opt)
 	a.NotNil(srv)
 
 	// 未指定 accept-encoding
