@@ -30,18 +30,20 @@ func TestCompress(t *testing.T) {
 	mgr := NewManager(map[string]WriterFunc{
 		"gzip":    NewGzip,
 		"deflate": NewDeflate,
-	}, []string{"text"}, 0)
+	}, []string{"text/*"}, 0)
 	srv := mgr.New(http.HandlerFunc(f1), log.New(os.Stderr, "", log.LstdFlags))
 	a.NotNil(srv)
 
 	// 未指定 accept-encoding
 	w := httptest.NewRecorder()
+	w.Header().Set("Content-Type", "text/html")
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	srv.ServeHTTP(w, r)
 	a.Equal(w.Body.String(), "f1\nf2")
 	a.Equal(w.Header().Get("Content-Encoding"), "")
 
 	w = httptest.NewRecorder()
+	w.Header().Set("Content-Type", "text/html")
 	r = httptest.NewRequest(http.MethodGet, "/", nil)
 	r.Header.Set("Accept-encoding", "gzip;q=0.8,deflate")
 	srv.ServeHTTP(w, r)

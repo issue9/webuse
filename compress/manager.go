@@ -67,10 +67,6 @@ func (mgr *Manager) canCompressed(w http.ResponseWriter, errlog *log.Logger) boo
 		}
 	}
 
-	if len(mgr.prefix) == 0 && len(mgr.vals) == 0 {
-		return true
-	}
-
 	typ := w.Header().Get("Content-Type")
 	if index := strings.IndexByte(typ, ';'); index > 0 {
 		typ = strings.TrimSpace(typ[:index])

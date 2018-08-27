@@ -13,8 +13,28 @@ import (
 
 func TestManager_canComporessed(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager(nil, nil, 0)
 
+	mgr := NewManager(nil, nil, 0)
 	w := httptest.NewRecorder()
+	a.False(mgr.canCompressed(w, nil))
+
+	mgr = NewManager(map[string]WriterFunc{"gzip": NewGzip}, []string{"text/*", "application/json"}, 1024)
+	w = httptest.NewRecorder()
+
+	// 长度不够
+	w.Header().Set("Content-Length", "10")
+	a.False(mgr.canCompressed(w, nil))
+
+	// 长度够，但是未指定 content-type
+	w.Header().Set("Content-Length", "2046")
+	a.False(mgr.canCompressed(w, nil))
+
+	w.Header().Set("Content-Type", "text/html;charset=utf-8")
+	a.True(mgr.canCompressed(w, nil))
+
+	w.Header().Set("Content-Type", "application/json")
+	a.True(mgr.canCompressed(w, nil))
+
+	w.Header().Set("Content-Type", "application/octet")
 	a.False(mgr.canCompressed(w, nil))
 }
