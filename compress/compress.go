@@ -31,21 +31,26 @@ func NewDeflate(w io.Writer) (io.WriteCloser, error) {
 type compress struct {
 	h      http.Handler
 	errlog *log.Logger
-	funcs  map[string]WriterFunc
+	mgr    *Manager
 }
 
 // New 构建一个支持压缩的中间件。
 //
 // 注意 funcs 键名的大小写。
-func New(next http.Handler, errlog *log.Logger, funcs map[string]WriterFunc) http.Handler {
+func (mgr *Manager) New(next http.Handler, errlog *log.Logger) http.Handler {
 	return &compress{
 		h:      next,
 		errlog: errlog,
-		funcs:  funcs,
+		mgr:    mgr,
 	}
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !c.mgr.canCompressed(w, c.errlog) {
+		c.h.ServeHTTP(w, r)
+		return
+	}
+
 	accepts, err := accept.Parse(r.Header.Get("Accept-Encoding"))
 	if err != nil {
 		c.errlog.Println(err)
@@ -61,7 +66,7 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		f, found := c.funcs[accept.Value]
+		f, found := c.mgr.funcs[accept.Value]
 		if !found {
 			continue
 		}
