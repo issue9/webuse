@@ -13,7 +13,9 @@ type Middleware func(http.Handler) http.Handler
 // Handler 将所有的中间件应用于 h。
 func Handler(h http.Handler, middleware ...Middleware) http.Handler {
 	for _, m := range middleware {
-		h = m(h)
+		if m != nil {
+			h = m(h)
+		}
 	}
 
 	return h
