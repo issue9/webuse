@@ -18,7 +18,7 @@ install:
   - go get github.com/bradfitz/gomemcache/memcache
 
 script:
-  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
+  - env GO111MODULE=on go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
