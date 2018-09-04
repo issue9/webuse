@@ -22,6 +22,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
+go.sum
 
 # osx
 .DS_Store
