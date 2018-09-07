@@ -14,6 +14,8 @@ type header struct {
 }
 
 // New 声明一个用于输出报头的中间件。
+//
+// 若同时存在于 headers 与 funcs，则最终 funcs 中的作为内容输出。
 func New(next http.Handler, headers map[string]string, funs map[string]func() string) http.Handler {
 	return &header{
 		handler:     next,
@@ -23,16 +25,12 @@ func New(next http.Handler, headers map[string]string, funs map[string]func() st
 }
 
 func (h *header) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if len(h.headers) > 0 {
-		for k, v := range h.headers {
-			w.Header().Set(k, v)
-		}
+	for k, v := range h.headers {
+		w.Header().Set(k, v)
 	}
 
-	if len(h.headersFunc) > 0 {
-		for k, v := range h.headersFunc {
-			w.Header().Set(k, v())
-		}
+	for k, v := range h.headersFunc {
+		w.Header().Set(k, v())
 	}
 
 	h.handler.ServeHTTP(w, r)
