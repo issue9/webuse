@@ -11,6 +11,8 @@ import "net/http"
 type Middleware func(http.Handler) http.Handler
 
 // Handler 将所有的中间件应用于 h。
+//
+// 后添加的 middleware 会先执行。
 func Handler(h http.Handler, middleware ...Middleware) http.Handler {
 	for _, m := range middleware {
 		if m != nil {
@@ -22,6 +24,8 @@ func Handler(h http.Handler, middleware ...Middleware) http.Handler {
 }
 
 // HandlerFunc 将所有的中间件应用于 h。
+//
+// 后添加的 middleware 会先执行。
 func HandlerFunc(h func(w http.ResponseWriter, r *http.Request), middleware ...Middleware) http.Handler {
 	return Handler(http.HandlerFunc(h), middleware...)
 }
