@@ -14,10 +14,20 @@ import (
 // Options New 的参数
 type Options struct {
 	Funcs    map[string]WriterFunc
-	Size     int      // 大于此值才会启用压缩
-	Types    []string // 类型
+	Size     int // 大于此值才会启用压缩
 	ErrorLog *log.Logger
 
+	// 仅对该表中的类型进行压缩
+	//
+	// 可以用通配符 * 作为结尾：
+	// text* 表示以 text 开头的 mimetype；
+	// 其它类型的值，表示完全匹配。
+	Types []string
+
+	// Types 列表的处理结果保存在 prefixTypes 和 types 中。
+	//
+	// prefixTypes 保存通配符匹配的值列表；
+	// types 表示完全匹配的值列表。
 	prefixTypes []string
 	types       []string
 }
