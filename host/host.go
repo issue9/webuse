@@ -11,8 +11,9 @@ import (
 )
 
 type host struct {
-	domains []string
-	handler http.Handler
+	domains   []string // 域名列表
+	wildcards []string // 泛域名列表，只保存 * 之后的部分内容
+	handler   http.Handler
 }
 
 // New 声明一个限定域名的中间件.
@@ -22,10 +23,21 @@ type host struct {
 //
 // 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
 func New(next http.Handler, domains ...string) http.Handler {
-	return &host{
-		domains: domains,
-		handler: next,
+	h := &host{
+		domains:   make([]string, 0, len(domains)),
+		wildcards: make([]string, 0, len(domains)),
+		handler:   next,
 	}
+
+	for _, domain := range domains {
+		if strings.HasPrefix(domain, "*.") {
+			h.wildcards = append(h.wildcards, domain[1:]) // 保留 . 符号
+		} else {
+			h.domains = append(h.domains, domain)
+		}
+	}
+
+	return h
 }
 
 func (h *host) Matched(hostname string) bool {
@@ -36,6 +48,12 @@ func (h *host) Matched(hostname string) bool {
 
 	for _, domain := range h.domains {
 		if domain == hostname {
+			return true
+		}
+	}
+
+	for _, wildcard := range h.wildcards {
+		if strings.HasSuffix(hostname, wildcard) {
 			return true
 		}
 	}
