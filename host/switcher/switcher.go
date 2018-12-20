@@ -47,5 +47,5 @@ func (s *Switcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	http.NotFound(w, r)
 }
