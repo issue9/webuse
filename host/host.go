@@ -28,9 +28,7 @@ func New(next http.Handler, domains ...string) http.Handler {
 	}
 }
 
-func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// r.URL.Hostname() 可能是空值
-	hostname := r.Host
+func (h *host) Matched(hostname string) bool {
 	index := strings.IndexByte(hostname, ':')
 	if index >= 0 {
 		hostname = hostname[:index]
@@ -38,9 +36,18 @@ func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for _, domain := range h.domains {
 		if domain == hostname {
-			h.handler.ServeHTTP(w, r)
-			return
+			return true
 		}
+	}
+
+	return false
+}
+
+func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// r.URL.Hostname() 可能是空值
+	if h.Matched(r.Host) {
+		h.handler.ServeHTTP(w, r)
+		return
 	}
 
 	http.NotFound(w, r)
