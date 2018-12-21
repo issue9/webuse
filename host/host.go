@@ -23,6 +23,10 @@ type host struct {
 //
 // 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
 func New(next http.Handler, domains ...string) http.Handler {
+	return newHost(next, domains...)
+}
+
+func newHost(next http.Handler, domains ...string) *host {
 	h := &host{
 		domains:   make([]string, 0, len(domains)),
 		wildcards: make([]string, 0, len(domains)),
@@ -40,7 +44,8 @@ func New(next http.Handler, domains ...string) http.Handler {
 	return h
 }
 
-func (h *host) Matched(hostname string) bool {
+// 查找 hostname 是否与当前的域名匹配。
+func (h *host) matched(hostname string) bool {
 	index := strings.IndexByte(hostname, ':')
 	if index >= 0 {
 		hostname = hostname[:index]
@@ -63,7 +68,7 @@ func (h *host) Matched(hostname string) bool {
 
 func (h *host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// r.URL.Hostname() 可能是空值
-	if h.Matched(r.Host) {
+	if h.matched(r.Host) {
 		h.handler.ServeHTTP(w, r)
 		return
 	}

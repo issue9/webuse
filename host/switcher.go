@@ -22,10 +22,7 @@ func NewSwitcher() *Switcher {
 
 // AddHost 添加域名信息
 func (s *Switcher) AddHost(h http.Handler, domain ...string) {
-	s.hosts = append(s.hosts, &host{
-		domains: domain,
-		handler: h,
-	})
+	s.hosts = append(s.hosts, newHost(h, domain...))
 }
 
 func (s *Switcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +30,7 @@ func (s *Switcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hostname := r.Host
 
 	for _, host := range s.hosts {
-		if host.Matched(hostname) {
+		if host.matched(hostname) {
 			host.handler.ServeHTTP(w, r)
 			return
 		}
