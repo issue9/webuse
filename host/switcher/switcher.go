@@ -6,46 +6,15 @@
 package switcher
 
 import (
-	"net/http"
+	"github.com/issue9/middleware/host"
 )
 
-// Switcher 实现按域名进行路由
-type Switcher struct {
-	hosts []*host
-}
-
-type host struct {
-	domains []string
-	handler http.Handler
-}
+// Switcher 域名切换中间件
+//
+// Deprecated: 已经不再使用，请使用 host.Switcher
+type Switcher = host.Switcher
 
 // New 声明新的 Switcher 实例
 func New() *Switcher {
-	return &Switcher{
-		hosts: make([]*host, 0, 10),
-	}
-}
-
-// AddHost 添加域名信息
-func (s *Switcher) AddHost(h http.Handler, domain ...string) {
-	s.hosts = append(s.hosts, &host{
-		domains: domain,
-		handler: h,
-	})
-}
-
-func (s *Switcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// r.URL.Hostname() 可能是空值
-	hostname := r.Host
-
-	for _, host := range s.hosts {
-		for _, domain := range host.domains {
-			if domain == hostname {
-				host.handler.ServeHTTP(w, r)
-				return
-			}
-		}
-	}
-
-	http.NotFound(w, r)
+	return host.NewSwitcher()
 }

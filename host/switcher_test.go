@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package switcher
+package host
 
 import (
 	"net/http"
@@ -12,33 +12,30 @@ import (
 	"github.com/issue9/assert"
 )
 
-var (
-	f1 = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
-	}
+var f2 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(2)
+}
 
-	f2 = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(2)
-	}
-)
+var h2 = http.HandlerFunc(f2)
 
-var (
-	h1 = http.HandlerFunc(f1)
-	h2 = http.HandlerFunc(f2)
-)
-
-func TestNew(t *testing.T) {
+func TestNewSwitcher(t *testing.T) {
 	a := assert.New(t)
 
-	switcher := New()
+	switcher := NewSwitcher()
 	a.NotNil(switcher)
 
-	switcher.AddHost(h1, "caixw.io")
+	switcher.AddHost(h1, "caixw.io", "*.example.com")
 	switcher.AddHost(h2, "caixw.oi")
 
 	// h1
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
+	a.NotNil(w).NotNil(r)
+	switcher.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "https://sub.example.com/test", nil)
 	a.NotNil(w).NotNil(r)
 	switcher.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
