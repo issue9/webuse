@@ -24,7 +24,7 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-// PrintDebug 是 RecoverFunc 类型的实现。方便 NewRecovery 在调试期间将函数的调用信息输出到 w。
+// PrintDebug 是 RecoverFunc 类型的实现。方便 New 在调试期间将函数的调用信息输出到 w。
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 
