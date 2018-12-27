@@ -2,7 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package auth
+// Package basic 实现 Basic 校验
+package basic
 
 import (
 	"bytes"
@@ -23,8 +24,13 @@ type basic struct {
 	unauthorizationStatus int
 }
 
-// NewBasic 新的 Basic 验证方式
-func NewBasic(next http.Handler, username, password, realm string, proxy bool, log *log.Logger) http.Handler {
+// New 声明一个 Basic 验证的中间件
+//
+// next 表示验证通过之后，需要执行的 handler；
+// proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。
+// true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
+// 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码。
+func New(next http.Handler, username, password, realm string, proxy bool, log *log.Logger) http.Handler {
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
 	status := http.StatusUnauthorized
