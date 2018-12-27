@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/base64"
 	"log"
 	"net/http"
@@ -13,31 +14,39 @@ import (
 
 type basic struct {
 	next   http.Handler
-	secret string
+	secret []byte
 	realm  string
 	errlog *log.Logger
 
-	authorization string
-	authenticate  string
+	authorization         string
+	authenticate          string
+	unauthorizationStatus int
 }
 
 // NewBasic 新的 Basic 验证方式
 func NewBasic(next http.Handler, username, password, realm string, proxy bool, log *log.Logger) http.Handler {
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
+	status := http.StatusUnauthorized
 	if proxy {
 		authorization = "Proxy-Authorization"
 		authenticate = "Proxy-Authenticate"
+		status = http.StatusProxyAuthRequired
 	}
+
+	data := []byte(username + ":" + password)
+	secret := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+	base64.StdEncoding.Encode(secret, data)
 
 	return &basic{
 		next:   next,
-		secret: base64.StdEncoding.EncodeToString([]byte(username + ":" + password)),
+		secret: secret,
 		realm:  `Basic realm="` + realm + `"`,
 		errlog: log,
 
-		authorization: authorization,
-		authenticate:  authenticate,
+		authorization:         authorization,
+		authenticate:          authenticate,
+		unauthorizationStatus: status,
 	}
 }
 
@@ -57,7 +66,7 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if string(secret) != b.secret {
+	if bytes.Equal(secret, b.secret) {
 		b.unauthorization(w)
 		return
 	}
@@ -67,5 +76,5 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (b *basic) unauthorization(w http.ResponseWriter) {
 	w.Header().Set(b.authenticate, b.realm)
-	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	http.Error(w, http.StatusText(b.unauthorizationStatus), b.unauthorizationStatus)
 }
