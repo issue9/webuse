@@ -42,12 +42,7 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	auth := r.Header.Get(b.authorization)
 	index := strings.IndexByte(auth, ' ')
 
-	if index <= 0 {
-		b.unauthorization(w)
-		return
-	}
-
-	if "Basic" != auth[:index] {
+	if index <= 0 || auth[:index] != "Basic" {
 		b.unauthorization(w)
 		return
 	}
