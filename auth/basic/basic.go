@@ -7,15 +7,28 @@ package basic
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"log"
 	"net/http"
 	"strings"
 )
 
+type keyType int
+
+// ValueKey 保存于 context 中的值的名称
+const ValueKey keyType = 0
+
+// AuthFunc 验证登录用户的函数签名
+//
+// username,password 表示用户登录信息。
+// 返回值中，ok 表示是否成功验证。如果成功验证，
+// 则 v 用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
+type AuthFunc func(username, password []byte) (v interface{}, ok bool)
+
 type basic struct {
 	next   http.Handler
-	secret []byte
+	auth   AuthFunc
 	realm  string
 	errlog *log.Logger
 
@@ -30,7 +43,7 @@ type basic struct {
 // proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码。
-func New(next http.Handler, username, password, realm string, proxy bool, log *log.Logger) http.Handler {
+func New(next http.Handler, auth AuthFunc, realm string, proxy bool, log *log.Logger) http.Handler {
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
 	status := http.StatusUnauthorized
@@ -40,13 +53,9 @@ func New(next http.Handler, username, password, realm string, proxy bool, log *l
 		status = http.StatusProxyAuthRequired
 	}
 
-	data := []byte(username + ":" + password)
-	secret := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
-	base64.StdEncoding.Encode(secret, data)
-
 	return &basic{
 		next:   next,
-		secret: secret,
+		auth:   auth,
 		realm:  `Basic realm="` + realm + `"`,
 		errlog: log,
 
@@ -72,10 +81,20 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bytes.Equal(secret, b.secret) {
+	index = bytes.IndexByte(secret, ':')
+	if index <= 0 {
 		b.unauthorization(w)
 		return
 	}
+
+	v, ok := b.auth(secret[:index], secret[index+1:])
+	if !ok {
+		b.unauthorization(w)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), ValueKey, v)
+	r = r.WithContext(ctx)
 
 	b.next.ServeHTTP(w, r)
 }
