@@ -3,6 +3,8 @@
 // license that can be found in the LICENSE file.
 
 // Package basic 实现 Basic 校验
+//
+// https://tools.ietf.org/html/rfc7617
 package basic
 
 import (
