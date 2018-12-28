@@ -117,14 +117,14 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 		ret[v[:index]] = v[index+2 : len(v)-1]
 	}
 
-	if ret["realm"] != d.realm {
-		return nil, errors.New("realm 不正确")
-	}
-
 	// 基本检测
 	nonce := d.nonces.get(ret["nonce"])
 	if nonce == nil {
-		return nil, errors.New("not found")
+		return nil, errors.New("nonce 不存在")
+	}
+
+	if ret["realm"] != d.realm {
+		return nil, errors.New("realm 不正确")
 	}
 
 	count, err := strconv.Atoi(ret["nc"])
