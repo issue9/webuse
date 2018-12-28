@@ -18,12 +18,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/issue9/middleware/auth"
 )
-
-type keyType int
-
-// ValueKey 保存于 context 中的值的名称
-const ValueKey keyType = 0
 
 // Auther 验证用户信息的接口
 type Auther interface {
@@ -83,7 +80,7 @@ func (d *digest) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), ValueKey, v)
+	ctx := context.WithValue(r.Context(), auth.ValueKey, v)
 	r = r.WithContext(ctx)
 	d.next.ServeHTTP(w, r)
 }

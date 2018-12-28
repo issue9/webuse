@@ -12,12 +12,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/issue9/middleware/auth"
 )
-
-type keyType int
-
-// ValueKey 保存于 context 中的值的名称
-const ValueKey keyType = 0
 
 // AuthFunc 验证登录用户的函数签名
 //
@@ -66,15 +63,15 @@ func New(next http.Handler, auth AuthFunc, realm string, proxy bool, log *log.Lo
 }
 
 func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	auth := r.Header.Get(b.authorization)
-	index := strings.IndexByte(auth, ' ')
+	header := r.Header.Get(b.authorization)
+	index := strings.IndexByte(header, ' ')
 
-	if index <= 0 || index >= len(auth) || auth[:index] != "Basic" {
+	if index <= 0 || index >= len(header) || header[:index] != "Basic" {
 		b.unauthorization(w)
 		return
 	}
 
-	secret, err := base64.StdEncoding.DecodeString(auth[index+1:])
+	secret, err := base64.StdEncoding.DecodeString(header[index+1:])
 	if err != nil {
 		b.errlog.Println(err)
 		b.unauthorization(w)
@@ -93,7 +90,7 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), ValueKey, v)
+	ctx := context.WithValue(r.Context(), auth.ValueKey, v)
 	r = r.WithContext(ctx)
 
 	b.next.ServeHTTP(w, r)
