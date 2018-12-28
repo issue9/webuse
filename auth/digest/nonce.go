@@ -56,9 +56,8 @@ func (n *nonces) gc(now time.Time) {
 	}
 }
 
-func (n *nonces) exists(nonceKey string) bool {
-	_, found := n.nonces[nonceKey]
-	return found
+func (n *nonces) get(nonceKey string) *nonce {
+	return n.nonces[nonceKey]
 }
 
 func (n *nonces) add(nonceKey string) {

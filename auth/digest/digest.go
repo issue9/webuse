@@ -8,9 +8,14 @@
 package digest
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"github.com/issue9/utils"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,15 +25,18 @@ type keyType int
 // ValueKey 保存于 context 中的值的名称
 const ValueKey keyType = 0
 
-// AuthFunc 验证登录用户的函数签名
-//
-// username,password 表示用户登录信息。
-// 返回值中，ok 表示是否成功验证。如果成功验证，
-// 则 v 用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
-type AuthFunc func(username, password []byte) (v interface{}, ok bool)
+// Auther 验证用户信息的接口
+type Auther interface {
+	// 根据用户名，找到其对应的密码
+	Password(username string) string
+
+	// 根据用户名，获取其相关的信息，方便附加到 request，传递给其它中间件。
+	Object(username string) interface{}
+}
 
 type digest struct {
 	next   http.Handler
+	auth   Auther
 	realm  string
 	errlog *log.Logger
 	nonces *nonces
@@ -39,7 +47,7 @@ type digest struct {
 }
 
 // New 声明一个摘要验证的中间件。
-func New(next http.Handler, realm string, proxy bool, errlog *log.Logger) http.Handler {
+func New(next http.Handler, auth Auther, realm string, proxy bool, errlog *log.Logger) http.Handler {
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
 	status := http.StatusUnauthorized
@@ -56,6 +64,7 @@ func New(next http.Handler, realm string, proxy bool, errlog *log.Logger) http.H
 
 	return &digest{
 		next:   next,
+		auth:   auth,
 		realm:  realm,
 		errlog: errlog,
 		nonces: nonces,
@@ -67,14 +76,16 @@ func New(next http.Handler, realm string, proxy bool, errlog *log.Logger) http.H
 }
 
 func (d *digest) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	kv, err := parse(r.Header.Get("Authorization"))
+	v, err := d.parse(r)
 	if err != nil {
 		d.errlog.Println(err)
 		d.unauthorization(w)
 		return
 	}
 
-	// TODO
+	ctx := context.WithValue(r.Context(), ValueKey, v)
+	r = r.WithContext(ctx)
+	d.next.ServeHTTP(w, r)
 }
 
 func (d *digest) unauthorization(w http.ResponseWriter) {
@@ -95,19 +106,63 @@ func (d *digest) unauthorization(w http.ResponseWriter) {
 	http.Error(w, http.StatusText(d.unauthorizationStatus), d.unauthorizationStatus)
 }
 
-func parse(digest string) (map[string]string, error) {
-	pairs := strings.Split(digest, ",")
+func (d *digest) parse(r *http.Request) (interface{}, error) {
+	pairs := strings.Split(r.Header.Get("Authorization"), ",")
 	ret := make(map[string]string, len(pairs))
 
 	for _, v := range pairs {
 		index := strings.IndexByte(v, '=')
 		if index <= 0 {
-			return nil, fmt.Errorf("格式错误：%s", digest)
+			return nil, fmt.Errorf("格式错误：%s", r.Header.Get("Authorization"))
 		}
 
 		// TODO 越界检测
 		ret[v[:index]] = v[index+2 : len(v)-1]
 	}
 
-	return ret, nil
+	if ret["realm"] != d.realm {
+		return nil, errors.New("realm 不正确")
+	}
+
+	// 基本检测
+	nonce := d.nonces.get(ret["nonce"])
+	if nonce == nil {
+		return nil, errors.New("not found")
+	}
+
+	count, err := strconv.Atoi(ret["nc"])
+	if err != nil {
+		return nil, err
+	}
+	if nonce.count >= count {
+		return nil, errors.New("计数器不准确")
+	}
+
+	pass := d.auth.Password(ret["username"])
+	ha1 := utils.MD5(strings.Join([]string{ret["username"], d.realm, pass}, ":"))
+	var ha2 string
+
+	switch ret["qop"] {
+	case "auth", "":
+		ha2 = utils.MD5(r.Method + ":" + ret["uri"])
+	case "auth-int":
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		ha2 = utils.MD5(r.Method + ":" + ret["uri"] + ":" + string(body))
+	}
+
+	var resp string
+	switch ret["qop"] {
+	case "auth", "auth-int":
+		resp = utils.MD5(strings.Join([]string{ha1, nonce.key, ret["nc"], ret["cnonce"], ret["qop"], ha2}, ":"))
+	default:
+		resp = utils.MD5(ha1 + ":" + nonce.key + ":" + ha2)
+	}
+
+	if resp == ret["response"] {
+		return d.auth.Object(ret["username"]), nil
+	}
+	return nil, errors.New("验证无法通过")
 }
