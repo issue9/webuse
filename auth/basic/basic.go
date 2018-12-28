@@ -39,8 +39,17 @@ type basic struct {
 // next 表示验证通过之后，需要执行的 handler；
 // proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
-// 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码。
+// 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
+// log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
 func New(next http.Handler, auth AuthFunc, realm string, proxy bool, log *log.Logger) http.Handler {
+	if next == nil {
+		panic("next 参数不能为空")
+	}
+
+	if auth == nil {
+		panic("auth 参数不能为空")
+	}
+
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
 	status := http.StatusUnauthorized
@@ -73,7 +82,9 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	secret, err := base64.StdEncoding.DecodeString(header[index+1:])
 	if err != nil {
-		b.errlog.Println(err)
+		if b.errlog != nil {
+			b.errlog.Println(err)
+		}
 		b.unauthorization(w)
 		return
 	}
