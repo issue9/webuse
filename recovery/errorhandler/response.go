@@ -17,3 +17,19 @@ func (r *response) WriteHeader(status int) {
 
 	r.ResponseWriter.WriteHeader(status)
 }
+
+// WriteHeader 如果不想让 400 以上的状态码被作特殊处理，
+// 可以调用此方法逃避。
+func WriteHeader(w http.ResponseWriter, status int) {
+	if status < 400 {
+		w.WriteHeader(status)
+		return
+	}
+
+	if resp, ok := w.(*response); ok {
+		resp.ResponseWriter.WriteHeader(status)
+		return
+	}
+
+	w.WriteHeader(status)
+}

@@ -3,6 +3,16 @@
 // license that can be found in the LICENSE file.
 
 // Package errorhandler 提供自定义错误处理功能
+//
+// net/http 包中对于错误的处理是通过 http.Error() 进行的，
+// 我们无法直接修改该方法，实现自定义的错误处理功能。
+// 只能对 http.ResponseWriter.WriteHeader() 进行自定义，
+// 在指定的状态下，抛出异常，再通过 recover 实现错误处理。
+//
+// 需要注意的是，如果采用了当前包的方案，那么默认情况下，
+// 所有大于 400 的 WriteHeader 操作，都会被 panic，
+// 如果你对某些操作不想按正常流程处理，可以使用 errorhandler.WriteHeader
+// 代替默认的 ResponseWriter.WriteHeader 操作。
 package errorhandler
 
 import (
@@ -19,11 +29,6 @@ import (
 type HandleFunc func(http.ResponseWriter, int)
 
 // ErrorHandler 错误处理函数的管理
-//
-// net/http 包中对于错误的处理是通过 http.Error() 进行的，
-// 我们无法直接修改该方法，实现自定义的错误处理功能。
-// 只能对 http.ResponseWriter.WriteHeader() 进行自定义，
-// 在指定的状态下，抛出异常，再通过 recover 实现错误处理。
 type ErrorHandler struct {
 	// 指定状态下对应的错误处理函数。
 	//
