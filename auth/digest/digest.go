@@ -11,13 +11,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/issue9/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/issue9/utils"
 
 	"github.com/issue9/middleware/auth"
 )
@@ -44,6 +45,12 @@ type digest struct {
 }
 
 // New 声明一个摘要验证的中间件。
+//
+// next 表示验证通过之后，需要执行的 handler；
+// proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。
+// true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
+// 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
+// log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
 func New(next http.Handler, auth Auther, realm string, proxy bool, errlog *log.Logger) http.Handler {
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
@@ -75,7 +82,9 @@ func New(next http.Handler, auth Auther, realm string, proxy bool, errlog *log.L
 func (d *digest) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v, err := d.parse(r)
 	if err != nil {
-		d.errlog.Println(err)
+		if d.errlog != nil {
+			d.errlog.Println(err)
+		}
 		d.unauthorization(w)
 		return
 	}

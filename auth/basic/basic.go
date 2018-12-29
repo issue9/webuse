@@ -102,9 +102,7 @@ func (b *basic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.WithValue(r.Context(), auth.ValueKey, v)
-	r = r.WithContext(ctx)
-
-	b.next.ServeHTTP(w, r)
+	b.next.ServeHTTP(w, r.WithContext(ctx))
 }
 
 func (b *basic) unauthorization(w http.ResponseWriter) {

@@ -12,7 +12,7 @@ import (
 
 var randBytes = []byte("01234567890abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz")
 
-// 记录随机字符
+// 服务端随机字符串的管理工具。
 type nonces struct {
 	nonces  map[string]*nonce
 	rands   *rands.Rands
