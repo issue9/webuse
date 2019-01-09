@@ -1,4 +1,6 @@
-middleware [![Build Status](https://travis-ci.org/issue9/middleware.svg?branch=master)](https://travis-ci.org/issue9/middleware)
+middleware
+[![Build Status](https://travis-ci.org/issue9/middleware.svg?branch=master)](https://travis-ci.org/issue9/middleware)
+[![Build status](https://ci.appveyor.com/api/projects/status/jfrnl9iuakpxg74f?svg=true)](https://ci.appveyor.com/project/caixw/middleware)
 ======
 
 middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
@@ -8,6 +10,7 @@ middleware 是实现 http.Handler 接口的中间件，提供了大部分实用�
 - host 匹配指定的域名；
 - recovery 对 Panic 的处理；
 - header 输出指定的报头；
+- auth 基本的验证处理；
 
 
 ### 安装
