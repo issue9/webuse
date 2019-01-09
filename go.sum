@@ -2,7 +2,13 @@ github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737 h1:rRISKWyXfVx
 github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
 github.com/issue9/assert v1.0.0 h1:NkLKrreEZgOdyl0aHlF8Yq2+Id7GsfEtU0rTK8nsN4E=
 github.com/issue9/assert v1.0.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=
-github.com/issue9/rands v1.0.0 h1:YGVQcyXnqulxxcdv+r6Yl7/6M+XumaSRnpdx4xNnvqc=
-github.com/issue9/rands v1.0.0/go.mod h1:CxJnlAzHTi/4zfdYaKQqeN6jLZpZ7giB52DMiLb1H1E=
+github.com/issue9/assert v1.1.0 h1:vRl4oP7O7EfYpfXwVfC7kjo7cwzs+NsiAJDg1oyU2Fk=
+github.com/issue9/assert v1.1.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=
+github.com/issue9/autoinc v1.0.3 h1:QvQqRx34lWIpyZ+5tr+UTRa1mI/WCIS4uFHP3VL6p2c=
+github.com/issue9/autoinc v1.0.3/go.mod h1:H0h4TqVwzgS2/0RMA9E3eOTHUwV2l3Fesf45sPxp5rQ=
+github.com/issue9/rands v1.1.0 h1:tUcTkzlQDxeqqSYHdI0FSMRNgH62HYB4pG8NrIB2CS8=
+github.com/issue9/rands v1.1.0/go.mod h1:CxJnlAzHTi/4zfdYaKQqeN6jLZpZ7giB52DMiLb1H1E=
+github.com/issue9/unique v1.1.0 h1:IhJW4kkpxGF4py1uzDAfR4fF0yEtNdBzBxpkKYVb4Q4=
+github.com/issue9/unique v1.1.0/go.mod h1:9+X4oW1+TJ6tRE4X9C3sdSFWnUFe8RddOBFOF6x3U10=
 github.com/issue9/utils v1.0.0 h1:2LuHIPRufdIXK7AJ3QP7Qzxd0cMNNPY1izgFxj+d2EE=
 github.com/issue9/utils v1.0.0/go.mod h1:M/m1msOXz9GHESoAvzxpBe4jar/QGDKcGXDhKsZJAKE=

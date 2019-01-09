@@ -8,32 +8,36 @@ import (
 	"time"
 
 	"github.com/issue9/rands"
+	"github.com/issue9/unique"
 )
-
-var randBytes = []byte("01234567890abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz")
 
 // 服务端随机字符串的管理工具。
 type nonces struct {
 	nonces  map[string]*nonce
-	rands   *rands.Rands
+	rands   *unique.Rands
 	expired time.Duration
 }
 
 type nonce struct {
-	key   string
-	count int
-	last  time.Time
+	key   string    // 随机字符串的值
+	count int       // 计数
+	last  time.Time // 最后更新时间，超过一定时间未用，会被收回
 }
 
 func newNonces(expired, gc time.Duration) (*nonces, error) {
-	rands, err := rands.New(time.Now().Unix(), 1000, 32, 33, randBytes)
+	seed := time.Now().Unix()
+
+	rands, err := rands.New(seed, 1000, 32, 33, rands.AlphaNumber)
 	if err != nil {
 		return nil, err
 	}
 
 	ns := &nonces{
-		nonces:  make(map[string]*nonce, 1000),
-		rands:   rands,
+		nonces: make(map[string]*nonce, 1000),
+		rands: &unique.Rands{
+			Rands:  rands,
+			Unique: unique.New(seed, 1, 120, "", 35),
+		},
 		expired: expired,
 	}
 
@@ -47,7 +51,7 @@ func newNonces(expired, gc time.Duration) (*nonces, error) {
 }
 
 func (n *nonces) gc(now time.Time) {
-	expired := now.Truncate(n.expired)
+	expired := now.Add(-n.expired)
 
 	for k, v := range n.nonces {
 		if v.last.Before(expired) {

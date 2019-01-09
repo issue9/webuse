@@ -28,7 +28,7 @@ type Auther interface {
 	// 根据用户名，找到其对应的密码
 	Password(username string) string
 
-	// 根据用户名，获取其相关的信息，方便附加到 request，传递给其它中间件。
+	// 根据用户名，获取其相关的信息，方便附加到 request.Context，传递给其它中间件。
 	Object(username string) interface{}
 }
 
