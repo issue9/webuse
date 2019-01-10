@@ -13,20 +13,6 @@ import (
 	"github.com/issue9/assert"
 )
 
-type auther struct {
-	password string
-}
-
-func (a *auther) Password(username string) string {
-	return a.password
-}
-
-func (a *auther) Object(username string) interface{} {
-	return a
-}
-
-var _ Auther = &auther{}
-
 var (
 	fok = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -34,6 +20,10 @@ var (
 	}
 
 	hok = http.HandlerFunc(fok)
+
+	authFunc = func(username string) (interface{}, string, bool) {
+		return username, username, true
+	}
 )
 
 func TestNew(t *testing.T) {
@@ -49,7 +39,7 @@ func TestNew(t *testing.T) {
 	})
 
 	a.NotPanic(func() {
-		h = New(hok, &auther{}, "", false, nil)
+		h = New(hok, authFunc, "", false, nil)
 	})
 
 	dd, ok := h.(*digest)
@@ -61,7 +51,7 @@ func TestNew(t *testing.T) {
 		NotNil(dd.auth)
 
 	a.NotPanic(func() {
-		h = New(hok, &auther{}, "", true, log.New(ioutil.Discard, "", 0))
+		h = New(hok, authFunc, "", true, log.New(ioutil.Discard, "", 0))
 	})
 
 	dd, ok = h.(*digest)

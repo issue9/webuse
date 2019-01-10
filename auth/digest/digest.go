@@ -25,19 +25,17 @@ import (
 	"github.com/issue9/middleware/auth"
 )
 
-// Auther 验证用户信息的接口
-// TODO 简化为函数？
-type Auther interface {
-	// 根据用户名，找到其对应的密码
-	Password(username string) string
-
-	// 根据用户名，获取其相关的信息，方便附加到 request.Context，传递给其它中间件。
-	Object(username string) interface{}
-}
+// AuthFunc 查找到指定名称的用户数据。
+//
+// username 表示用户名称；
+// v 表示在验证成功的情况下，希望附加到 Request.Context 中的数据；
+// password 表示该用户对应的密码；
+// found 表示是否找到数据；
+type AuthFunc func(username string) (v interface{}, password string, found bool)
 
 type digest struct {
 	next   http.Handler
-	auth   Auther
+	auth   AuthFunc
 	realm  string
 	errlog *log.Logger
 	nonces *nonces
@@ -54,7 +52,7 @@ type digest struct {
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
 // log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
-func New(next http.Handler, auth Auther, realm string, proxy bool, errlog *log.Logger) http.Handler {
+func New(next http.Handler, auth AuthFunc, realm string, proxy bool, errlog *log.Logger) http.Handler {
 	if next == nil {
 		panic("next 参数不能为空")
 	}
@@ -144,7 +142,10 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 
-	pass := d.auth.Password(ret["username"])
+	obj, pass, ok := d.auth(ret["username"])
+	if !ok {
+		return nil, errors.New("不存在该用户")
+	}
 	ha1 := utils.MD5(strings.Join([]string{ret["username"], d.realm, pass}, ":"))
 	var ha2 string
 
@@ -168,7 +169,7 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 	}
 
 	if resp == ret["response"] {
-		return d.auth.Object(ret["username"]), nil
+		return obj, nil
 	}
 	return nil, errors.New("验证无法通过")
 }
