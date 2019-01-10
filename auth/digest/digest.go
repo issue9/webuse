@@ -131,8 +131,8 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if nonce.count >= count {
-		return nil, errors.New("计数器不准确")
+	if err = nonce.setCount(count); err != nil {
+		return nil, err
 	}
 
 	pass := d.auth.Password(ret["username"])

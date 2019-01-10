@@ -5,6 +5,7 @@
 package digest
 
 import (
+	"errors"
 	"time"
 
 	"github.com/issue9/rands"
@@ -24,6 +25,8 @@ type nonce struct {
 	last  time.Time // 最后更新时间，超过一定时间未用，会被收回
 }
 
+// expired 表示超过此时间段未作任何处理的，都会被回收
+// gc 执行回收的时间
 func newNonces(expired, gc time.Duration) (*nonces, error) {
 	seed := time.Now().Unix()
 
@@ -64,17 +67,6 @@ func (n *nonces) get(nonceKey string) *nonce {
 	return n.nonces[nonceKey]
 }
 
-func (n *nonces) add(nonceKey string) {
-	v, found := n.nonces[nonceKey]
-	if !found {
-		v = &nonce{key: nonceKey}
-		n.nonces[nonceKey] = v
-	}
-
-	v.count++
-	v.last = time.Now()
-}
-
 func (n *nonces) newNonce() *nonce {
 	nn := &nonce{
 		key:  n.rands.String(),
@@ -83,4 +75,16 @@ func (n *nonces) newNonce() *nonce {
 	n.nonces[nn.key] = nn
 
 	return nn
+}
+
+// 设置新的计数值
+func (n *nonce) setCount(count int) error {
+	if n.count >= count {
+		return errors.New("计数器不准确")
+	}
+
+	n.count = count
+	n.last = time.Now()
+
+	return nil
 }
