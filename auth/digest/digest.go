@@ -26,6 +26,7 @@ import (
 )
 
 // Auther 验证用户信息的接口
+// TODO 简化为函数？
 type Auther interface {
 	// 根据用户名，找到其对应的密码
 	Password(username string) string
@@ -54,6 +55,14 @@ type digest struct {
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
 // log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
 func New(next http.Handler, auth Auther, realm string, proxy bool, errlog *log.Logger) http.Handler {
+	if next == nil {
+		panic("next 参数不能为空")
+	}
+
+	if auth == nil {
+		panic("auth 参数不能为空")
+	}
+
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
 	status := http.StatusUnauthorized
@@ -169,16 +178,25 @@ func parseAuthorization(header string) (map[string]string, error) {
 		return nil, errors.New("无效的起始字符串")
 	}
 
+	header = header[7:]
+	if len(header) == 0 {
+		return nil, errors.New("Authorization 报头内容为空")
+	}
+
 	pairs := strings.Split(header, ",")
 	ret := make(map[string]string, len(pairs))
 
 	for _, v := range pairs {
 		index := strings.IndexByte(v, '=')
-		if index <= 0 || index >= len(v) {
+		if index <= 0 || index >= len(v)-1 {
 			return nil, fmt.Errorf("格式错误：%s", header)
 		}
 
-		ret[v[:index]] = v[index+2 : len(v)-1]
+		k := v[:index]
+		if _, found := ret[k]; found {
+			return nil, fmt.Errorf("存在相同的键名：%s", ret[k])
+		}
+		ret[k] = v[index+2 : len(v)-1]
 	}
 
 	return ret, nil
