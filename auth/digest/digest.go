@@ -5,6 +5,8 @@
 // Package digest 实现 digest 验证
 //
 // https://tools.ietf.org/html/rfc7616
+//
+// NOTE: 实验中，未作任何测试
 package digest
 
 import (
@@ -113,18 +115,7 @@ func (d *digest) unauthorization(w http.ResponseWriter) {
 }
 
 func (d *digest) parse(r *http.Request) (interface{}, error) {
-	pairs := strings.Split(r.Header.Get("Authorization"), ",")
-	ret := make(map[string]string, len(pairs))
-
-	for _, v := range pairs {
-		index := strings.IndexByte(v, '=')
-		if index <= 0 {
-			return nil, fmt.Errorf("格式错误：%s", r.Header.Get("Authorization"))
-		}
-
-		// TODO 越界检测
-		ret[v[:index]] = v[index+2 : len(v)-1]
-	}
+	ret, err := parseAuthorization(r.Header.Get("Authorization"))
 
 	// 基本检测
 	nonce := d.nonces.get(ret["nonce"])
@@ -171,4 +162,24 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 		return d.auth.Object(ret["username"]), nil
 	}
 	return nil, errors.New("验证无法通过")
+}
+
+func parseAuthorization(header string) (map[string]string, error) {
+	if !strings.HasPrefix(header, "Digest ") {
+		return nil, errors.New("无效的起始字符串")
+	}
+
+	pairs := strings.Split(header, ",")
+	ret := make(map[string]string, len(pairs))
+
+	for _, v := range pairs {
+		index := strings.IndexByte(v, '=')
+		if index <= 0 || index >= len(v) {
+			return nil, fmt.Errorf("格式错误：%s", header)
+		}
+
+		ret[v[:index]] = v[index+2 : len(v)-1]
+	}
+
+	return ret, nil
 }
