@@ -6,6 +6,7 @@ services:
 os:
   - linux
   - osx
+  - windows
 
 go:
   - tip

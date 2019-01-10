@@ -113,12 +113,12 @@ func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
 
 		e.Render(w, http.StatusInternalServerError)
 
-		message, err := utils.TraceStack(3, msg)
-		if err != nil {
-			panic(err)
-		}
-
 		if errlog != nil {
+			message, err := utils.TraceStack(3, msg)
+			if err != nil {
+				panic(err)
+			}
+
 			errlog.Println(message)
 		}
 	}
