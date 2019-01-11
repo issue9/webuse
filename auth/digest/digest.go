@@ -2,11 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package digest 实现 digest 验证
+// Package digest 实现 digest 验证。
+// NOTE: 这是个未完成的功能，请勿使用
 //
 // https://tools.ietf.org/html/rfc7616
 //
-// NOTE: 实验中，未作任何测试
+// TODO: Authorization-Info 等输出的处理
 package digest
 
 import (
