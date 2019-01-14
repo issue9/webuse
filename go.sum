@@ -10,5 +10,5 @@ github.com/issue9/rands v1.1.1 h1:LN2oLhExq5MqK5bqIzZu18k26QK3eQIWBw3Cbm8fhq4=
 github.com/issue9/rands v1.1.1/go.mod h1:+34JYQL1EcxK79SFD3wOJklufb2967Tl9iom5jE1LF4=
 github.com/issue9/unique v1.1.1 h1:E6TVM1eRasJ43h+pvVvNn/tar55vOjd5sX6Rpodh0Wc=
 github.com/issue9/unique v1.1.1/go.mod h1:vzncDMl3GNOaZWZWVFVyFwhzxbWhljilgGkH1TpTSRY=
-github.com/issue9/utils v1.0.0 h1:2LuHIPRufdIXK7AJ3QP7Qzxd0cMNNPY1izgFxj+d2EE=
-github.com/issue9/utils v1.0.0/go.mod h1:M/m1msOXz9GHESoAvzxpBe4jar/QGDKcGXDhKsZJAKE=
+github.com/issue9/utils v1.0.1 h1:4vmqD/E4SMLSvdb4pMoFtO/kQyk/Er68RdwmgrWwo50=
+github.com/issue9/utils v1.0.1/go.mod h1:fpWGqXMwgL6HQKtqT2ZMPBrdTSyxnyHONy54BSCGOyI=
