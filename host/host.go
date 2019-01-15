@@ -22,6 +22,7 @@ type host struct {
 // 若 domains 为空，则任何请求都将返回 404。
 //
 // 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
+// domains 可以是泛域名，比如 *.example.com，但不能是 s1.*.example.com
 func New(next http.Handler, domains ...string) http.Handler {
 	return newHost(next, domains...)
 }

@@ -21,6 +21,8 @@ func NewSwitcher() *Switcher {
 }
 
 // AddHost 添加域名信息
+//
+// domain 可以是泛域名，比如 *.example.com，但不能是 s1.*.example.com
 func (s *Switcher) AddHost(h http.Handler, domain ...string) {
 	s.hosts = append(s.hosts, newHost(h, domain...))
 }
