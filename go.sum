@@ -2,6 +2,8 @@ github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737 h1:rRISKWyXfVx
 github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
 github.com/issue9/assert v1.1.0 h1:vRl4oP7O7EfYpfXwVfC7kjo7cwzs+NsiAJDg1oyU2Fk=
 github.com/issue9/assert v1.1.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=
+github.com/issue9/assert v1.2.0 h1:5ipIbr/IeyAB5840tYvE/TSN09bAB18A/ayUydhpf+U=
+github.com/issue9/assert v1.2.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=
 github.com/issue9/autoinc v1.0.4 h1:sP1BDVFLxPDzrrKxsAD2JZhKH6Cfvk+iZP+6FUJYoNs=
 github.com/issue9/autoinc v1.0.4/go.mod h1:cWddUuBa//znV0hUWG2gitAYT7GOLg7kw5bBDn9DBP8=
 github.com/issue9/rands v1.1.1 h1:LN2oLhExq5MqK5bqIzZu18k26QK3eQIWBw3Cbm8fhq4=

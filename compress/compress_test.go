@@ -5,15 +5,16 @@
 package compress
 
 import (
+	"bytes"
 	"compress/flate"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 )
 
 var (
@@ -22,6 +23,7 @@ var (
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte("f1\nf2"))
 }
 
@@ -36,26 +38,47 @@ func TestCompress(t *testing.T) {
 		Size:     0,
 		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
 	}
-	srv := New(http.HandlerFunc(f1), opt)
-	a.NotNil(srv)
+	srv := rest.NewServer(t, New(http.HandlerFunc(f1), opt), nil)
 
-	// 未指定 accept-encoding
-	w := httptest.NewRecorder()
-	w.Header().Set("Content-Type", "text/html")
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	srv.ServeHTTP(w, r)
-	a.Equal(w.Body.String(), "f1\nf2")
-	a.Equal(w.Header().Get("Content-Encoding"), "")
+	// 指定 accept-encoding = *
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Content-Type", "text/html").
+		Header("Accept-Encoding", "*").
+		Do().
+		StringBody("f1\nf2").
+		Header("Content-Encoding", "")
 
-	w = httptest.NewRecorder()
-	w.Header().Set("Content-Type", "text/html")
-	r = httptest.NewRequest(http.MethodGet, "/", nil)
-	r.Header.Set("Accept-encoding", "gzip;q=0.8,deflate")
-	srv.ServeHTTP(w, r)
-	a.Equal(w.Header().Get("Content-Encoding"), "deflate")
-	a.NotEqual(w.Body.String(), "f1\nf2")
+	// 指定 accept-encoding = identity
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Content-Type", "text/html").
+		Header("Accept-Encoding", "identity").
+		Do().
+		StringBody("f1\nf2").
+		Header("Content-Encoding", "")
+
+	// 指定 accept-encoding 为空
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Content-Type", "text/html").
+		Header("Accept-Encoding", "").
+		Do().
+		StringBody("f1\nf2").
+		Header("Content-Encoding", "")
+
+	// accept-encoding = deflate
+	buf := new(bytes.Buffer)
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Content-Type", "text/html").
+		Header("Accept-encoding", "gzip;q=0.8,deflate").
+		Do().
+		BodyNotNil().
+		ReadBody(buf).
+		Header("Content-Encoding", "deflate").
+		Header("Content-Type", "text/html").
+		Header("Vary", "Content-Encoding")
+
 	// 解码后相等
-	data, err := ioutil.ReadAll(flate.NewReader(w.Body))
+	a.True(len(buf.Bytes()) > 0)
+	data, err := ioutil.ReadAll(flate.NewReader(buf))
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "f1\nf2")
 }

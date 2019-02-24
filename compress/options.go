@@ -6,8 +6,6 @@ package compress
 
 import (
 	"log"
-	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -48,27 +46,15 @@ func (opt *Options) build() {
 	opt.types = types
 }
 
-func (opt *Options) canCompressed(w http.ResponseWriter) bool {
+func (opt *Options) canCompressed(l int, typ string) bool {
 	if len(opt.Funcs) == 0 {
 		return false
 	}
 
-	if opt.Size > 0 {
-		l := w.Header().Get("Content-Length")
-		if l != "" {
-			ll, err := strconv.Atoi(l)
-			if err != nil {
-				opt.ErrorLog.Println(err)
-				return false
-			}
-
-			if ll < opt.Size {
-				return false
-			}
-		}
+	if opt.Size > l {
+		return false
 	}
 
-	typ := w.Header().Get("Content-Type")
 	if index := strings.IndexByte(typ, ';'); index > 0 {
 		typ = strings.TrimSpace(typ[:index])
 	}
@@ -86,4 +72,10 @@ func (opt *Options) canCompressed(w http.ResponseWriter) bool {
 	}
 
 	return false
+}
+
+func (opt *Options) println(err error) {
+	if opt.ErrorLog != nil {
+		opt.ErrorLog.Println(err)
+	}
 }

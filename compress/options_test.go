@@ -5,7 +5,6 @@
 package compress
 
 import (
-	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -29,8 +28,7 @@ func TestOptions_canComporessed(t *testing.T) {
 
 	opt := &Options{}
 	opt.build()
-	w := httptest.NewRecorder()
-	a.False(opt.canCompressed(w))
+	a.False(opt.canCompressed(0, ""))
 
 	opt = &Options{
 		Funcs: map[string]WriterFunc{"gzip": NewGzip},
@@ -38,22 +36,16 @@ func TestOptions_canComporessed(t *testing.T) {
 		Size:  1024,
 	}
 	opt.build()
-	w = httptest.NewRecorder()
 
 	// 长度不够
-	w.Header().Set("Content-Length", "10")
-	a.False(opt.canCompressed(w))
+	a.False(opt.canCompressed(10, ""))
 
 	// 长度够，但是未指定 content-type
-	w.Header().Set("Content-Length", "2046")
-	a.False(opt.canCompressed(w))
+	a.False(opt.canCompressed(2046, ""))
 
-	w.Header().Set("Content-Type", "text/html;charset=utf-8")
-	a.True(opt.canCompressed(w))
+	a.True(opt.canCompressed(2046, "text/html;charset=utf-8"))
 
-	w.Header().Set("Content-Type", "application/json")
-	a.True(opt.canCompressed(w))
+	a.True(opt.canCompressed(2046, "application/json"))
 
-	w.Header().Set("Content-Type", "application/octet")
-	a.False(opt.canCompressed(w))
+	a.False(opt.canCompressed(2046, "application/octet"))
 }
