@@ -1,6 +1,5 @@
 middleware
 [![Build Status](https://travis-ci.org/issue9/middleware.svg?branch=master)](https://travis-ci.org/issue9/middleware)
-[![Build status](https://ci.appveyor.com/api/projects/status/jfrnl9iuakpxg74f?svg=true)](https://ci.appveyor.com/project/caixw/middleware)
 ======
 
 middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
