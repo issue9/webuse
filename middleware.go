@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package middleware 包含了一系列 http.Handler 接口的中间件。
-package middleware // import "github.com/issue9/middleware"
+package middleware
 
 import "net/http"
 

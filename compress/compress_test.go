@@ -7,6 +7,7 @@ package compress
 import (
 	"bytes"
 	"compress/flate"
+	"compress/gzip"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -59,6 +60,7 @@ func TestCompress_f1(t *testing.T) {
 		Header("Accept-Encoding", "*").
 		Do().
 		StringBody("f1\nf2").
+		Status(http.StatusAccepted).
 		Header("Content-Encoding", "")
 
 	// 指定 accept-encoding = identity
@@ -66,6 +68,7 @@ func TestCompress_f1(t *testing.T) {
 		Header("Accept-Encoding", "identity").
 		Do().
 		StringBody("f1\nf2").
+		Status(http.StatusAccepted).
 		Header("Content-Encoding", "")
 
 	// 指定 accept-encoding 为空
@@ -73,6 +76,7 @@ func TestCompress_f1(t *testing.T) {
 		Header("Accept-Encoding", "").
 		Do().
 		StringBody("f1\nf2").
+		Status(http.StatusAccepted).
 		Header("Content-Encoding", "")
 
 	// accept-encoding = deflate
@@ -82,6 +86,7 @@ func TestCompress_f1(t *testing.T) {
 		Do().
 		BodyNotNil().
 		ReadBody(buf).
+		Status(http.StatusAccepted).
 		Header("Content-Type", "text/html").
 		Header("Content-Encoding", "deflate").
 		Header("Vary", "Content-Encoding")
@@ -89,6 +94,26 @@ func TestCompress_f1(t *testing.T) {
 	// 解码后相等
 	a.True(len(buf.Bytes()) > 0)
 	data, err := ioutil.ReadAll(flate.NewReader(buf))
+	a.NotError(err).NotNil(data)
+	a.Equal(string(data), "f1\nf2")
+
+	// accept-encoding = gzip
+	buf = new(bytes.Buffer)
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-encoding", "gzip,deflate;q=0.8").
+		Do().
+		BodyNotNil().
+		ReadBody(buf).
+		Status(http.StatusAccepted).
+		Header("Content-Type", "text/html").
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+
+	// 解码后相等
+	a.True(len(buf.Bytes()) > 0)
+	reader, err := gzip.NewReader(buf)
+	a.NotError(err).NotNil(reader)
+	data, err = ioutil.ReadAll(reader)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "f1\nf2")
 }
@@ -110,6 +135,7 @@ func TestCompress_f2(t *testing.T) {
 		Header("Accept-Encoding", "*").
 		Do().
 		StringBody("f1\nf2").
+		Status(http.StatusOK).
 		Header("Content-Encoding", "")
 
 	// 指定 accept-encoding = identity
@@ -117,29 +143,34 @@ func TestCompress_f2(t *testing.T) {
 		Header("Accept-Encoding", "identity").
 		Do().
 		StringBody("f1\nf2").
+		Status(http.StatusOK).
 		Header("Content-Encoding", "")
 
 	// 指定 accept-encoding 为空
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "").
 		Do().
+		Status(http.StatusOK).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
 	// accept-encoding = deflate
 	buf := new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
+		Header("Accept-encoding", "gzip,deflate;q=0.8").
 		Do().
+		Status(http.StatusOK).
 		BodyNotNil().
 		ReadBody(buf).
 		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "deflate").
+		Header("Content-Encoding", "gzip").
 		Header("Vary", "Content-Encoding")
 
 	// 解码后相等
 	a.True(len(buf.Bytes()) > 0)
-	data, err := ioutil.ReadAll(flate.NewReader(buf))
+	reader, err := gzip.NewReader(buf)
+	a.NotError(err).NotNil(reader)
+	data, err := ioutil.ReadAll(reader)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "f1\nf2")
 }
@@ -160,6 +191,7 @@ func TestCompress_f3(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "*").
 		Do().
+		Status(http.StatusOK).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -167,6 +199,7 @@ func TestCompress_f3(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "identity").
 		Do().
+		Status(http.StatusOK).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -174,6 +207,7 @@ func TestCompress_f3(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "").
 		Do().
+		Status(http.StatusOK).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -182,6 +216,7 @@ func TestCompress_f3(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
+		Status(http.StatusOK).
 		BodyNotNil().
 		ReadBody(buf).
 		Header("Content-Type", "text/plain; charset=utf-8").
@@ -210,6 +245,7 @@ func TestCompress_f4(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "*").
 		Do().
+		Status(http.StatusAccepted).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -217,6 +253,7 @@ func TestCompress_f4(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "identity").
 		Do().
+		Status(http.StatusAccepted).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -224,6 +261,7 @@ func TestCompress_f4(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-Encoding", "").
 		Do().
+		Status(http.StatusAccepted).
 		StringBody("f1\nf2").
 		Header("Content-Encoding", "")
 
@@ -232,6 +270,7 @@ func TestCompress_f4(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
+		Status(http.StatusAccepted).
 		BodyNotNil().
 		ReadBody(buf).
 		Header("Content-Type", "text/plain; charset=utf-8").

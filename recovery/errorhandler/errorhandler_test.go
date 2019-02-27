@@ -9,19 +9,21 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 
 	"github.com/issue9/middleware/recovery"
 )
 
 func testRenderError(w http.ResponseWriter, status int) {
+	w.Header().Set("Content-type", "test")
 	w.WriteHeader(status)
 	w.Write([]byte("test"))
-	w.Header().Set("Content-type", "test")
 }
 
 func TestErrorHandler_Add(t *testing.T) {
@@ -55,37 +57,46 @@ func TestErrorHandler_New(t *testing.T) {
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("f1"))
 	}
 	h1 := http.HandlerFunc(f1)
 
-	// New，400 错误
-	h := recovery.New(eh.New(h1), eh.Recovery(nil))
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	// New，400 错误，不会采用 f1 的内容
+	h := recovery.New(eh.New(h1), eh.Recovery(log.New(os.Stdout, "--", 0)))
 	a.NotPanic(func() {
-		h.ServeHTTP(w, r)
+		srv := rest.NewServer(t, h, nil)
+		srv.Get("/path").
+			Do().
+			Status(http.StatusBadRequest).
+			Header("Content-Type", "test").
+			StringBody("test")
 	})
-	a.Equal(w.Header().Get("Content-type"), "test")
 
-	// New，正常访问
+	// New，正常访问，采用 h 的内容
 	h = recovery.New(eh.NewFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "h1")
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("h"))
 	}), eh.Recovery(nil))
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	a.NotPanic(func() {
-		h.ServeHTTP(w, r)
+		srv := rest.NewServer(t, h, nil)
+		srv.Get("/path").
+			Do().
+			Status(http.StatusOK).
+			Header("Content-Type", "h1").
+			StringBody("h")
 	})
-	a.Equal(w.Header().Get("Content-type"), "")
 
-	// NewFunc，400 错误
+	// NewFunc，400 错误，不会采用 f1 的内容
 	h = recovery.New(eh.NewFunc(f1), eh.Recovery(nil))
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	a.NotPanic(func() {
-		h.ServeHTTP(w, r)
+		srv := rest.NewServer(t, h, nil)
+		srv.Get("/path").
+			Do().
+			Status(http.StatusBadRequest).
+			Header("Content-Type", "test").
+			StringBody("test")
 	})
-	a.Equal(w.Header().Get("Content-type"), "test")
 }
 
 func TestErrorHandler_Render(t *testing.T) {
