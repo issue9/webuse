@@ -6,17 +6,21 @@ package compress
 
 import (
 	"bufio"
-	"bytes"
+	"io"
 	"net"
 	"net/http"
 )
 
 // 实现了 http.ResponseWriter 接口。
 type response struct {
-	// 所有返回给客户端的内容，先保存到 buffer。
-	// 在最终返回给客户之前，即 close() 函数中，
-	// 再判断其是否符合压缩的条件，根据条件输出到 rw 或是压缩对象。
-	buffer *bytes.Buffer
+	// 当前的 Write 方法实际调用的对象。
+	//
+	// 可能是 rw 也有可能是 gzw，根据第一次调用 Write
+	// 时，判断引用哪个对象。
+	writer io.Writer
+
+	// gzw 是根据当前的 f 值生成的压缩对象实例。
+	gzw io.WriteCloser
 
 	rw           http.ResponseWriter // 旧的 ResponseWriter
 	opt          *Options
@@ -24,19 +28,34 @@ type response struct {
 	encodingName string
 }
 
-func (resp *response) Write(bs []byte) (int, error) {
-	return resp.buffer.Write(bs)
-}
-
 func (resp *response) Header() http.Header {
 	return resp.rw.Header()
 }
 
+// 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
 	// https://github.com/golang/go/issues/14975
 	resp.rw.Header().Del("Content-Length")
 
+	resp.genWriter(resp.Header().Get("Content-Type"))
 	resp.rw.WriteHeader(code)
+}
+
+// 根据接口要求，第一次调用 Write 时，会发送报头内容，即 WriteHeader 自动调用。
+func (resp *response) Write(bs []byte) (int, error) {
+	if resp.writer == nil {
+		h := resp.Header()
+
+		ct := h.Get("Content-Type")
+		if ct == "" {
+			ct = http.DetectContentType(bs)
+			h.Set("Content-Type", ct)
+		}
+
+		resp.genWriter(ct)
+	}
+
+	return resp.writer.Write(bs)
 }
 
 func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -48,40 +67,28 @@ func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func (resp *response) close() {
-	bs := resp.buffer.Bytes()
+	if resp.gzw != nil {
+		if err := resp.gzw.Close(); err != nil {
+			resp.opt.println(err)
+		}
+	}
+}
+
+func (resp *response) genWriter(ct string) {
 	h := resp.Header()
 
-	hv := h.Get("Content-Type")
-	if hv == "" {
-		h.Set("Content-Type", http.DetectContentType(bs))
-	}
-
-	if !resp.opt.canCompressed(resp.buffer.Len(), h.Get("Content-Type")) {
-		if _, err := resp.rw.Write(bs); err != nil {
-			resp.opt.println(err)
-		}
+	if !resp.opt.canCompressed(ct) {
+		resp.writer = resp.rw
 		return
 	}
 
-	gzw, err := resp.f(resp.rw)
-	if err != nil {
+	if gzw, err := resp.f(resp.rw); err != nil {
 		resp.opt.println(err)
-
-		if _, err := resp.rw.Write(bs); err != nil {
-			resp.opt.println(err)
-		}
-		return
-	}
-
-	h.Set("Content-Encoding", resp.encodingName)
-	h.Add("Vary", "Content-Encoding")
-
-	if _, err = gzw.Write(bs); err != nil {
-		resp.opt.println(err)
-		return
-	}
-
-	if err = gzw.Close(); err != nil {
-		resp.opt.println(err)
+		resp.writer = resp.rw
+	} else {
+		h.Set("Content-Encoding", resp.encodingName)
+		h.Add("Vary", "Content-Encoding")
+		resp.gzw = gzw
+		resp.writer = resp.gzw
 	}
 }

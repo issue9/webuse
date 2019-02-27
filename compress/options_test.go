@@ -28,24 +28,23 @@ func TestOptions_canComporessed(t *testing.T) {
 
 	opt := &Options{}
 	opt.build()
-	a.False(opt.canCompressed(0, ""))
+	a.False(opt.canCompressed(""))
 
 	opt = &Options{
 		Funcs: map[string]WriterFunc{"gzip": NewGzip},
 		Types: []string{"text/*", "application/json"},
-		Size:  1024,
 	}
 	opt.build()
 
 	// 长度不够
-	a.False(opt.canCompressed(10, ""))
+	a.False(opt.canCompressed(""))
 
 	// 长度够，但是未指定 content-type
-	a.False(opt.canCompressed(2046, ""))
+	a.False(opt.canCompressed(""))
 
-	a.True(opt.canCompressed(2046, "text/html;charset=utf-8"))
+	a.True(opt.canCompressed("text/html;charset=utf-8"))
 
-	a.True(opt.canCompressed(2046, "application/json"))
+	a.True(opt.canCompressed("application/json"))
 
-	a.False(opt.canCompressed(2046, "application/octet"))
+	a.False(opt.canCompressed("application/octet"))
 }

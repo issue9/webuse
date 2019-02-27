@@ -6,7 +6,6 @@
 package compress
 
 import (
-	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"io"
@@ -73,7 +72,6 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resp := &response{
 		rw:           w,
-		buffer:       new(bytes.Buffer),
 		opt:          c.opt,
 		f:            wf,
 		encodingName: accept.Value,

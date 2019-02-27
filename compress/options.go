@@ -11,8 +11,14 @@ import (
 
 // Options New 的参数
 type Options struct {
-	Funcs    map[string]WriterFunc
-	Size     int // 大于此值才会启用压缩
+	// Funcs 指定压缩名称对应的生成函数。
+	Funcs map[string]WriterFunc
+
+	// Size 不再启作用
+	Size int
+
+	// 如果指定了这个值，那么会把错误日志输出到此。
+	// 若未指定，则不输出内容。
 	ErrorLog *log.Logger
 
 	// 仅对该表中的类型进行压缩
@@ -46,12 +52,8 @@ func (opt *Options) build() {
 	opt.types = types
 }
 
-func (opt *Options) canCompressed(l int, typ string) bool {
+func (opt *Options) canCompressed(typ string) bool {
 	if len(opt.Funcs) == 0 {
-		return false
-	}
-
-	if opt.Size > l {
 		return false
 	}
 

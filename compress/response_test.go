@@ -5,8 +5,8 @@
 package compress
 
 import (
-	"bytes"
 	"compress/flate"
+	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -28,34 +28,46 @@ func newErrorWriter(w io.Writer) (io.WriteCloser, error) {
 	return nil, errors.New("error")
 }
 
-func TestResponse_close(t *testing.T) {
+func TestResponse_Write(t *testing.T) {
 	a := assert.New(t)
 	rw := httptest.NewRecorder()
 	opt := &Options{
 		Funcs: map[string]WriterFunc{"deflate": NewDeflate},
 		Types: []string{"application/xml", "text/*", "application/json"},
-		Size:  10,
 	}
 	opt.build()
 	resp := &response{
 		rw:           rw,
-		buffer:       new(bytes.Buffer),
 		opt:          opt,
 		f:            NewDeflate,
 		encodingName: "deflate",
 	}
 
+	// 压缩
 	_, err := resp.Write([]byte("123"))
 	a.NotError(err)
 	resp.close()
-	a.Equal(resp.buffer.String(), "123").
-		Equal(resp.buffer.String(), rw.Body.String()).
-		Equal(rw.Header().Get("Content-Encoding"), "")
+	a.NotEmpty(rw.Body.String()).
+		Equal(rw.Header().Get("Content-Encoding"), "deflate").
+		Equal(rw.Code, http.StatusOK)
+
+	data, err := ioutil.ReadAll(flate.NewReader(rw.Body))
+	a.NotError(err).NotNil(data).
+		Equal(string(data), "123")
+
+	// 没有写入内容
+	rw = httptest.NewRecorder()
+	resp.writer = nil
+	resp.rw = rw
+	resp.close()
+	a.Empty(rw.Body.String()).
+		Equal(rw.Header().Get("Content-Encoding"), "").
+		Equal(rw.Code, http.StatusOK)
 
 	// 多次写入
-	resp.buffer.Reset()
 	rw = httptest.NewRecorder()
 	resp.rw = rw
+	resp.writer = nil
 	_, err = resp.Write([]byte("123"))
 	a.NotError(err)
 	_, err = resp.Write([]byte("4567890\n"))
@@ -63,22 +75,37 @@ func TestResponse_close(t *testing.T) {
 	_, err = resp.Write([]byte("123"))
 	a.NotError(err)
 	resp.close()
-	a.Equal(resp.buffer.String(), "1234567890\n123").
-		NotEqual(resp.buffer.String(), rw.Body.String()).
-		Equal(rw.Header().Get("Content-Encoding"), "deflate")
-	data, err := ioutil.ReadAll(flate.NewReader(rw.Body))
+	a.NotEmpty(rw.Body.String())
+
+	data, err = ioutil.ReadAll(flate.NewReader(rw.Body))
 	a.NotError(err).NotNil(data).
-		Equal(string(data), resp.buffer.String())
+		Equal(string(data), "1234567890\n123")
 
 	// 可压缩，但是压缩时构建压缩实例出错
-	resp.buffer.Reset()
 	rw = httptest.NewRecorder()
 	resp.rw = rw
+	resp.writer = nil
 	resp.f = newErrorWriter
 	_, err = resp.Write([]byte("1234567890\n123"))
 	a.NotError(err)
 	resp.close()
-	a.Equal(resp.buffer.String(), "1234567890\n123").
-		Equal(resp.buffer.String(), rw.Body.String()).
+	a.Equal(rw.Body.String(), "1234567890\n123").
 		Equal(rw.Header().Get("Content-Encoding"), "")
+
+	// 可压缩
+	rw = httptest.NewRecorder()
+	resp.rw = rw
+	resp.writer = nil
+	resp.f = NewGzip
+	_, err = resp.Write([]byte("1234567890\n123"))
+	a.NotError(err)
+	resp.close()
+	a.NotEqual(rw.Body.String(), "1234567890\n123").
+		Equal(rw.Header().Get("Content-Encoding"), resp.encodingName)
+
+	gzw, err := gzip.NewReader(rw.Body)
+	a.NotError(err).NotNil(gzw)
+	data, err = ioutil.ReadAll(gzw)
+	a.NotError(err).NotNil(data).
+		Equal(string(data), "1234567890\n123")
 }
