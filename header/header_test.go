@@ -28,7 +28,7 @@ func TestNew(t *testing.T) {
 
 	// 动态生成的内容
 	now := time.Now().Format("2006-01-02 15:16:05")
-	h = New(h1, nil, map[string]func() string{"Server": func() string { return now }})
+	h = New(h1, nil, func(h http.Header) { h.Set("Server", now) })
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 		Header("Server", now)
 
 		// 同时存在，则以动态生成的优先
-	h = New(h1, map[string]string{"Server": "test"}, map[string]func() string{"Server": func() string { return now }})
+	h = New(h1, map[string]string{"Server": "test"}, func(h http.Header) { h.Set("Server", now) })
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
