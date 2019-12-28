@@ -11,7 +11,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/issue9/middleware/compress/accept"
+	"github.com/issue9/qheader"
 )
 
 // WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
@@ -45,7 +45,7 @@ func New(next http.Handler, opt *Options) http.Handler {
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	accepts, err := accept.Parse(r.Header.Get("Accept-Encoding"))
+	accepts, err := qheader.Parse(r.Header.Get("Accept-Encoding"))
 	if err != nil {
 		c.opt.println(err)
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -53,7 +53,7 @@ func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var wf WriterFunc
-	var accept *accept.Accept
+	var accept *qheader.Header
 	for _, accept = range accepts {
 		if accept.Value == "identity" || accept.Value == "*" { // 不支持压缩
 			break
