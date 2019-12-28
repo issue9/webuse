@@ -23,5 +23,5 @@ type Accept = qheader.Header
 //  application/*;q=0.1,application/xml;q=0.1,text/html;q=0
 // 其中的 text/html 不会被返回，application/xml 的优先级会高于 applicatioon/*
 func Parse(header string) ([]*Accept, error) {
-	return qheader.Parse(header)
+	return qheader.Parse(header, "*/*")
 }

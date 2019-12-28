@@ -45,7 +45,7 @@ func New(next http.Handler, opt *Options) http.Handler {
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	accepts, err := qheader.Parse(r.Header.Get("Accept-Encoding"))
+	accepts, err := qheader.AcceptEncoding(r)
 	if err != nil {
 		c.opt.println(err)
 		w.WriteHeader(http.StatusNotAcceptable)
