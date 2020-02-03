@@ -67,8 +67,8 @@ func (opt *Options) canCompressed(typ string) bool {
 		}
 	}
 
-	for _, preifx := range opt.prefixTypes {
-		if strings.HasPrefix(typ, preifx) {
+	for _, prefix := range opt.prefixTypes {
+		if strings.HasPrefix(typ, prefix) {
 			return true
 		}
 	}
