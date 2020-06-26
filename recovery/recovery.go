@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/issue9/utils"
+	"github.com/issue9/source"
 )
 
 // RecoverFunc 错误处理函数。Recovery 需要此函数作为出错时的处理。
@@ -28,7 +28,7 @@ func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 
-	data, err := utils.TraceStack(2, msg)
+	data, err := source.TraceStack(2, msg)
 	if err != nil {
 		panic(err)
 	}

@@ -20,7 +20,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/issue9/utils"
+	"github.com/issue9/source"
 
 	"github.com/issue9/middleware/recovery"
 )
@@ -114,7 +114,7 @@ func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
 		e.Render(w, http.StatusInternalServerError)
 
 		if errlog != nil {
-			message, err := utils.TraceStack(3, msg)
+			message, err := source.TraceStack(3, msg)
 			if err != nil {
 				panic(err)
 			}

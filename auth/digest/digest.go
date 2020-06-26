@@ -12,6 +12,8 @@ package digest
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -21,10 +23,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/utils"
-
 	"github.com/issue9/middleware/auth"
 )
+
+func encodeMD5(str string) string {
+	m := md5.New()
+	m.Write([]byte(str))
+	return hex.EncodeToString(m.Sum(nil))
+}
 
 // AuthFunc 查找到指定名称的用户数据。
 //
@@ -147,26 +153,26 @@ func (d *digest) parse(r *http.Request) (interface{}, error) {
 	if !ok {
 		return nil, errors.New("不存在该用户")
 	}
-	ha1 := utils.MD5(strings.Join([]string{ret["username"], d.realm, pass}, ":"))
+	ha1 := encodeMD5(strings.Join([]string{ret["username"], d.realm, pass}, ":"))
 	var ha2 string
 
 	switch ret["qop"] {
 	case "auth", "":
-		ha2 = utils.MD5(r.Method + ":" + ret["uri"])
+		ha2 = encodeMD5(r.Method + ":" + ret["uri"])
 	case "auth-int":
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
-		ha2 = utils.MD5(r.Method + ":" + ret["uri"] + ":" + string(body))
+		ha2 = encodeMD5(r.Method + ":" + ret["uri"] + ":" + string(body))
 	}
 
 	var resp string
 	switch ret["qop"] {
 	case "auth", "auth-int":
-		resp = utils.MD5(strings.Join([]string{ha1, nonce.key, ret["nc"], ret["cnonce"], ret["qop"], ha2}, ":"))
+		resp = encodeMD5(strings.Join([]string{ha1, nonce.key, ret["nc"], ret["cnonce"], ret["qop"], ha2}, ":"))
 	default:
-		resp = utils.MD5(ha1 + ":" + nonce.key + ":" + ha2)
+		resp = encodeMD5(ha1 + ":" + nonce.key + ":" + ha2)
 	}
 
 	if resp == ret["response"] {
