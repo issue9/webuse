@@ -32,7 +32,7 @@ func encodeMD5(str string) string {
 	return hex.EncodeToString(m.Sum(nil))
 }
 
-// AuthFunc 查找到指定名称的用户数据。
+// AuthFunc 查找到指定名称的用户数据
 //
 // username 表示用户名称；
 // v 表示在验证成功的情况下，希望附加到 Request.Context 中的数据；
@@ -52,7 +52,7 @@ type digest struct {
 	unauthorizationStatus int
 }
 
-// New 声明一个摘要验证的中间件。
+// New 声明一个摘要验证的中间件
 //
 // next 表示验证通过之后，需要执行的 handler；
 // proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。

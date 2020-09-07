@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/unique"
 )
 
-// 服务端随机字符串的管理工具。
+// 服务端随机字符串的管理工具
 type nonces struct {
 	nonces  map[string]*nonce
 	rands   *unique.Rands
@@ -39,7 +39,7 @@ func newNonces(expired, gc time.Duration) (*nonces, error) {
 		nonces: make(map[string]*nonce, 1000),
 		rands: &unique.Rands{
 			Rands:  rands,
-			Unique: unique.New(seed, 1, 120, "", 35),
+			Unique: unique.New(seed, 1, 120*time.Second, "", 35),
 		},
 		expired: expired,
 	}
