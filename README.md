@@ -1,5 +1,5 @@
 middleware
-[![Build Status](https://travis-ci.org/issue9/middleware.svg?branch=master)](https://travis-ci.org/issue9/middleware)
+[![Build Status](https://github.com/issue9/middleware/workflows/Go/badge.svg)](https://github.com/issue9/middleware/actions?query=workflow%3AGo)
 ======
 
 middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
@@ -22,7 +22,7 @@ go get github.com/issue9/middleware
 ---
 
 [![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/middleware)
-[![GoDoc](https://godoc.org/github.com/issue9/middleware?status.svg)](https://godoc.org/github.com/issue9/middleware)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/middleware)](https://pkg.go.dev/github.com/issue9/middleware)
 
 版权
 ---
