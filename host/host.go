@@ -16,7 +16,7 @@ type host struct {
 	handler   http.Handler
 }
 
-// New 声明一个限定域名的中间件.
+// New 声明一个限定域名的中间件
 //
 // 若请求的域名不允许，会返回 404 错误。
 // 若 domains 为空，则任何请求都将返回 404。
@@ -45,7 +45,7 @@ func newHost(next http.Handler, domains ...string) *host {
 	return h
 }
 
-// 查找 hostname 是否与当前的域名匹配。
+// 查找 hostname 是否与当前的域名匹配
 func (h *host) matched(hostname string) bool {
 	index := strings.IndexByte(hostname, ':')
 	if index >= 0 {

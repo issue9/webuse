@@ -4,9 +4,7 @@
 
 package middleware
 
-import (
-	"net/http"
-)
+import "net/http"
 
 // Manager 中间件管理
 type Manager struct {
@@ -24,17 +22,18 @@ func NewManager(next http.Handler) *Manager {
 	return &Manager{
 		middlewares: make([]Middleware, 0, 10),
 		next:        next,
+		handler:     next,
 	}
 }
 
-// Before 添加中间件到顶部，可多次调用。
+// Before 添加中间件到顶部
 func (mgr *Manager) Before(m Middleware) *Manager {
 	mgr.middlewares = append(mgr.middlewares, m)
 	mgr.handler = Handler(mgr.next, mgr.middlewares...)
 	return mgr
 }
 
-// After 添加中间件到尾部。可多次调用
+// After 添加中间件到尾部
 func (mgr *Manager) After(m Middleware) *Manager {
 	ms := make([]Middleware, 1+len(mgr.middlewares))
 	ms = append(ms, m)
@@ -44,7 +43,7 @@ func (mgr *Manager) After(m Middleware) *Manager {
 	return mgr
 }
 
-// Reset 清除中间件。
+// Reset 清除中间件
 func (mgr *Manager) Reset() *Manager {
 	mgr.middlewares = mgr.middlewares[:0]
 	mgr.handler = mgr.next

@@ -34,9 +34,14 @@ func TestManager(t *testing.T) {
 	m := NewManager(buildHandler(http.StatusCreated, "test"))
 	a.NotNil(m)
 
-	m.After(buildMiddleware("a0"))
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusCreated). // 没有中间件
+						Equal(w.Body.String(), "test")
+
+	w = httptest.NewRecorder()
+	m.After(buildMiddleware("a0"))
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
 					Equal(w.Body.String(), "a0test")
