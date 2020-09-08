@@ -16,7 +16,6 @@ func TestOptions_build(t *testing.T) {
 	opt := &Options{
 		Funcs: map[string]WriterFunc{"gzip": NewGzip},
 		Types: []string{"application/xml", "text/*", "application/json"},
-		Size:  1024,
 	}
 	opt.build()
 	a.Equal(opt.prefixTypes, []string{"text/"})

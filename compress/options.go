@@ -14,9 +14,6 @@ type Options struct {
 	// Funcs 指定压缩名称对应的生成函数
 	Funcs map[string]WriterFunc
 
-	// Size 大小小于此值不作压缩
-	Size int
-
 	// 如果指定了这个值，那么会把错误日志输出到此。
 	// 若未指定，则不输出内容。
 	ErrorLog *log.Logger
