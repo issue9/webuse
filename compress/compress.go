@@ -32,11 +32,13 @@ type compress struct {
 	opt *Options
 }
 
-// New 构建一个支持压缩的中间件。
+// New 构建一个支持压缩的中间件
 //
 // 将 opt 传递给 New 之后，再修改 opt 中的值，将不再启作用。
 func New(next http.Handler, opt *Options) http.Handler {
-	opt.build()
+	if opt != nil {
+		opt.build()
+	}
 
 	return &compress{
 		h:   next,
@@ -45,6 +47,11 @@ func New(next http.Handler, opt *Options) http.Handler {
 }
 
 func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if c.opt == nil || len(c.opt.Funcs) == 0 {
+		c.h.ServeHTTP(w, r)
+		return
+	}
+
 	accepts, err := qheader.AcceptEncoding(r)
 	if err != nil {
 		c.opt.println(err)

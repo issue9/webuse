@@ -11,10 +11,10 @@ import (
 
 // Options New 的参数
 type Options struct {
-	// Funcs 指定压缩名称对应的生成函数。
+	// Funcs 指定压缩名称对应的生成函数
 	Funcs map[string]WriterFunc
 
-	// Size 不再启作用
+	// Size 大小小于此值不作压缩
 	Size int
 
 	// 如果指定了这个值，那么会把错误日志输出到此。
@@ -28,7 +28,7 @@ type Options struct {
 	// 其它类型的值，表示完全匹配。
 	Types []string
 
-	// Types 列表的处理结果保存在 prefixTypes 和 types 中。
+	// Types 列表的处理结果保存在 prefixTypes 和 types 中
 	//
 	// prefixTypes 保存通配符匹配的值列表；
 	// types 表示完全匹配的值列表。

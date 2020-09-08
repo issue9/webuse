@@ -45,7 +45,25 @@ var f4 = func(w http.ResponseWriter, r *http.Request) {
 
 func TestCompress_f1(t *testing.T) {
 	a := assert.New(t)
-	opt := &Options{
+
+	var opt *Options
+
+	// 空的 options
+	buf := new(bytes.Buffer)
+	srv := rest.NewServer(t, New(http.HandlerFunc(f1), nil), nil)
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-encoding", "gzip,deflate;q=0.8").
+		Do().
+		BodyNotNil().
+		ReadBody(buf).
+		Status(http.StatusAccepted).
+		Header("Content-Type", "text/html").
+		Header("Content-Encoding", "").
+		Header("Vary", "")
+	a.Equal(buf.String(), "f1\nf2")
+	srv.Close()
+
+	opt = &Options{
 		Funcs: map[string]WriterFunc{
 			"gzip":    NewGzip,
 			"deflate": NewDeflate,
@@ -53,7 +71,9 @@ func TestCompress_f1(t *testing.T) {
 		Types:    []string{"text/*"},
 		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
 	}
-	srv := rest.NewServer(t, New(http.HandlerFunc(f1), opt), nil)
+
+	srv = rest.NewServer(t, New(http.HandlerFunc(f1), opt), nil)
+	defer srv.Close()
 
 	// 指定 accept-encoding = *
 	srv.NewRequest(http.MethodGet, "/").
@@ -80,7 +100,7 @@ func TestCompress_f1(t *testing.T) {
 		Header("Content-Encoding", "")
 
 	// accept-encoding = deflate
-	buf := new(bytes.Buffer)
+	buf = new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().

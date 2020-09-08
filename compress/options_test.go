@@ -23,7 +23,7 @@ func TestOptions_build(t *testing.T) {
 	a.Equal(opt.types, []string{"application/xml", "application/json"})
 }
 
-func TestOptions_canComporessed(t *testing.T) {
+func TestOptions_canCompressed(t *testing.T) {
 	a := assert.New(t)
 
 	opt := &Options{}

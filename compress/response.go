@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-// 实现了 http.ResponseWriter 接口。
+// 实现了 http.ResponseWriter 接口
 type response struct {
 	// 当前的 Write 方法实际调用的对象。
 	//
