@@ -1,8 +1,6 @@
-// Copyright 2017 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
-// Package header 用于指定输出的报头。
+// Package header 用于指定输出的报头
 package header
 
 import "net/http"
@@ -13,7 +11,7 @@ type header struct {
 	handler     http.Handler
 }
 
-// New 声明一个用于输出报头的中间件。
+// New 声明一个用于输出报头的中间件
 //
 // 如果 funcs 不为空，则 funcs 与 headers 相同的内容，
 // 以 funcs 为最终内容。

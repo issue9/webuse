@@ -1,16 +1,15 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 package errorhandler
 
-// 表示一个 HTTP 状态码错误。
+// 表示一个 HTTP 状态码错误
+//
 // panic 此类型的值，可以在 Recovery 中作特殊处理。
 //
 // 目前仅由 Exit 使用，让框加以特定的状态码退出当前协程。
 type httpStatus int
 
-// Exit 退出当前的协程。
+// Exit 退出当前的协程
 //
 // status 表示输出的状态码，如果为 0，则不会作任何状态码输出。
 //

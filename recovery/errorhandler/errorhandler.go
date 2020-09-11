@@ -1,6 +1,4 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package errorhandler 提供自定义错误处理功能
 //
@@ -25,7 +23,7 @@ import (
 	"github.com/issue9/middleware/recovery"
 )
 
-// HandleFunc 错误处理函数，对某一固定的状态码可以做专门的处理。
+// HandleFunc 错误处理函数，对某一固定的状态码可以做专门的处理
 type HandleFunc func(http.ResponseWriter, int)
 
 // ErrorHandler 错误处理函数的管理
@@ -68,7 +66,7 @@ func (e *ErrorHandler) Set(f HandleFunc, status ...int) {
 	}
 }
 
-// Render 向客户端输出指定状态码的错误内容。
+// Render 向客户端输出指定状态码的错误内容
 func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 	f, found := e.handlers[status]
 	if !found {
@@ -82,21 +80,25 @@ func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 	f(w, status)
 }
 
-// New 构建一个可以捕获错误状态码的 Handler，要求在最外层。
+// New 构建一个可以捕获错误状态码的 Handler
+//
+// NOTE: 要求在最外层
 func (e *ErrorHandler) New(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(&response{ResponseWriter: w}, r)
 	})
 }
 
-// NewFunc 构建一个可以捕获错误状态码的 Handler，要求在最外层。
+// NewFunc 构建一个可以捕获错误状态码的 Handler
+//
+// NOTE: 要求在最外层
 func (e *ErrorHandler) NewFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next(&response{ResponseWriter: w}, r)
 	})
 }
 
-// Recovery 生成一个 recovery.RecoverFunc 函数，用于捕获由 panic 触发的事件。
+// Recovery 生成一个 recovery.RecoverFunc 函数用于捕获由 panic 触发的事件
 //
 // errlog 表示输出调用堆栈信息到日志。可以为空，表示不输出信息。
 func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
@@ -124,7 +126,7 @@ func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
 	}
 }
 
-// 仅向客户端输出状态码。
+// 仅向客户端输出状态码
 func defaultRender(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }

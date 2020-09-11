@@ -1,8 +1,7 @@
-// Copyright 2016 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
-// Package ratelimit 提供了 X-Rate-Limit 功能的中间件：
+// Package ratelimit 提供了 X-Rate-Limit 功能的中间件
+//
 //  store := NewMemory(...)
 //  srv := NewServer(store)
 //  h = srv.RateLimit(h, logs.ERROR())

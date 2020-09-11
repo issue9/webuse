@@ -1,6 +1,4 @@
-// Copyright 2017 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 package ratelimit
 
@@ -10,7 +8,7 @@ import (
 	"time"
 )
 
-// Bucket 令牌桶。
+// Bucket 令牌桶
 //
 // 真正的令牌桶算法应该是按时自动增加令牌数量，
 // 此处稍作修改：去掉自动分发令牌功能，集中在每次拿令牌时，
@@ -22,7 +20,7 @@ type Bucket struct {
 	Last     time.Time     `json:"last"`   // 最后次添加令牌的时间
 }
 
-// 生成一个新的令牌桶，新的令牌桶中令牌数量为满格。
+// 生成一个新的令牌桶，新的令牌桶中令牌数量为满格
 //
 // capacity 令牌桶中最大的令牌数量。
 // rate 产生令牌的速度。
@@ -58,7 +56,7 @@ func (b *Bucket) allow(n int64) bool {
 	return true
 }
 
-// 获取 X-Rate-Limit-Reset 的值。
+// 获取 X-Rate-Limit-Reset 的值
 func (b *Bucket) resetTime() int64 {
 	t := (b.Capacity - b.Tokens) * int64(b.Rate.Seconds())
 	return time.Now().Unix() + t

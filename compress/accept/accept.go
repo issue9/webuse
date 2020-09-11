@@ -1,8 +1,6 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
-// Package accept 用于处理 accpet 系列的报头。
+// Package accept 用于处理 accpet 系列的报头
 //
 // Deprecated: 已不在使用，请使用 qheader 包的相关内容
 package accept
@@ -21,7 +19,7 @@ type Accept = qheader.Header
 //
 // q 值为 0 的数据将被过滤，比如：
 //  application/*;q=0.1,application/xml;q=0.1,text/html;q=0
-// 其中的 text/html 不会被返回，application/xml 的优先级会高于 applicatioon/*
+// 其中的 text/html 不会被返回，application/xml 的优先级会高于 application/*
 func Parse(header string) ([]*Accept, error) {
 	return qheader.Parse(header, "*/*")
 }

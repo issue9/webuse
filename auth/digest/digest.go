@@ -1,8 +1,7 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
-// Package digest 实现 digest 验证。
+// Package digest 实现 digest 验证
+//
 // NOTE: 这是个未完成的功能，请勿使用
 //
 // https://tools.ietf.org/html/rfc7616

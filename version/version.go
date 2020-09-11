@@ -1,8 +1,6 @@
-// Copyright 2017 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
-// Package version 提供一个限定版本号的中间件。
+// Package version 提供一个限定版本号的中间件
 package version
 
 import (
@@ -18,7 +16,8 @@ type version struct {
 	strict  bool
 }
 
-// New 构建一个限定版本号的中间件。
+// New 构建一个限定版本号的中间件
+//
 // 从请求报头的 Accept 中解析相应的版本号，不区分大小写。
 //
 // 当版本号不匹配时，返回 404 错误信息。

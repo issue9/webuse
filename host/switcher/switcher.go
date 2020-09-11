@@ -1,13 +1,9 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package switcher 按域名进行路由分类
 package switcher
 
-import (
-	"github.com/issue9/middleware/host"
-)
+import "github.com/issue9/middleware/host"
 
 // Switcher 域名切换中间件
 //

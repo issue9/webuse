@@ -1,6 +1,4 @@
-// Copyright 2017 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 package ratelimit
 
@@ -11,7 +9,7 @@ import (
 	"time"
 )
 
-// GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户。
+// GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户
 type GenFunc func(*http.Request) (string, error)
 
 // Store 存储 Bucket 的接口
@@ -26,7 +24,7 @@ type Store interface {
 	Get(name string) *Bucket
 }
 
-// Server 提供操作 Bucket 的一系列服务。
+// Server 提供操作 Bucket 的一系列服务
 type Server struct {
 	store    Store
 	capacity int64
@@ -34,7 +32,7 @@ type Server struct {
 	genFunc  GenFunc
 }
 
-// GenIP 用于生成区分令牌桶的 IP 地址。
+// GenIP 用于生成区分令牌桶的 IP 地址
 func GenIP(r *http.Request) (string, error) {
 	if len(r.RemoteAddr) == 0 {
 		return "", errors.New("无法获取请求端的 IP 地址")
@@ -53,7 +51,7 @@ func GenIP(r *http.Request) (string, error) {
 	return r.RemoteAddr, nil
 }
 
-// NewServer 声明一个新的 Server。
+// NewServer 声明一个新的 Server
 // rate 拿令牌的频率
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
 func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Server {
@@ -69,7 +67,7 @@ func NewServer(store Store, capacity int64, rate time.Duration, fn GenFunc) *Ser
 	}
 }
 
-// 获取与当前请求相对应的令牌桶。
+// 获取与当前请求相对应的令牌桶
 func (srv *Server) bucket(r *http.Request) (*Bucket, error) {
 	name, err := srv.genFunc(r)
 	if err != nil {
@@ -87,7 +85,7 @@ func (srv *Server) bucket(r *http.Request) (*Bucket, error) {
 	return b, nil
 }
 
-// Transfer 将 oldName 的数据传送给 newName。
+// Transfer 将 oldName 的数据传送给 newName
 func (srv *Server) Transfer(oldName, newName string) error {
 	b := srv.store.Get(oldName)
 	if b != nil {
