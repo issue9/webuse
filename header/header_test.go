@@ -10,6 +10,8 @@ import (
 	"github.com/issue9/assert/rest"
 )
 
+var _ http.Handler = &Header{}
+
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -22,7 +24,27 @@ func TestNew(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
 		Status(http.StatusAccepted).
-		Header("Server", "s1")
+		Header("Server", "s1").
+		Header("Content-Type", "")
+
+	// Set
+	h.Set("Server", "s2").
+		Set("Content-Type", "xml")
+	srv = rest.NewServer(t, h, nil)
+	srv.NewRequest(http.MethodGet, "/test").
+		Do().
+		Status(http.StatusAccepted).
+		Header("Server", "s2").
+		Header("Content-Type", "xml")
+
+	// Delete
+	h.Delete("Server")
+	srv = rest.NewServer(t, h, nil)
+	srv.NewRequest(http.MethodGet, "/test").
+		Do().
+		Status(http.StatusAccepted).
+		Header("Server", "").
+		Header("Content-Type", "xml")
 
 	// 动态生成的内容
 	now := time.Now().Format("2006-01-02 15:16:05")
@@ -33,7 +55,7 @@ func TestNew(t *testing.T) {
 		Status(http.StatusAccepted).
 		Header("Server", now)
 
-		// 同时存在，则以动态生成的优先
+	// 同时存在，则以动态生成的优先
 	h = New(h1, map[string]string{"Server": "test"}, func(h http.Header) { h.Set("Server", now) })
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").

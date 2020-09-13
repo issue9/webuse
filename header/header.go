@@ -5,7 +5,8 @@ package header
 
 import "net/http"
 
-type header struct {
+// Header 修正报头输出内容
+type Header struct {
 	headers     map[string]string // 静态内容
 	headersFunc func(http.Header) // 动态生成的内容
 	handler     http.Handler
@@ -15,15 +16,27 @@ type header struct {
 //
 // 如果 funcs 不为空，则 funcs 与 headers 相同的内容，
 // 以 funcs 为最终内容。
-func New(next http.Handler, headers map[string]string, funs func(http.Header)) http.Handler {
-	return &header{
+func New(next http.Handler, headers map[string]string, funcs func(http.Header)) *Header {
+	return &Header{
 		handler:     next,
 		headers:     headers,
-		headersFunc: funs,
+		headersFunc: funcs,
 	}
 }
 
-func (h *header) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// Set 添加或是修改报头
+func (h *Header) Set(name, value string) *Header {
+	h.headers[name] = value
+	return h
+}
+
+// Delete 删除指定的报头
+func (h *Header) Delete(name string) *Header {
+	delete(h.headers, name)
+	return h
+}
+
+func (h *Header) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for k, v := range h.headers {
 		w.Header().Set(k, v)
 	}
