@@ -6,13 +6,13 @@ import "net/http"
 
 // Switcher 实现按域名进行路由
 type Switcher struct {
-	hosts []*host
+	hosts []*Host
 }
 
 // NewSwitcher 声明新的 Switcher 实例
 func NewSwitcher() *Switcher {
 	return &Switcher{
-		hosts: make([]*host, 0, 10),
+		hosts: make([]*Host, 0, 10),
 	}
 }
 

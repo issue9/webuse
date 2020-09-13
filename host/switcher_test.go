@@ -30,13 +30,13 @@ func TestNewSwitcher(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
 	switcher.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	a.Equal(w.Code, http.StatusAccepted)
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "https://sub.example.com/test", nil)
 	a.NotNil(w).NotNil(r)
 	switcher.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	a.Equal(w.Code, http.StatusAccepted)
 
 	// h2
 	w = httptest.NewRecorder()
