@@ -10,26 +10,26 @@ import (
 	"github.com/issue9/assert"
 )
 
-func buildMiddleware(text string) Middleware {
+func buildMiddleware(a *assert.Assertion, text string) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(text))
+			a.NotError(w.Write([]byte(text)))
 			h.ServeHTTP(w, r)
 		})
 	}
 }
 
-func buildHandler(code int, content string) http.Handler {
+func buildHandler(a *assert.Assertion, code int, content string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(code)
-		w.Write([]byte(content))
+		a.NotError(w.Write([]byte(content)))
 	})
 }
 
 func TestManager(t *testing.T) {
 	a := assert.New(t)
 
-	m := NewManager(buildHandler(http.StatusCreated, "test"))
+	m := NewManager(buildHandler(a, http.StatusCreated, "test"))
 	a.NotNil(m)
 
 	w := httptest.NewRecorder()
@@ -39,16 +39,16 @@ func TestManager(t *testing.T) {
 						Equal(w.Body.String(), "test")
 
 	w = httptest.NewRecorder()
-	m.After(buildMiddleware("a0"))
+	m.After(buildMiddleware(a, "a0"))
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
 					Equal(w.Body.String(), "a0test")
 
 	// 执行过程中添加中间件
-	m.After(buildMiddleware("a1"))
-	m.After(buildMiddleware("a2"))
-	m.Before(buildMiddleware("b1"))
-	m.Before(buildMiddleware("b2"))
+	m.After(buildMiddleware(a, "a1"))
+	m.After(buildMiddleware(a, "a2"))
+	m.Before(buildMiddleware(a, "b1"))
+	m.Before(buildMiddleware(a, "b2"))
 	w = httptest.NewRecorder()
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
@@ -62,7 +62,7 @@ func TestManager(t *testing.T) {
 		Equal(w.Body.String(), "test")
 
 	// 执行过程中添加中间件
-	m.After(buildMiddleware("m2"))
+	m.After(buildMiddleware(a, "m2"))
 	w = httptest.NewRecorder()
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200

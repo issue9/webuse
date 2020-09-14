@@ -33,9 +33,11 @@ func (mgr *Manager) Before(m Middleware) *Manager {
 
 // After 添加中间件到尾部
 func (mgr *Manager) After(m Middleware) *Manager {
-	ms := make([]Middleware, 1+len(mgr.middlewares))
+	ms := make([]Middleware, 0, 1+len(mgr.middlewares))
 	ms = append(ms, m)
-	ms = append(ms, mgr.middlewares...)
+	if len(mgr.middlewares) > 0 {
+		ms = append(ms, mgr.middlewares...)
+	}
 	mgr.middlewares = ms
 	mgr.handler = Handler(mgr.next, mgr.middlewares...)
 	return mgr

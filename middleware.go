@@ -13,9 +13,7 @@ type Middleware func(http.Handler) http.Handler
 // 后添加的 middleware 会先执行。
 func Handler(h http.Handler, middleware ...Middleware) http.Handler {
 	for _, m := range middleware {
-		if m != nil {
-			h = m(h)
-		}
+		h = m(h)
 	}
 
 	return h
