@@ -8,33 +8,40 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/middleware"
 )
+
+var _ middleware.Middlewarer = &Version{}
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(1)
 }
 
-var h1 = http.HandlerFunc(f1)
+func BenchmarkFindVersionNumber(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = findVersionNumber("application/json;version=1.0;application/json")
+	}
+}
 
-func TestNew_strict(t *testing.T) {
+func TestVersion(t *testing.T) {
 	a := assert.New(t)
 
-	h := New(h1, "1.0", true)
-	a.NotNil(h)
+	h := &Version{Version: "1.0", Strict: true}
 
 	// 相同版本号
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	r.Header.Set("Accept", "application/json; version=1.0")
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
 	// 空版本
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	r.Header.Set("Accept", "application/json; version=")
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusForbidden)
 
@@ -42,30 +49,27 @@ func TestNew_strict(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	r.Header.Set("Accept", "application/json; version=2")
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusNotFound)
-}
 
-func TestNew_nostrict(t *testing.T) {
-	a := assert.New(t)
+	// strict == false
 
-	h := New(h1, "1.0", false)
-	a.NotNil(h)
+	h.Strict = false
 
 	// 相同版本号
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	r.Header.Set("Accept", "application/json; version=1.0")
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
 	// 空版本
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	r.Header.Set("Accept", "application/json; version=")
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, 1)
 
@@ -73,7 +77,7 @@ func TestNew_nostrict(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
 	r.Header.Set("Accept", "application/json; version=2")
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusNotFound)
 }

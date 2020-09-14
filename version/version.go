@@ -10,50 +10,44 @@ import (
 
 const versionString = "version="
 
-type version struct {
-	handler http.Handler
-	version string
-	strict  bool
-}
-
-// New 构建一个限定版本号的中间件
+// Version 限定版本号的中间件
 //
 // 从请求报头的 Accept 中解析相应的版本号，不区分大小写。
 //
 // 当版本号不匹配时，返回 404 错误信息。
 //
-// v 只有与此匹配的版本号，才能运行 h；
-// strict 在没有指定版本号时的处理方式，为 false 时，请求头无版本号
-// 表示可以匹配；为 true 时，请求头无版本号表示不匹配。
-//
 // 若要将版本号放在路径中，可以直接使用 https://github.com/issue9/mux.Prefix 对象
-func New(next http.Handler, v string, strict bool) http.Handler {
-	return &version{
-		handler: next,
-		version: v,
-		strict:  strict,
-	}
+type Version struct {
+	Version string
+	Strict  bool // 在没有指定版本号时的处理方式，是否统一采用拒绝访问。
 }
 
-func (v *version) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ver := findVersionNumber(r.Header.Get("Accept"))
+// Middleware 将当前中间件应用于 next
+func (v *Version) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ver := findVersionNumber(r.Header.Get("Accept"))
 
-	if len(ver) == 0 {
-		if v.strict { // strict 模式下
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-		} else {
-			v.handler.ServeHTTP(w, r)
+		if len(ver) == 0 {
+			if v.Strict { // strict 模式下
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+			return
 		}
 
-		return
-	}
+		if ver != v.Version {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 
-	if ver != v.version {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+		next.ServeHTTP(w, r)
+	})
+}
 
-	v.handler.ServeHTTP(w, r)
+// Middleware 将当前中间件应用于 f
+func (v *Version) MiddlewareFunc(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return v.Middleware(http.HandlerFunc(f))
 }
 
 // 从 accept 中找到版本号，或是没有找到时，返回第二个参数 false。
@@ -61,9 +55,7 @@ func findVersionNumber(accept string) string {
 	strs := strings.Split(accept, ";")
 	for _, str := range strs {
 		str = strings.ToLower(strings.TrimSpace(str))
-		index := strings.Index(str, versionString)
-
-		if index >= 0 {
+		if index := strings.Index(str, versionString); index >= 0 {
 			return str[index+len(versionString):]
 		}
 	}
