@@ -15,8 +15,11 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
+	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/recovery"
 )
+
+var _ middleware.Middlewarer = &ErrorHandler{}
 
 func testRenderError(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-type", "test")
@@ -59,8 +62,8 @@ func TestErrorHandler_New(t *testing.T) {
 	}
 	h1 := http.HandlerFunc(f1)
 
-	// New，400 错误，不会采用 f1 的内容
-	h := recovery.New(eh.New(h1), eh.Recovery(log.New(os.Stdout, "--", 0)))
+	// Middleware，400 错误，不会采用 f1 的内容
+	h := recovery.New(eh.Middleware(h1), eh.Recovery(log.New(os.Stdout, "--", 0)))
 	a.NotPanic(func() {
 		srv := rest.NewServer(t, h, nil)
 		srv.Get("/path").
@@ -70,8 +73,8 @@ func TestErrorHandler_New(t *testing.T) {
 			StringBody("test")
 	})
 
-	// New，正常访问，采用 h 的内容
-	h = recovery.New(eh.NewFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Middleware，正常访问，采用 h 的内容
+	h = recovery.New(eh.MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "h1")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("h"))
@@ -85,8 +88,8 @@ func TestErrorHandler_New(t *testing.T) {
 			StringBody("h")
 	})
 
-	// NewFunc，400 错误，不会采用 f1 的内容
-	h = recovery.New(eh.NewFunc(f1), eh.Recovery(nil))
+	// MiddlewareFunc，400 错误，不会采用 f1 的内容
+	h = recovery.New(eh.MiddlewareFunc(f1), eh.Recovery(nil))
 	a.NotPanic(func() {
 		srv := rest.NewServer(t, h, nil)
 		srv.Get("/path").

@@ -45,15 +45,15 @@ func (v *Version) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// Middleware 将当前中间件应用于 f
-func (v *Version) MiddlewareFunc(f func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	return v.Middleware(http.HandlerFunc(f))
+// Middleware 将当前中间件应用于 next
+func (v *Version) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return v.Middleware(http.HandlerFunc(next))
 }
 
 // 从 accept 中找到版本号，或是没有找到时，返回第二个参数 false。
 func findVersionNumber(accept string) string {
-	strs := strings.Split(accept, ";")
-	for _, str := range strs {
+	accepts := strings.Split(accept, ";")
+	for _, str := range accepts {
 		str = strings.ToLower(strings.TrimSpace(str))
 		if index := strings.Index(str, versionString); index >= 0 {
 			return str[index+len(versionString):]

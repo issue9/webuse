@@ -80,22 +80,30 @@ func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 	f(w, status)
 }
 
-// New 构建一个可以捕获错误状态码的 Handler
+// Middleware 构建一个可以捕获错误状态码的 Handler
 //
 // NOTE: 要求在最外层
-func (e *ErrorHandler) New(next http.Handler) http.Handler {
+func (e *ErrorHandler) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(&response{ResponseWriter: w}, r)
 	})
 }
 
-// NewFunc 构建一个可以捕获错误状态码的 Handler
+// MiddlewareFunc 构建一个可以捕获错误状态码的 Handler
 //
 // NOTE: 要求在最外层
-func (e *ErrorHandler) NewFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next(&response{ResponseWriter: w}, r)
-	})
+func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
+	return e.Middleware(http.HandlerFunc(next))
+}
+
+// RecoveryMiddleware 生成用于处理 panic 的中间件
+func (e *ErrorHandler) RecoveryMiddleware(next http.Handler, errlog *log.Logger) http.Handler {
+	return recovery.New(next, e.Recovery(errlog))
+}
+
+// RecoveryMiddlewareFunc 生成用于处理 panic 的中间件
+func (e *ErrorHandler) RecoveryMiddlewareFunc(next func(http.ResponseWriter, *http.Request), errlog *log.Logger) http.Handler {
+	return e.RecoveryMiddleware(http.HandlerFunc(next), errlog)
 }
 
 // Recovery 生成一个 recovery.RecoverFunc 函数用于捕获由 panic 触发的事件
