@@ -15,11 +15,8 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/recovery"
 )
-
-var _ middleware.Middlewarer = &ErrorHandler{}
 
 func testRenderError(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-type", "test")

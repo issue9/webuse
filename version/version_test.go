@@ -8,11 +8,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/middleware"
 )
-
-var _ middleware.Middlewarer = &Version{}
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(1)

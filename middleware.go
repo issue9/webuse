@@ -8,15 +8,6 @@ import "net/http"
 // Middleware 将一个 http.Handler 封装成另一个 http.Handler
 type Middleware func(http.Handler) http.Handler
 
-// Middlewarer 声明了将对象转换成中间件的接口
-type Middlewarer interface {
-	// 将当前对象的功能应用于 http.Handler
-	Middleware(http.Handler) http.Handler
-
-	// 将当前对象的功能应用于 http.HandlerFunc
-	MiddlewareFunc(func(http.ResponseWriter, *http.Request)) http.Handler
-}
-
 // Handler 将所有的中间件应用于 h
 //
 // 后添加的 middleware 会先执行。
