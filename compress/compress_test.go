@@ -19,6 +19,8 @@ import (
 var (
 	_ WriterFunc = NewDeflate
 	_ WriterFunc = NewGzip
+
+	_ http.Handler = &Compress{}
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {

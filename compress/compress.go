@@ -9,23 +9,30 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/qheader"
 )
 
 // WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
 type WriterFunc func(w io.Writer) (io.WriteCloser, error)
 
-// NewGzip 表示支持 gzip 格式的压缩
+// NewGzip 新建 gzip 算法
 func NewGzip(w io.Writer) (io.WriteCloser, error) {
 	return gzip.NewWriter(w), nil
 }
 
-// NewDeflate 表示支持 deflate 压缩
+// NewDeflate 新建 deflate 算法
 func NewDeflate(w io.Writer) (io.WriteCloser, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
 }
 
-type compress struct {
+// NewBrotli 新建 br 算法
+func NewBrotli(w io.Writer) (io.WriteCloser, error) {
+	return brotli.NewWriter(w), nil
+}
+
+// Compress 提供压缩功能的中件间
+type Compress struct {
 	h   http.Handler
 	opt *Options
 }
@@ -33,18 +40,18 @@ type compress struct {
 // New 构建一个支持压缩的中间件
 //
 // 将 opt 传递给 New 之后，再修改 opt 中的值，将不再启作用。
-func New(next http.Handler, opt *Options) http.Handler {
+func New(next http.Handler, opt *Options) *Compress {
 	if opt != nil {
 		opt.build()
 	}
 
-	return &compress{
+	return &Compress{
 		h:   next,
 		opt: opt,
 	}
 }
 
-func (c *compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *Compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if c.opt == nil || len(c.opt.Funcs) == 0 {
 		c.h.ServeHTTP(w, r)
 		return
