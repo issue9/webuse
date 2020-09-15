@@ -39,8 +39,8 @@ func encodeMD5(str string) string {
 // found 表示是否找到数据；
 type AuthFunc func(username string) (v interface{}, password string, found bool)
 
-type digest struct {
-	next   http.Handler
+// Digest 摘要验证的中间件
+type Digest struct {
 	auth   AuthFunc
 	realm  string
 	errlog *log.Logger
@@ -53,16 +53,11 @@ type digest struct {
 
 // New 声明一个摘要验证的中间件
 //
-// next 表示验证通过之后，需要执行的 handler；
 // proxy 是否为代码，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
 // log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
-func New(next http.Handler, auth AuthFunc, realm string, proxy bool, errlog *log.Logger) http.Handler {
-	if next == nil {
-		panic("next 参数不能为空")
-	}
-
+func New(auth AuthFunc, realm string, proxy bool, errlog *log.Logger) *Digest {
 	if auth == nil {
 		panic("auth 参数不能为空")
 	}
@@ -81,8 +76,7 @@ func New(next http.Handler, auth AuthFunc, realm string, proxy bool, errlog *log
 		panic(err)
 	}
 
-	return &digest{
-		next:   next,
+	return &Digest{
 		auth:   auth,
 		realm:  realm,
 		errlog: errlog,
@@ -94,22 +88,30 @@ func New(next http.Handler, auth AuthFunc, realm string, proxy bool, errlog *log
 	}
 }
 
-func (d *digest) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	v, err := d.parse(r)
-	if err != nil {
-		if d.errlog != nil {
-			d.errlog.Println(err)
-		}
-		d.unauthorization(w)
-		return
-	}
-
-	ctx := context.WithValue(r.Context(), auth.ValueKey, v)
-	r = r.WithContext(ctx)
-	d.next.ServeHTTP(w, r)
+// MiddlewareFunc 将当前中间件应用于 next
+func (d *Digest) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return d.Middleware(http.HandlerFunc(next))
 }
 
-func (d *digest) unauthorization(w http.ResponseWriter) {
+// Middleware 将当前中间件应用于 next
+func (d *Digest) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		v, err := d.parse(r)
+		if err != nil {
+			if d.errlog != nil {
+				d.errlog.Println(err)
+			}
+			d.unauthorization(w)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), auth.ValueKey, v)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (d *Digest) unauthorization(w http.ResponseWriter) {
 	var digest strings.Builder
 
 	digest.WriteString(`Digest realm="`)
@@ -127,7 +129,7 @@ func (d *digest) unauthorization(w http.ResponseWriter) {
 	http.Error(w, http.StatusText(d.unauthorizationStatus), d.unauthorizationStatus)
 }
 
-func (d *digest) parse(r *http.Request) (interface{}, error) {
+func (d *Digest) parse(r *http.Request) (interface{}, error) {
 	ret, err := parseAuthorization(r.Header.Get("Authorization"))
 
 	// 基本检测
@@ -187,7 +189,7 @@ func parseAuthorization(header string) (map[string]string, error) {
 
 	header = header[7:]
 	if len(header) == 0 {
-		return nil, errors.New("Authorization 报头内容为空")
+		return nil, errors.New("'Authorization' 报头内容为空")
 	}
 
 	pairs := strings.Split(header, ",")

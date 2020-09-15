@@ -12,13 +12,6 @@ import (
 )
 
 var (
-	fok = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
-
-	hok = http.HandlerFunc(fok)
-
 	authFunc = func(username string) (interface{}, string, bool) {
 		return username, username, true
 	}
@@ -26,39 +19,35 @@ var (
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
-	var h http.Handler
+	var d *Digest
 
 	a.Panic(func() {
-		h = New(nil, nil, "", false, nil)
+		d = New(nil, "", false, nil)
 	})
 
 	a.Panic(func() {
-		h = New(hok, nil, "", false, nil)
+		d = New(nil, "", false, nil)
 	})
 
 	a.NotPanic(func() {
-		h = New(hok, authFunc, "", false, nil)
+		d = New(authFunc, "", false, nil)
 	})
 
-	dd, ok := h.(*digest)
-	a.True(ok).
-		Equal(dd.authorization, "Authorization").
-		Equal(dd.authenticate, "WWW-Authenticate").
-		Equal(dd.unauthorizationStatus, http.StatusUnauthorized).
-		Nil(dd.errlog).
-		NotNil(dd.auth)
+	a.Equal(d.authorization, "Authorization").
+		Equal(d.authenticate, "WWW-Authenticate").
+		Equal(d.unauthorizationStatus, http.StatusUnauthorized).
+		Nil(d.errlog).
+		NotNil(d.auth)
 
 	a.NotPanic(func() {
-		h = New(hok, authFunc, "", true, log.New(ioutil.Discard, "", 0))
+		d = New(authFunc, "", true, log.New(ioutil.Discard, "", 0))
 	})
 
-	dd, ok = h.(*digest)
-	a.True(ok).
-		Equal(dd.authorization, "Proxy-Authorization").
-		Equal(dd.authenticate, "Proxy-Authenticate").
-		Equal(dd.unauthorizationStatus, http.StatusProxyAuthRequired).
-		NotNil(dd.errlog).
-		NotNil(dd.auth)
+	a.Equal(d.authorization, "Proxy-Authorization").
+		Equal(d.authenticate, "Proxy-Authenticate").
+		Equal(d.unauthorizationStatus, http.StatusProxyAuthRequired).
+		NotNil(d.errlog).
+		NotNil(d.auth)
 }
 
 func TestParseAuthorization(t *testing.T) {

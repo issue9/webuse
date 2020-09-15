@@ -10,77 +10,58 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
 	"github.com/issue9/middleware/auth"
 )
 
-var _ http.Handler = &basic{}
-
 var (
-	fok = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
-
-	hok = http.HandlerFunc(fok)
-
-	authFunc = func(username, passowrd []byte) (interface{}, bool) {
+	authFunc = func(username, password []byte) (interface{}, bool) {
 		return username, true
 	}
 )
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
-	var h http.Handler
+	var b *Basic
 
 	a.Panic(func() {
-		h = New(nil, nil, "", false, nil)
-	})
-
-	a.Panic(func() {
-		h = New(hok, nil, "", false, nil)
+		b = New(nil, "", false, nil)
 	})
 
 	a.NotPanic(func() {
-		h = New(hok, authFunc, "", false, nil)
+		b = New(authFunc, "", false, nil)
 	})
 
-	bb, ok := h.(*basic)
-	a.True(ok).
-		Equal(bb.authorization, "Authorization").
-		Equal(bb.authenticate, "WWW-Authenticate").
-		Equal(bb.unauthorizationStatus, http.StatusUnauthorized).
-		Nil(bb.errlog).
-		NotNil(bb.auth)
+	a.Equal(b.authorization, "Authorization").
+		Equal(b.authenticate, "WWW-Authenticate").
+		Equal(b.unauthorizationStatus, http.StatusUnauthorized).
+		Nil(b.errlog).
+		NotNil(b.auth)
 
 	a.NotPanic(func() {
-		h = New(hok, authFunc, "", true, log.New(ioutil.Discard, "", 0))
+		b = New(authFunc, "", true, log.New(ioutil.Discard, "", 0))
 	})
 
-	bb, ok = h.(*basic)
-	a.True(ok).
-		Equal(bb.authorization, "Proxy-Authorization").
-		Equal(bb.authenticate, "Proxy-Authenticate").
-		Equal(bb.unauthorizationStatus, http.StatusProxyAuthRequired).
-		NotNil(bb.errlog).
-		NotNil(bb.auth)
+	a.Equal(b.authorization, "Proxy-Authorization").
+		Equal(b.authenticate, "Proxy-Authenticate").
+		Equal(b.unauthorizationStatus, http.StatusProxyAuthRequired).
+		NotNil(b.errlog).
+		NotNil(b.auth)
 }
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t)
-	var h http.Handler
 
 	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.ValueKey).([]byte)
 		a.Equal(string(username), "Aladdin")
 	})
 
-	a.NotPanic(func() {
-		h = New(ok, authFunc, "example.com", false, nil)
-	})
+	b := New(authFunc, "example.com", false, nil)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	h.ServeHTTP(w, r)
+	b.Middleware(ok).ServeHTTP(w, r)
 	a.Equal(w.Header().Get("WWW-Authenticate"), `Basic realm="example.com"`).
 		Equal(http.StatusUnauthorized, w.Code)
 
@@ -89,25 +70,22 @@ func TestServeHTTP_ok(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	// Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
 	r.Header.Set("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
-	h.ServeHTTP(w, r)
+	b.Middleware(ok).ServeHTTP(w, r)
 }
 
-func TestServeHTTP_faild(t *testing.T) {
+func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t)
-	var h http.Handler
 
-	faild := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	failed := func(w http.ResponseWriter, r *http.Request) {
 		obj := r.Context().Value(auth.ValueKey)
 		a.Nil(obj)
-	})
+	}
 
-	a.NotPanic(func() {
-		h = New(faild, authFunc, "example.com", false, nil)
-	})
+	b := New(authFunc, "example.com", false, nil)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	h.ServeHTTP(w, r)
+	b.MiddlewareFunc(failed).ServeHTTP(w, r)
 	a.Equal(w.Header().Get("WWW-Authenticate"), `Basic realm="example.com"`).
 		Equal(http.StatusUnauthorized, w.Code)
 
@@ -115,5 +93,5 @@ func TestServeHTTP_faild(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ===")
-	h.ServeHTTP(w, r)
+	b.MiddlewareFunc(failed).ServeHTTP(w, r)
 }
