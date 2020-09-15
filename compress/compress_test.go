@@ -19,8 +19,6 @@ import (
 var (
 	_ WriterFunc = NewDeflate
 	_ WriterFunc = NewGzip
-
-	_ http.Handler = &Compress{}
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
@@ -43,14 +41,27 @@ var f4 = func(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("f1\nf2"))
 }
 
+func TestNew(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip": NewGzip,
+	}, "application/xml", "text/*", "application/json")
+	a.NotNil(c)
+
+	a.Equal(c.prefix, []string{"text/"})
+	a.Equal(c.types, []string{"application/xml", "application/json"})
+}
+
 func TestCompress_f1(t *testing.T) {
 	a := assert.New(t)
 
-	var opt *Options
+	c := New(nil, nil)
+	a.NotNil(c)
 
 	// 空的 options
 	buf := new(bytes.Buffer)
-	srv := rest.NewServer(t, New(http.HandlerFunc(f1), nil), nil)
+	srv := rest.NewServer(t, c.MiddlewareFunc(f1), nil)
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-encoding", "gzip,deflate;q=0.8").
 		Do().
@@ -63,16 +74,12 @@ func TestCompress_f1(t *testing.T) {
 	a.Equal(buf.String(), "f1\nf2")
 	srv.Close()
 
-	opt = &Options{
-		Funcs: map[string]WriterFunc{
-			"gzip":    NewGzip,
-			"deflate": NewDeflate,
-		},
-		Types:    []string{"text/*"},
-		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-	}
+	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+	}, "text/*")
 
-	srv = rest.NewServer(t, New(http.HandlerFunc(f1), opt), nil)
+	srv = rest.NewServer(t, c.MiddlewareFunc(f1), nil)
 	defer srv.Close()
 
 	// 指定 accept-encoding = *
@@ -140,15 +147,14 @@ func TestCompress_f1(t *testing.T) {
 
 func TestCompress_f2(t *testing.T) {
 	a := assert.New(t)
-	opt := &Options{
-		Funcs: map[string]WriterFunc{
-			"gzip":    NewGzip,
-			"deflate": NewDeflate,
-		},
-		Types:    []string{"text/*"},
-		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-	}
-	srv := rest.NewServer(t, New(http.HandlerFunc(f2), opt), nil)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+	}, "text/*")
+	a.NotNil(c)
+
+	srv := rest.NewServer(t, c.MiddlewareFunc(f2), nil)
 
 	// 指定 accept-encoding = *
 	srv.NewRequest(http.MethodGet, "/").
@@ -197,15 +203,15 @@ func TestCompress_f2(t *testing.T) {
 
 func TestCompress_f3(t *testing.T) {
 	a := assert.New(t)
-	opt := &Options{
-		Funcs: map[string]WriterFunc{
-			"gzip":    NewGzip,
-			"deflate": NewDeflate,
-		},
-		Types:    []string{"text/*"},
-		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-	}
-	srv := rest.NewServer(t, New(http.HandlerFunc(f3), opt), nil)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+		"br":      NewBrotli,
+	}, "text/*")
+	a.NotNil(c)
+
+	srv := rest.NewServer(t, c.MiddlewareFunc(f3), nil)
 
 	// 指定 accept-encoding = *
 	srv.NewRequest(http.MethodGet, "/").
@@ -251,15 +257,16 @@ func TestCompress_f3(t *testing.T) {
 }
 
 func TestCompress_f4(t *testing.T) {
-	opt := &Options{
-		Funcs: map[string]WriterFunc{
-			"gzip":    NewGzip,
-			"deflate": NewDeflate,
-		},
-		Types:    []string{"text/*"},
-		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-	}
-	srv := rest.NewServer(t, New(http.HandlerFunc(f4), opt), nil)
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+		"br":      NewBrotli,
+	}, "text/*")
+	a.NotNil(c)
+
+	srv := rest.NewServer(t, c.MiddlewareFunc(f4), nil)
 
 	// 指定 accept-encoding = *
 	srv.NewRequest(http.MethodGet, "/").
@@ -301,18 +308,16 @@ func TestCompress_f4(t *testing.T) {
 func TestCompress_empty(t *testing.T) {
 	a := assert.New(t)
 
-	opt := &Options{
-		Funcs: map[string]WriterFunc{
-			"gzip":    NewGzip,
-			"deflate": NewDeflate,
-		},
-		Types:    []string{"text/*"},
-		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-	}
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+		"br":      NewBrotli,
+	}, "text/*")
+	a.NotNil(c)
 
 	// 不输出任何信息
 	f5 := func(w http.ResponseWriter, r *http.Request) {}
-	srv := rest.NewServer(t, New(http.HandlerFunc(f5), opt), nil)
+	srv := rest.NewServer(t, c.MiddlewareFunc(f5), nil)
 	// accept-encoding = deflate
 	buf := new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
@@ -329,7 +334,7 @@ func TestCompress_empty(t *testing.T) {
 	f5 = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 	}
-	srv = rest.NewServer(t, New(http.HandlerFunc(f5), opt), nil)
+	srv = rest.NewServer(t, c.MiddlewareFunc(f5), nil)
 	// accept-encoding = deflate
 	buf = new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
@@ -341,4 +346,30 @@ func TestCompress_empty(t *testing.T) {
 		Header("Content-Encoding", "").
 		Header("Vary", "")
 	a.Equal(0, buf.Len())
+}
+
+func TestCompress_canCompressed(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(nil, nil)
+	a.NotNil(c)
+
+	a.False(c.canCompressed(""))
+
+	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip": NewGzip,
+	}, "text/*", "application/json")
+	a.NotNil(c)
+
+	// 长度不够
+	a.False(c.canCompressed(""))
+
+	// 长度够，但是未指定 content-type
+	a.False(c.canCompressed(""))
+
+	a.True(c.canCompressed("text/html;charset=utf-8"))
+
+	a.True(c.canCompressed("application/json"))
+
+	a.False(c.canCompressed("application/octet"))
 }

@@ -21,7 +21,7 @@ type response struct {
 	gzw io.WriteCloser
 
 	rw           http.ResponseWriter // 旧的 ResponseWriter
-	opt          *Options
+	c            *Compress
 	f            WriterFunc
 	encodingName string
 }
@@ -67,7 +67,7 @@ func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (resp *response) close() {
 	if resp.gzw != nil {
 		if err := resp.gzw.Close(); err != nil {
-			resp.opt.println(err)
+			resp.c.printError(err)
 		}
 	}
 }
@@ -75,13 +75,13 @@ func (resp *response) close() {
 func (resp *response) genWriter(ct string) {
 	h := resp.Header()
 
-	if !resp.opt.canCompressed(ct) {
+	if !resp.c.canCompressed(ct) {
 		resp.writer = resp.rw
 		return
 	}
 
 	if gzw, err := resp.f(resp.rw); err != nil {
-		resp.opt.println(err)
+		resp.c.printError(err)
 		resp.writer = resp.rw
 	} else {
 		h.Set("Content-Encoding", resp.encodingName)

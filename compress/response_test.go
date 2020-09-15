@@ -8,8 +8,10 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -29,14 +31,15 @@ func newErrorWriter(w io.Writer) (io.WriteCloser, error) {
 func TestResponse_Write(t *testing.T) {
 	a := assert.New(t)
 	rw := httptest.NewRecorder()
-	opt := &Options{
-		Funcs: map[string]WriterFunc{"deflate": NewDeflate},
-		Types: []string{"application/xml", "text/*", "application/json"},
-	}
-	opt.build()
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"deflate": NewDeflate,
+	}, "application/xml", "text/*", "application/json")
+	a.NotNil(c)
+
 	resp := &response{
 		rw:           rw,
-		opt:          opt,
+		c:            c,
 		f:            NewDeflate,
 		encodingName: "deflate",
 	}

@@ -7,7 +7,9 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/qheader"
@@ -33,64 +35,119 @@ func NewBrotli(w io.Writer) (io.WriteCloser, error) {
 
 // Compress 提供压缩功能的中件间
 type Compress struct {
-	h   http.Handler
-	opt *Options
+	// 指定压缩名称对应的生成函数
+	writers map[string]WriterFunc
+
+	// 如果指定了这个值，那么会把错误日志输出到此。
+	// 若未指定，则不输出内容。
+	errlog *log.Logger
+
+	// Types 列表的处理结果保存在 prefixTypes 和 types 中
+	//
+	// prefix 保存通配符匹配的值列表；
+	// types 表示完全匹配的值列表。
+	prefix []string
+	types  []string
 }
 
 // New 构建一个支持压缩的中间件
-//
-// 将 opt 传递给 New 之后，再修改 opt 中的值，将不再启作用。
-func New(next http.Handler, opt *Options) *Compress {
-	if opt != nil {
-		opt.build()
+func New(errlog *log.Logger, writers map[string]WriterFunc, types ...string) *Compress {
+	c := &Compress{
+		writers: writers,
+		errlog:  errlog,
 	}
 
-	return &Compress{
-		h:   next,
-		opt: opt,
+	c.prefix = make([]string, 0, len(types))
+	c.types = make([]string, 0, len(types))
+
+	for _, typ := range types {
+		if typ[len(typ)-1] == '*' {
+			c.prefix = append(c.prefix, typ[:len(typ)-1])
+		} else {
+			c.types = append(c.types, typ)
+		}
 	}
+
+	return c
 }
 
-func (c *Compress) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if c.opt == nil || len(c.opt.Funcs) == 0 {
-		c.h.ServeHTTP(w, r)
-		return
-	}
+// MiddlewareFunc 将当前中间件应用于 next
+func (c *Compress) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return c.Middleware(http.HandlerFunc(next))
+}
 
-	accepts, err := qheader.AcceptEncoding(r)
-	if err != nil {
-		c.opt.println(err)
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
-
-	var wf WriterFunc
-	var accept *qheader.Header
-	for _, accept = range accepts {
-		if accept.Value == "identity" || accept.Value == "*" { // 不支持压缩
-			break
+// Middleware 将当前中间件应用于 next
+func (c *Compress) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(c.writers) == 0 {
+			next.ServeHTTP(w, r)
+			return
 		}
 
-		if f, found := c.opt.Funcs[accept.Value]; found {
-			wf = f
-			break
+		accepts := qheader.AcceptEncoding(r)
+		var wf WriterFunc
+		var accept *qheader.Header
+		for _, accept = range accepts {
+			if accept.Err != nil {
+				c.printError(accept.Err)
+				continue
+			}
+
+			if accept.Value == "identity" || accept.Value == "*" { // 不支持压缩
+				break
+			}
+
+			if f, found := c.writers[accept.Value]; found {
+				wf = f
+				break
+			}
 		}
-	} // end for
 
-	if wf == nil { // 客户端不需要压缩
-		c.h.ServeHTTP(w, r)
-		return
+		if wf == nil || accept == nil { // 客户端不需要压缩
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		resp := &response{
+			rw:           w,
+			c:            c,
+			f:            wf,
+			encodingName: accept.Value,
+		}
+
+		defer resp.close()
+
+		// 此处可能 panic，所以得保证在 panic 之前，resp 已经关闭
+		next.ServeHTTP(resp, r)
+	})
+}
+
+func (c *Compress) canCompressed(typ string) bool {
+	if len(c.writers) == 0 {
+		return false
 	}
 
-	resp := &response{
-		rw:           w,
-		opt:          c.opt,
-		f:            wf,
-		encodingName: accept.Value,
+	if index := strings.IndexByte(typ, ';'); index > 0 {
+		typ = strings.TrimSpace(typ[:index])
 	}
 
-	defer resp.close()
+	for _, val := range c.types {
+		if val == typ {
+			return true
+		}
+	}
 
-	// 此处可能 panic，所以得保证在 panic 之前，resp 已经关闭
-	c.h.ServeHTTP(resp, r)
+	for _, prefix := range c.prefix {
+		if strings.HasPrefix(typ, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Compress) printError(err error) {
+	if c.errlog != nil {
+		c.errlog.Println(err)
+	}
 }

@@ -80,7 +80,7 @@ func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 	f(w, status)
 }
 
-// Middleware 构建一个可以捕获错误状态码的 Handler
+// Middleware 将当前中间件应用于 next
 //
 // NOTE: 要求在最外层
 func (e *ErrorHandler) Middleware(next http.Handler) http.Handler {
@@ -89,7 +89,7 @@ func (e *ErrorHandler) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// MiddlewareFunc 构建一个可以捕获错误状态码的 Handler
+// MiddlewareFunc 将当前中间件应用于 next
 //
 // NOTE: 要求在最外层
 func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
