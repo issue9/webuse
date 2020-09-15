@@ -10,8 +10,8 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ RecoverFunc = defaultRecoverFunc
-var _ RecoverFunc = PrintDebug
+var _ RecoverFunc = DefaultRecoverFunc
+var _ RecoverFunc = TraceStack
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(1)
@@ -24,39 +24,34 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	defaultRecoverFunc(w, "not found")
+	DefaultRecoverFunc(w, "not found")
 	a.Equal(http.StatusText(http.StatusInternalServerError)+"\n", w.Body.String())
 }
 
-func TestNew(t *testing.T) {
+func TestRecoverFunc_Middleware(t *testing.T) {
 	a := assert.New(t)
 
-	// h参数传递空值
-	a.Panic(func() {
-		New(nil, nil)
-	})
-
-	// 指定 fun 参数为 nil值，可以正常使用
-	h := New(h1, nil)
+	// DefaultRecoverFunc
+	h := RecoverFunc(DefaultRecoverFunc)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.Middleware(h1).ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
 	// 触发 panic
-	h = New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	next := func(w http.ResponseWriter, r *http.Request) {
 		panic("test")
-	}), nil)
+	}
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(next).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
-func TestPrintDebug(t *testing.T) {
+func TestTraceStack(t *testing.T) {
 	w := httptest.NewRecorder()
-	PrintDebug(w, "PrintDebug")
+	TraceStack(w, "TraceStack")
 	t.Log(w.Body.String())
 }

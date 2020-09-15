@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 // Package recovery 提供了处理 panic 操作的中间件
+//
+//  recovery.RecoverFunc(func(w http.ResponseWriter, msg interface{}) {
+//      fmt.Printf("recovery: %s", msg)
+//  }).MiddlewareFunc(func(w http.ResponseWriter, r *http.Request){
+//      panic("panic")
+//  })
 package recovery
 
 import (
@@ -12,22 +18,18 @@ import (
 
 // RecoverFunc 错误处理函数
 //
-// Recovery 需要此函数作为出错时的处理。
-//
 // msg 为输出的错误信息，可能是任意类型的数据，一般为从 recover() 返回的数据。
 type RecoverFunc func(w http.ResponseWriter, msg interface{})
 
-// RecoverFunc 的默认实现
+// DefaultRecoverFunc RecoverFunc 的默认实现
 //
 // 为一个简单的 500 错误信息。不会输出 msg 参数的内容。
-func defaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
+func DefaultRecoverFunc(w http.ResponseWriter, msg interface{}) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-// PrintDebug 是 RecoverFunc 类型的实现
-//
-// 方便 New 在调试期间将函数的调用信息输出到 w。
-func PrintDebug(w http.ResponseWriter, msg interface{}) {
+// TraceStack 打印调用的堆栈信息的 RecoverFunc 实现
+func TraceStack(w http.ResponseWriter, msg interface{}) {
 	w.WriteHeader(http.StatusNotFound)
 
 	data, err := source.TraceStack(2, msg)
@@ -40,21 +42,13 @@ func PrintDebug(w http.ResponseWriter, msg interface{}) {
 	}
 }
 
-// New 声明一个处理 panic 操作的中间件
-//
-// next 参数中发生的 panic 将被截获并处理，不会再向上级反映。
-// 当 next 参数为空时，将直接 panic。
-// rf 参数用于指定处理 panic 信息的函数，其原型为 RecoverFunc，
-// 当将 rf 指定为 nil 时，将使用默认的处理函数，仅仅向客户端输出 500 的错误信息，没有具体内容。
-func New(next http.Handler, rf RecoverFunc) http.Handler {
-	if next == nil {
-		panic("参数 h 不能为空")
-	}
+// MiddlewareFunc 将当前中间件应用于 next
+func (rf RecoverFunc) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return rf.Middleware(http.HandlerFunc(next))
+}
 
-	if rf == nil {
-		rf = defaultRecoverFunc
-	}
-
+// Middleware 将当前中间件应用于 next
+func (rf RecoverFunc) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {

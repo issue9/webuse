@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -57,44 +56,36 @@ func TestErrorHandler_New(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("f1"))
 	}
-	h1 := http.HandlerFunc(f1)
 
-	// Middleware，400 错误，不会采用 f1 的内容
-	h := recovery.New(eh.Middleware(h1), eh.Recovery(log.New(os.Stdout, "--", 0)))
-	a.NotPanic(func() {
-		srv := rest.NewServer(t, h, nil)
-		srv.Get("/path").
-			Do().
-			Status(http.StatusBadRequest).
-			Header("Content-Type", "test").
-			StringBody("test")
-	})
+	// MiddlewareFunc，400 错误，不会采用 f1 的内容，而是 testRenderError
+	h := eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f1))
+	srv := rest.NewServer(t, h, nil)
+	srv.Get("/path").
+		Do().
+		Status(http.StatusBadRequest).
+		Header("Content-Type", "test").
+		StringBody("test")
 
-	// Middleware，正常访问，采用 h 的内容
-	h = recovery.New(eh.MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
+	// MiddlewareFunc，正常访问，采用 h 的内容
+	h = eh.Recovery(nil).MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "h1")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("h"))
-	}), eh.Recovery(nil))
-	a.NotPanic(func() {
-		srv := rest.NewServer(t, h, nil)
-		srv.Get("/path").
-			Do().
-			Status(http.StatusOK).
-			Header("Content-Type", "h1").
-			StringBody("h")
 	})
+	srv = rest.NewServer(t, h, nil)
+	srv.Get("/path").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "h1").
+		StringBody("h")
 
-	// MiddlewareFunc，400 错误，不会采用 f1 的内容
-	h = recovery.New(eh.MiddlewareFunc(f1), eh.Recovery(nil))
-	a.NotPanic(func() {
-		srv := rest.NewServer(t, h, nil)
-		srv.Get("/path").
-			Do().
-			Status(http.StatusBadRequest).
-			Header("Content-Type", "test").
-			StringBody("test")
-	})
+	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
+	defRecoverFunc := recovery.RecoverFunc(recovery.DefaultRecoverFunc)
+	h = defRecoverFunc.Middleware(eh.MiddlewareFunc(f1))
+	srv = rest.NewServer(t, h, nil)
+	srv.Get("/path").
+		Do().
+		Status(http.StatusInternalServerError)
 }
 
 func TestErrorHandler_Render(t *testing.T) {

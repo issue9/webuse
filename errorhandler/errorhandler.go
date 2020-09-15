@@ -96,22 +96,13 @@ func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Reque
 	return e.Middleware(http.HandlerFunc(next))
 }
 
-// RecoveryMiddleware 生成用于处理 panic 的中间件
-func (e *ErrorHandler) RecoveryMiddleware(next http.Handler, errlog *log.Logger) http.Handler {
-	return recovery.New(next, e.Recovery(errlog))
-}
-
-// RecoveryMiddlewareFunc 生成用于处理 panic 的中间件
-func (e *ErrorHandler) RecoveryMiddlewareFunc(next func(http.ResponseWriter, *http.Request), errlog *log.Logger) http.Handler {
-	return e.RecoveryMiddleware(http.HandlerFunc(next), errlog)
-}
-
 // Recovery 生成一个 recovery.RecoverFunc 函数用于捕获由 panic 触发的事件
 //
+// 相较于 recovery 的相关功能，此函数可以正常处理 errorhandler 的错误代码。
 // errlog 表示输出调用堆栈信息到日志。可以为空，表示不输出信息。
 func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		// 通 httpStatus 退出的，并不能算是错误，所以此处不输出调用堆栈信息。
+		// 通 httpStatus 退出的，并不能算是 panic，所以此处不输出调用堆栈信息。
 		if status, ok := msg.(httpStatus); ok {
 			if status > 0 {
 				e.Render(w, int(status))
@@ -128,7 +119,6 @@ func (e *ErrorHandler) Recovery(errlog *log.Logger) recovery.RecoverFunc {
 			if err != nil {
 				panic(err)
 			}
-
 			errlog.Println(message)
 		}
 	}
