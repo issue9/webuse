@@ -9,16 +9,14 @@ import "net/http"
 type Header struct {
 	headers     map[string]string // 静态内容
 	headersFunc func(http.Header) // 动态生成的内容
-	handler     http.Handler
 }
 
 // New 声明一个用于输出报头的中间件
 //
 // 如果 funcs 不为空，则 funcs 与 headers 相同的内容，
 // 以 funcs 为最终内容。
-func New(next http.Handler, headers map[string]string, funcs func(http.Header)) *Header {
+func New(headers map[string]string, funcs func(http.Header)) *Header {
 	return &Header{
-		handler:     next,
 		headers:     headers,
 		headersFunc: funcs,
 	}
@@ -36,14 +34,22 @@ func (h *Header) Delete(name string) *Header {
 	return h
 }
 
-func (h *Header) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for k, v := range h.headers {
-		w.Header().Set(k, v)
-	}
+// Middleware 将当前中间件应用于 next
+func (h *Header) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for k, v := range h.headers {
+			w.Header().Set(k, v)
+		}
 
-	if h.headersFunc != nil {
-		h.headersFunc(w.Header())
-	}
+		if h.headersFunc != nil {
+			h.headersFunc(w.Header())
+		}
 
-	h.handler.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// MiddlewareFunc 将当前中间件应用于 next
+func (h *Header) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return h.Middleware(http.HandlerFunc(next))
 }

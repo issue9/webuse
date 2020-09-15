@@ -2,6 +2,10 @@
 
 // Package ratelimit 提供了 X-Rate-Limit 功能的中间件
 //
+//  X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
+//  X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
+//  X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
+//
 //  store := NewMemory(...)
 //  srv := New(store)
 //  h = srv.Middleware(h)
@@ -111,10 +115,7 @@ func (rate *Ratelimit) printError(err error) {
 	}
 }
 
-// Middleware 限制单一用户的 HTTP 请求数量。会向报头输出以下内容：
-//  X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-//  X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-//  X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
+// Middleware 将当前中间件应用于 next
 func (rate *Ratelimit) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := rate.bucket(r)
@@ -134,4 +135,9 @@ func (rate *Ratelimit) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// MiddlewareFunc 将当前中间件应用于 next
+func (rate *Ratelimit) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return rate.Middleware(http.HandlerFunc(next))
 }
