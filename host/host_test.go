@@ -10,8 +10,6 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ http.Handler = &Host{}
-
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -21,7 +19,7 @@ var h1 = http.HandlerFunc(f1)
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	h := New(h1, "caixw.io", "caixw.oi", "*.example.com")
+	h := New(false, "caixw.io", "caixw.oi", "*.example.com")
 	a.NotNil(h)
 	a.Equal(len(h.domains), 2).
 		Equal(len(h.wildcards), 1)
@@ -30,41 +28,41 @@ func TestNew(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusAccepted)
 
 	// HTTPS
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusAccepted)
 
 	// 泛域名
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "https://xx.example.com/test", nil)
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusAccepted)
 
 	// 带端口
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io:88/test", nil)
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusAccepted)
 
 	// 访问不允许的域名
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://sub.caixw.io/test", nil)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusNotFound)
 
 	// 访问不允许的域名
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://sub.1example.com/test", nil)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusNotFound)
 }
@@ -72,7 +70,7 @@ func TestNew(t *testing.T) {
 func TestHost_add_delete(t *testing.T) {
 	a := assert.New(t)
 
-	h := New(h1)
+	h := New(false)
 	h.Add("xx.example.com")
 	h.Add("*.example.com")
 	a.Equal(1, len(h.domains)).
@@ -94,33 +92,33 @@ func TestHost_add_delete(t *testing.T) {
 func TestNew_empty_domains(t *testing.T) {
 	a := assert.New(t)
 
-	h := New(h1)
+	h := New(false)
 	a.NotNil(h)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(w).NotNil(r)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusNotFound)
 
-	h.Omitempty(true)
+	h = New(true)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusAccepted)
 
 	// 访问不允许的域名
-	h.Omitempty(false)
+	h = New(false)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusNotFound)
 
-	h.Omitempty(true)
+	h = New(true)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "http://not.exsits/test", nil)
-	h.ServeHTTP(w, r)
+	h.MiddlewareFunc(f1).ServeHTTP(w, r)
 	a.NotNil(w).NotNil(r)
 	a.Equal(w.Code, http.StatusAccepted)
 }

@@ -15,36 +15,24 @@ type Host struct {
 	omitempty bool     // 在限定条件为空时，对所有访问一律放行
 	domains   []string // 域名列表
 	wildcards []string // 泛域名列表，只保存 * 之后的部分内容
-	handler   http.Handler
 }
 
 // New 声明一个限定域名的中间件
 //
 // 若请求的域名不允许，会返回 404 错误。
-// 若 domains 为空，则任何请求都将返回 404。
+// 若 domain 为空，则任何请求都将返回 404。
 //
 // 仅会将域名与 domains 进行比较，端口与协议都将不参写比较。
-func New(next http.Handler, domains ...string) *Host {
-	return newHost(next, domains...)
-}
-
-func newHost(next http.Handler, domain ...string) *Host {
+func New(omitempty bool, domain ...string) *Host {
 	h := &Host{
+		omitempty: omitempty,
 		domains:   make([]string, 0, len(domain)),
 		wildcards: make([]string, 0, len(domain)),
-		handler:   next,
 	}
 
 	h.Add(domain...)
 
 	return h
-}
-
-// Omitempty 当域名列表为空时是否对所有访问都采用许可的方式进行
-//
-// 默认情况下，如果域名列表为空，则会阻止所有的访问。
-func (h *Host) Omitempty(v bool) {
-	h.omitempty = v
 }
 
 // Add 添加新的域名
@@ -101,12 +89,20 @@ func (h *Host) matched(hostname string) bool {
 	return false
 }
 
-func (h *Host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// r.URL.Hostname() 可能是空值
-	if h.matched(r.Host) {
-		h.handler.ServeHTTP(w, r)
-		return
-	}
+// Middleware 将当前中间件应用于 next
+func (h *Host) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// r.URL.Hostname() 可能是空值
+		if h.matched(r.Host) {
+			next.ServeHTTP(w, r)
+			return
+		}
 
-	http.NotFound(w, r)
+		http.NotFound(w, r)
+	})
+}
+
+// MiddlewareFunc 将当前中间件应用于 next
+func (h *Host) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return h.Middleware(http.HandlerFunc(next))
 }
