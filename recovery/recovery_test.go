@@ -10,9 +10,6 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ RecoverFunc = DefaultRecoverFunc
-var _ RecoverFunc = TraceStack
-
 var f1 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(1)
 }
@@ -24,7 +21,7 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	DefaultRecoverFunc(w, "not found")
+	DefaultRecoverFunc()(w, "not found")
 	a.Equal(http.StatusText(http.StatusInternalServerError)+"\n", w.Body.String())
 }
 
@@ -32,7 +29,7 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 	a := assert.New(t)
 
 	// DefaultRecoverFunc
-	h := RecoverFunc(DefaultRecoverFunc)
+	h := DefaultRecoverFunc()
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
@@ -52,6 +49,6 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 
 func TestTraceStack(t *testing.T) {
 	w := httptest.NewRecorder()
-	TraceStack(w, "TraceStack")
+	TraceStack()(w, "TraceStack")
 	t.Log(w.Body.String())
 }

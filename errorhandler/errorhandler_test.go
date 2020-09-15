@@ -80,8 +80,7 @@ func TestErrorHandler_New(t *testing.T) {
 		StringBody("h")
 
 	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
-	defRecoverFunc := recovery.RecoverFunc(recovery.DefaultRecoverFunc)
-	h = defRecoverFunc.Middleware(eh.MiddlewareFunc(f1))
+	h = recovery.DefaultRecoverFunc().Middleware(eh.MiddlewareFunc(f1))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
