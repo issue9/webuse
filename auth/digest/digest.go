@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/middleware/auth"
+	"github.com/issue9/middleware/v2/auth"
 )
 
 func encodeMD5(str string) string {

@@ -20,7 +20,7 @@ import (
 
 	"github.com/issue9/source"
 
-	"github.com/issue9/middleware/recovery"
+	"github.com/issue9/middleware/v2/recovery"
 )
 
 // HandleFunc 错误处理函数，对某一固定的状态码可以做专门的处理
