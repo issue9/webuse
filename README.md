@@ -20,14 +20,14 @@ middleware 是实现 http.Handler 接口的中间件，提供了大部分实用�
 ---
 
 ```shell
-go get github.com/issue9/middleware
+go get github.com/issue9/middleware/v2
 ```
 
 文档
 ---
 
 [![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/middleware)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/middleware)](https://pkg.go.dev/github.com/issue9/middleware)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/middleware/v2)](https://pkg.go.dev/github.com/issue9/middleware/v2)
 
 版权
 ---
