@@ -444,7 +444,10 @@ func TestCompress_f4(t *testing.T) {
 		Status(http.StatusAccepted).
 		BodyNotNil().
 		ReadBody(buf).
-		Header("Content-Type", ""). // 启用了压缩，此时还不知道类型，所以此值为空，f4 的实现是先调用 WriteHeader，一旦调用之后的报头输出也不再启作用。
+		// 启用了压缩，此时还不知道类型，所以此值可能为空，
+		// go 1.13 会被此值默认设置为 application/octet-stream。
+		// f4 的实现是先调用 WriteHeader，一旦调用之后的报头输出也不再启作用。
+		//Header("Content-Type", "").
 		Header("Content-Encoding", "deflate").
 		Header("Vary", "Content-Encoding")
 }
