@@ -42,6 +42,8 @@ type Compress struct {
 	// 若未指定，则不输出内容。
 	errlog *log.Logger
 
+	any bool // 表示任何类型都需要压缩
+
 	// Types 列表的处理结果保存在 prefixTypes 和 types 中
 	//
 	// prefix 保存通配符匹配的值列表；
@@ -51,6 +53,11 @@ type Compress struct {
 }
 
 // New 构建一个支持压缩的中间件
+//
+// types 表示需要进行压缩处理的 mimetype 类型，可以是以下格式：
+//  - application/json 具体类型；
+//  - text* 表示以 text 开头的所有类型；
+//  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
 func New(errlog *log.Logger, writers map[string]WriterFunc, types ...string) *Compress {
 	c := &Compress{
 		writers: writers,
@@ -61,9 +68,12 @@ func New(errlog *log.Logger, writers map[string]WriterFunc, types ...string) *Co
 	c.types = make([]string, 0, len(types))
 
 	for _, typ := range types {
-		if typ[len(typ)-1] == '*' {
+		switch {
+		case typ == "*":
+			c.any = true
+		case typ[len(typ)-1] == '*':
 			c.prefix = append(c.prefix, typ[:len(typ)-1])
-		} else {
+		default:
 			c.types = append(c.types, typ)
 		}
 	}
@@ -97,7 +107,7 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 				break
 			}
 
-			if f, found := c.writers[accept.Value]; found {
+			if f, found := c.writers[accept.Value]; found { // 找到压缩函数
 				wf = f
 				break
 			}
@@ -125,6 +135,10 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 func (c *Compress) canCompressed(typ string) bool {
 	if len(c.writers) == 0 {
 		return false
+	}
+
+	if c.any {
+		return true
 	}
 
 	if index := strings.IndexByte(typ, ';'); index > 0 {

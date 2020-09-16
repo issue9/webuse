@@ -10,6 +10,8 @@ import (
 	"github.com/issue9/assert"
 )
 
+var _ http.Handler = &Manager{}
+
 func buildMiddleware(a *assert.Assertion, text string) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -11,7 +11,7 @@ import (
 
 // 实现了 http.ResponseWriter 接口
 type response struct {
-	// 当前的 Write 方法实际调用的对象。
+	// 当前的 Write 方法实际调用的对象
 	//
 	// 可能是 rw 也有可能是 gzw，根据第一次调用 Write
 	// 时，判断引用哪个对象。
