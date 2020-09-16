@@ -54,12 +54,12 @@ func TestRatelimit_bucket(t *testing.T) {
 	a.NotError(err).NotNil(b1)
 	b2, err := srv.bucket(r2)
 	a.NotError(err).NotNil(b2)
-	a.Equal(b1, b2)
+	a.True(b1 == b2) // 同一个对象
 
 	r2.RemoteAddr = "2"
 	b2, err = srv.bucket(r2)
 	a.NotError(err).NotNil(b2)
-	a.NotEqual(b1, b2)
+	a.False(b1 == b2) // 不同对象
 
 	r2.RemoteAddr = ""
 	b2, err = srv.bucket(r2)
