@@ -4,13 +4,15 @@ middleware
 
 middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
 
-- version 匹配从 Accept 报头中的版本号信息；
+- auth 基本的验证处理；
 - compress 对内容进行压缩；
-- host 匹配指定的域名；
-- recovery 对 Panic 的处理；
 - errorhandler 处理各类状态码下的输出；
 - header 输出指定的报头；
-- auth 基本的验证处理；
+- health 接口状态的监测；
+- host 匹配指定的域名；
+- ratelimit x-rate-limit 的相关实现；
+- recovery 对 Panic 的处理；
+- version 匹配从 Accept 报头中的版本号信息；
 
 安装
 ---

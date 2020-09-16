@@ -63,6 +63,7 @@ func GenIP(r *http.Request) (string, error) {
 }
 
 // New 声明一个新的 Ratelimit
+//
 // rate 拿令牌的频率
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
 func New(store Store, capacity int64, rate time.Duration, fn GenFunc, errlog *log.Logger) *Ratelimit {
