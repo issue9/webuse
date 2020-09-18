@@ -16,6 +16,9 @@ type Header struct {
 // 如果 funcs 不为空，则 funcs 与 headers 相同的内容，
 // 以 funcs 为最终内容。
 func New(headers map[string]string, funcs func(http.Header)) *Header {
+	if headers == nil {
+		headers = make(map[string]string, 10)
+	}
 	return &Header{
 		headers:     headers,
 		headersFunc: funcs,

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 )
 
@@ -15,7 +16,14 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestNew(t *testing.T) {
-	h := New(map[string]string{"Server": "s1"}, nil)
+	a := assert.New(t)
+
+	h := New(nil, nil)
+	a.NotPanic(func() {
+		h.Set("key", "val")
+	})
+
+	h = New(map[string]string{"Server": "s1"}, nil)
 	srv := rest.NewServer(t, h.MiddlewareFunc(f1), nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
