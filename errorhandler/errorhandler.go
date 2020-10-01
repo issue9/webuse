@@ -44,7 +44,7 @@ func New() *ErrorHandler {
 	}
 }
 
-// Add 添加针对特写状态码的错误处理函数
+// Add 添加针对指定状态码的错误处理函数
 func (e *ErrorHandler) Add(f HandleFunc, status ...int) error {
 	for _, s := range status {
 		if _, found := e.handlers[s]; found {

@@ -38,20 +38,27 @@ func New(omitempty bool, domain ...string) *Host {
 // Add 添加新的域名
 //
 // domain 可以是泛域名，比如 *.example.com，但不能是 s1.*.example.com。
+//
+// NOTE: 重复的值不会重复添加。
 func (h *Host) Add(domain ...string) {
 	for _, d := range domain {
 		switch {
 		case strings.HasPrefix(d, "*."):
-			h.wildcards = append(h.wildcards, d[1:]) // 保留 . 符号
+			d = d[1:] // 保留 . 符号
+			if sliceutil.Count(h.wildcards, func(i int) bool { return d == h.wildcards[i] }) <= 0 {
+				h.wildcards = append(h.wildcards, d)
+			}
 		default:
-			h.domains = append(h.domains, d)
+			if sliceutil.Count(h.domains, func(i int) bool { return d == h.domains[i] }) <= 0 {
+				h.domains = append(h.domains, d)
+			}
 		}
 	}
 }
 
 // Delete 删除域名
 //
-// NOTE：如果不存在，则不作任何改变。
+// NOTE: 如果不存在，则不作任何改变。
 func (h *Host) Delete(domain string) {
 	switch {
 	case strings.HasPrefix(domain, "*."):

@@ -67,11 +67,16 @@ func TestNew(t *testing.T) {
 	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestHost_add_delete(t *testing.T) {
+func TestHost_Add_Delete(t *testing.T) {
 	a := assert.New(t)
 
 	h := New(false)
+
 	h.Add("xx.example.com")
+	h.Add("xx.example.com")
+	h.Add("xx.example.com")
+	h.Add("*.example.com")
+	h.Add("*.example.com")
 	h.Add("*.example.com")
 	a.Equal(1, len(h.domains)).
 		Equal(1, len(h.wildcards))
