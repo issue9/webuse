@@ -28,12 +28,6 @@ type HandleFunc func(http.ResponseWriter, int)
 
 // ErrorHandler 错误处理函数的管理
 type ErrorHandler struct {
-	// 指定状态下对应的错误处理函数。
-	//
-	// 若该状态码的处理函数不存在，则会查找键值为 0 的函数，
-	// 若依然不存在，则调用 defaultRender
-	//
-	// 用户也可以通过调用 Add 进行添加。
 	handlers map[int]HandleFunc
 }
 
@@ -59,8 +53,19 @@ func (e *ErrorHandler) Add(f HandleFunc, status ...int) error {
 
 // Set 设置指定状态码对应的处理函数
 //
-// 有则修改，没有则添加
+// 有则修改，没有则添加，如果 f 为 nil，则表示删除该状态码的处理函数。
+//
+// status 表示处理函数 f 对应的状态码，仅对大于等于 400 的启作用，
+// 同时还有一个特殊的状态码 0，表示那些未设置的状态码会统一采和此处理函数。
+// 如果也没设置 0，则仅简单地输出状态码对应的错误信息。
 func (e *ErrorHandler) Set(f HandleFunc, status ...int) {
+	if f == nil {
+		for _, s := range status {
+			delete(e.handlers, s)
+		}
+		return
+	}
+
 	for _, s := range status {
 		e.handlers[s] = f
 	}

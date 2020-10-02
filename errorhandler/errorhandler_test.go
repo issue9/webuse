@@ -40,7 +40,7 @@ func TestErrorHandler_Set(t *testing.T) {
 
 	eh.Set(nil, 500, 501)
 	f, found := eh.handlers[500]
-	a.True(found).Nil(f)
+	a.False(found).Nil(f)
 
 	eh.Set(testRenderError, 500, 502)
 	a.Equal(eh.handlers[500], HandleFunc(testRenderError))
