@@ -24,15 +24,15 @@ func NewManager(next http.Handler) *Manager {
 	}
 }
 
-// Before 添加中间件到顶部
-func (mgr *Manager) Before(m Middleware) *Manager {
+// After 添加中间件到尾部
+func (mgr *Manager) After(m Middleware) *Manager {
 	mgr.middlewares = append(mgr.middlewares, m)
 	mgr.handler = Handler(mgr.next, mgr.middlewares...)
 	return mgr
 }
 
-// After 添加中间件到尾部
-func (mgr *Manager) After(m Middleware) *Manager {
+// Before 添加中间件到顶部
+func (mgr *Manager) Before(m Middleware) *Manager {
 	ms := make([]Middleware, 0, 1+len(mgr.middlewares))
 	ms = append(ms, m)
 	if len(mgr.middlewares) > 0 {

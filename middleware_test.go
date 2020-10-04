@@ -39,16 +39,6 @@ func m3(h http.Handler) http.Handler {
 	})
 }
 
-func TestHandler(t *testing.T) {
-	a := assert.New(t)
-
-	h := Handler(h1, m1, m2, m3)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Body.String(), "321h1-")
-}
-
 func TestHandlerFunc(t *testing.T) {
 	a := assert.New(t)
 
@@ -56,5 +46,13 @@ func TestHandlerFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Body.String(), "321f1-")
+	a.Equal(w.Body.String(), "123f1-")
+
+	// 未指定 middleware
+
+	h = HandlerFunc(f1)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Body.String(), "f1-")
 }
