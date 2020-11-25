@@ -55,6 +55,51 @@ func TestNew(t *testing.T) {
 	a.Equal(c.types, []string{"application/xml", "application/json"})
 }
 
+func TestCompress_SetWriter(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip": NewGzip,
+	}, "application/xml", "text/*", "application/json")
+	a.NotNil(c)
+
+	a.Equal(1, len(c.writers))
+	c.SetWriter("gzip", nil)
+	a.Equal(0, len(c.writers))
+
+	c.SetWriter("gzip", NewGzip)
+	c.SetWriter("br", NewBrotli)
+	a.Equal(2, len(c.writers))
+}
+
+func TestCompress_Types(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip": NewGzip,
+	}, "application/xml", "text/*", "application/json")
+	a.NotNil(c)
+
+	a.Equal(2, len(c.types)).
+		Equal(1, len(c.prefix)).
+		False(c.any)
+
+	c.DeleteType("application/")
+	a.Equal(2, len(c.types)).
+		Equal(1, len(c.prefix)).
+		False(c.any)
+
+	c.DeleteType("application/*")
+	a.Equal(0, len(c.types)).
+		Equal(1, len(c.prefix)).
+		False(c.any)
+
+	c.DeleteType("*")
+	a.Equal(0, len(c.types)).
+		Equal(0, len(c.prefix)).
+		False(c.any)
+}
+
 func TestCompress_f1(t *testing.T) {
 	a := assert.New(t)
 

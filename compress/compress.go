@@ -13,6 +13,7 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/qheader"
+	"github.com/issue9/sliceutil"
 )
 
 // WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
@@ -60,13 +61,40 @@ type Compress struct {
 //  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
 func New(errlog *log.Logger, writers map[string]WriterFunc, types ...string) *Compress {
 	c := &Compress{
-		writers: writers,
+		writers: make(map[string]WriterFunc, len(writers)),
 		errlog:  errlog,
+	}
+
+	for name, w := range writers {
+		c.SetWriter(name, w)
 	}
 
 	c.prefix = make([]string, 0, len(types))
 	c.types = make([]string, 0, len(types))
+	c.AddType(types...)
 
+	return c
+}
+
+// SetWriter 设置压缩算法
+//
+// 如果 w 为 nil，则表示去掉此算法的支持。
+func (c *Compress) SetWriter(name string, w WriterFunc) {
+	if w == nil {
+		delete(c.writers, name)
+		return
+	}
+
+	c.writers[name] = w
+}
+
+// AddType 添加对媒体类型的支持
+//
+// types 表示需要进行压缩处理的 mimetype 类型，可以是以下格式：
+//  - application/json 具体类型；
+//  - text* 表示以 text 开头的所有类型；
+//  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
+func (c *Compress) AddType(types ...string) {
 	for _, typ := range types {
 		switch {
 		case typ == "*":
@@ -77,8 +105,29 @@ func New(errlog *log.Logger, writers map[string]WriterFunc, types ...string) *Co
 			c.types = append(c.types, typ)
 		}
 	}
+}
 
-	return c
+// DeleteType 删除对媒体类型的支持
+//
+// types 的格式可参考 AddType 方法。
+func (c *Compress) DeleteType(types ...string) {
+	for _, typ := range types {
+		switch {
+		case typ == "*":
+			c.any = false
+			c.prefix = c.prefix[:0]
+			c.types = c.types[:0]
+		case typ[len(typ)-1] == '*':
+			index := sliceutil.Delete(c.prefix, func(i int) bool { return strings.HasPrefix(c.prefix[i], typ[:len(typ)-1]) })
+			c.prefix = c.prefix[:index]
+
+			index = sliceutil.Delete(c.types, func(i int) bool { return strings.HasPrefix(c.types[i], typ[:len(typ)-1]) })
+			c.types = c.types[:index]
+		default:
+			index := sliceutil.Delete(c.types, func(i int) bool { return c.types[i] == typ })
+			c.types = c.types[:index]
+		}
+	}
 }
 
 // MiddlewareFunc 将当前中间件应用于 next
