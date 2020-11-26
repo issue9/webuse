@@ -5,7 +5,6 @@ package header
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
@@ -18,12 +17,12 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	h := New(nil, nil)
+	h := New(nil)
 	a.NotPanic(func() {
 		h.Set("key", "val")
 	})
 
-	h = New(map[string]string{"Server": "s1"}, nil)
+	h = New(map[string]string{"Server": "s1"})
 	srv := rest.NewServer(t, h.MiddlewareFunc(f1), nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
@@ -49,21 +48,4 @@ func TestNew(t *testing.T) {
 		Status(http.StatusAccepted).
 		Header("Server", "").
 		Header("Content-Type", "xml")
-
-	// 动态生成的内容
-	now := time.Now().Format("2006-01-02 15:16:05")
-	h = New(nil, func(h http.Header) { h.Set("Server", now) })
-	srv = rest.NewServer(t, h.MiddlewareFunc(f1), nil)
-	srv.NewRequest(http.MethodGet, "/test").
-		Do().
-		Status(http.StatusAccepted).
-		Header("Server", now)
-
-	// 同时存在，则以动态生成的优先
-	h = New(map[string]string{"Server": "test"}, func(h http.Header) { h.Set("Server", now) })
-	srv = rest.NewServer(t, h.MiddlewareFunc(f1), nil)
-	srv.NewRequest(http.MethodGet, "/test").
-		Do().
-		Status(http.StatusAccepted).
-		Header("Server", now)
 }

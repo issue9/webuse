@@ -7,21 +7,19 @@ import "net/http"
 
 // Header 修正报头输出内容
 type Header struct {
-	headers     map[string]string // 静态内容
-	headersFunc func(http.Header) // 动态生成的内容
+	headers map[string]string
 }
 
 // New 声明一个用于输出报头的中间件
 //
 // 如果 funcs 不为空，则 funcs 与 headers 相同的内容，
 // 以 funcs 为最终内容。
-func New(headers map[string]string, funcs func(http.Header)) *Header {
+func New(headers map[string]string) *Header {
 	if headers == nil {
 		headers = make(map[string]string, 10)
 	}
 	return &Header{
-		headers:     headers,
-		headersFunc: funcs,
+		headers: headers,
 	}
 }
 
@@ -43,11 +41,6 @@ func (h *Header) Middleware(next http.Handler) http.Handler {
 		for k, v := range h.headers {
 			w.Header().Set(k, v)
 		}
-
-		if h.headersFunc != nil {
-			h.headersFunc(w.Header())
-		}
-
 		next.ServeHTTP(w, r)
 	})
 }
