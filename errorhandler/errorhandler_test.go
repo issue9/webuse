@@ -3,8 +3,7 @@
 package errorhandler
 
 import (
-	"bytes"
-	"log"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -80,7 +79,7 @@ func TestErrorHandler_New(t *testing.T) {
 		StringBody("h")
 
 	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
-	h = recovery.DefaultRecoverFunc().Middleware(eh.MiddlewareFunc(f1))
+	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f1))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
@@ -163,28 +162,30 @@ func TestErrorHandler_Recovery(t *testing.T) {
 	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
 
-	// 以下为带 errlog 的测试内容
+	// 以下为自定义 rf 参数
 
-	errlog := new(bytes.Buffer)
-	fn = eh.Recovery(log.New(errlog, "", 0))
+	fn = eh.Recovery(recovery.TraceStack(http.StatusNotFound))
 
 	// 普通内容
 	w = httptest.NewRecorder()
 	a.NotPanic(func() { fn(w, "msg") })
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.Contains(errlog.String(), "msg"))
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+	msg, err := ioutil.ReadAll(w.Result().Body)
+	a.NotError(err).NotNil(msg)
+	a.True(strings.Contains(string(msg), "msg"))
 
 	// 普通数值
 	w = httptest.NewRecorder()
-	errlog.Reset()
 	a.NotPanic(func() { fn(w, http.StatusBadGateway) })
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.Contains(errlog.String(), strconv.FormatInt(http.StatusBadGateway, 10)))
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+	msg, err = ioutil.ReadAll(w.Result().Body)
+	a.NotError(err).NotNil(msg)
+	a.True(strings.Contains(string(msg), strconv.FormatInt(http.StatusBadGateway, 10)))
 
 	// httpStatus，没有输出日志，算是正常退出。
 	w = httptest.NewRecorder()
-	errlog.Reset()
 	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
-	a.Empty(errlog.String())
+	msg, err = ioutil.ReadAll(w.Result().Body)
+	a.NotError(err).NotEmpty(msg)
 }
