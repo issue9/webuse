@@ -110,6 +110,8 @@ func (c *Compress) AddType(types ...string) {
 // DeleteType 删除对媒体类型的支持
 //
 // types 的格式可参考 AddType 方法。
+//
+// NOTE: 仅用于删除通过 AddType 添加的内容。
 func (c *Compress) DeleteType(types ...string) {
 	for _, typ := range types {
 		switch {

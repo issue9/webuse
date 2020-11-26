@@ -24,16 +24,16 @@ type RecoverFunc func(w http.ResponseWriter, msg interface{})
 // DefaultRecoverFunc RecoverFunc 的默认实现
 //
 // 为一个简单的 500 错误信息。不会输出 msg 参数的内容。
-func DefaultRecoverFunc() RecoverFunc {
+func DefaultRecoverFunc(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(status), status)
 	}
 }
 
 // TraceStack 打印调用的堆栈信息的 RecoverFunc 实现
-func TraceStack() RecoverFunc {
+func TraceStack(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(status)
 
 		data, err := source.TraceStack(2, msg)
 		if err != nil {
