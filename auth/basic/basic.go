@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/issue9/middleware/v2/auth"
+	"github.com/issue9/middleware/v3/auth"
 )
 
 // AuthFunc 验证登录用户的函数签名

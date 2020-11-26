@@ -1,4 +1,4 @@
-module github.com/issue9/middleware/v2
+module github.com/issue9/middleware/v3
 
 require (
 	github.com/andybalholm/brotli v1.0.1

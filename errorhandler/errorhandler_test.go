@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/middleware/v2/recovery"
+	"github.com/issue9/middleware/v3/recovery"
 )
 
 func testRenderError(w http.ResponseWriter, status int) {

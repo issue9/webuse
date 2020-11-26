@@ -2,7 +2,7 @@ middleware
 [![Build Status](https://github.com/issue9/middleware/workflows/Go/badge.svg)](https://github.com/issue9/middleware/actions?query=workflow%3AGo)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/issue9/middleware/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/middleware)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/middleware/v2)](https://pkg.go.dev/github.com/issue9/middleware/v2)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/middleware/v3)](https://pkg.go.dev/github.com/issue9/middleware/v3)
 ======
 
 middleware 是实现 http.Handler 接口的中间件，提供了大部分实用的功能。
@@ -22,7 +22,7 @@ middleware 是实现 http.Handler 接口的中间件，提供了大部分实用�
 ---
 
 ```shell
-go get github.com/issue9/middleware/v2
+go get github.com/issue9/middleware/v3
 ```
 
 版权

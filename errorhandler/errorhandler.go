@@ -16,7 +16,7 @@ package errorhandler
 import (
 	"net/http"
 
-	"github.com/issue9/middleware/v2/recovery"
+	"github.com/issue9/middleware/v3/recovery"
 )
 
 // HandleFunc 错误处理函数
