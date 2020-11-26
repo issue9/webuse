@@ -2,10 +2,14 @@ github.com/andybalholm/brotli v1.0.1 h1:KqhlKozYbRtJvsPrrEeXcO+N2l6NYT5A2QAFmSUL
 github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
 github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b h1:L/QXpzIa3pOvUGt1D1lA5KjYhPBAN/3iWdP7xeFS9F0=
 github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b/go.mod h1:H0wQNHz2YrLsuXOZozoeDmnHXkNCRmMW0gwFWDfEZDA=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gomodule/redigo v1.8.2/go.mod h1:P9dn9mFrCBvWhGE1wpxx6fgq7BAeLBk+UUUzlpkBYO0=
 github.com/issue9/assert v1.4.0 h1:/hLHZOr6koZn6fM8feB2fSVl8RZ4o629hSdCeARWNWg=
 github.com/issue9/assert v1.4.0/go.mod h1:Yktk83hAVl1SPSYtd9kjhBizuiBIqUQyj+D5SE2yjVY=
 github.com/issue9/assert v1.4.1 h1:gUtOpMTeaE4JTe9kACma5foOHBvVt1p5XTFrULDwdXI=
 github.com/issue9/assert v1.4.1/go.mod h1:Yktk83hAVl1SPSYtd9kjhBizuiBIqUQyj+D5SE2yjVY=
+github.com/issue9/cache v0.2.0 h1:KX679cCJK6wLs9RPbr4F4rKVe/S/SkspdtOknxGqw+k=
+github.com/issue9/cache v0.2.0/go.mod h1:nwzru2EDdL62V9CnC2gPkoTEMcb16XT7ALqHfIGtWUo=
 github.com/issue9/errwrap v0.1.2 h1:5TEX7YJdbaYbEn8UNphxc0hC/xi8/vb3ulZYhyWj0nw=
 github.com/issue9/errwrap v0.1.2/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
 github.com/issue9/qheader v0.5.0 h1:QKGv8ZbI2vgB6c3oZ1+GYz9USM8js9r1ULfB4vTDXtw=
@@ -14,3 +18,8 @@ github.com/issue9/sliceutil v0.6.0 h1:qff0GiuTf5ThPfm+Vgp3+XDzAiHA3o98Dlx/TU7Gj8
 github.com/issue9/sliceutil v0.6.0/go.mod h1:FUxZQC4oEw6V46afC+JOdCjOv84BA6WBNQRYGS9V4Dg=
 github.com/issue9/source v0.1.1 h1:Xemp2xP1m2t9r2+9mg/zYldYQCs0T13ggE69I65WNQ0=
 github.com/issue9/source v0.1.1/go.mod h1:oyj2OUvab/aVFsHqRTS8uI8KcvGZb0ZFoh9b3FzzAYU=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

@@ -17,26 +17,16 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/issue9/cache"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户
 type GenFunc func(*http.Request) (string, error)
 
-// Store 存储 Bucket 的接口
-type Store interface {
-	// 设置或是添加指定名称的令牌桶
-	Set(name string, val *Bucket) error
-
-	// 删除指定的令牌桶
-	Delete(name string) error
-
-	// 获取指定的令牌桶，为空则返回 nil
-	Get(name string) *Bucket
-}
-
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
-	store    Store
+	store    cache.Cache
 	capacity int64
 	rate     time.Duration
 	genFunc  GenFunc
@@ -66,7 +56,7 @@ func GenIP(r *http.Request) (string, error) {
 //
 // rate 拿令牌的频率
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
-func New(store Store, capacity int64, rate time.Duration, fn GenFunc, errlog *log.Logger) *Ratelimit {
+func New(store cache.Cache, capacity int64, rate time.Duration, fn GenFunc, errlog *log.Logger) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
@@ -87,27 +77,34 @@ func (rate *Ratelimit) bucket(r *http.Request) (*Bucket, error) {
 		return nil, err
 	}
 
-	b := rate.store.Get(name)
-	if b == nil {
+	b, err := rate.store.Get(name)
+	if err == cache.ErrCacheMiss {
 		b = newBucket(rate.capacity, rate.rate)
-		if err := rate.store.Set(name, b); err != nil {
+		if err := rate.store.Set(name, b, cache.Forever); err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	}
 
-	return b, nil
+	return b.(*Bucket), nil
 }
 
 // Transfer 将 oldName 的数据传送给 newName
 func (rate *Ratelimit) Transfer(oldName, newName string) error {
-	b := rate.store.Get(oldName)
+	b, err := rate.store.Get(oldName)
+	if err != nil && err != cache.ErrCacheMiss {
+		return err
+	}
+
 	if b != nil {
 		if err := rate.store.Delete(oldName); err != nil {
 			return err
 		}
+		return rate.store.Set(newName, b, cache.Forever)
 	}
 
-	return rate.store.Set(newName, b)
+	return nil
 }
 
 func (rate *Ratelimit) printError(err error) {

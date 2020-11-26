@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/cache/memory"
 )
 
 var h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +43,7 @@ func TestGenIP(t *testing.T) {
 
 func TestRatelimit_bucket(t *testing.T) {
 	a := assert.New(t)
-	srv := New(NewMemory(10), 10, 50*time.Second, nil, nil)
+	srv := New(memory.New(24*time.Hour), 10, 50*time.Second, nil, nil)
 	a.NotNil(srv)
 
 	r1 := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -68,7 +69,7 @@ func TestRatelimit_bucket(t *testing.T) {
 
 func TestRatelimit_Transfer(t *testing.T) {
 	a := assert.New(t)
-	srv := New(NewMemory(10), 10, 50*time.Second, nil, nil)
+	srv := New(memory.New(24*time.Hour), 10, 50*time.Second, nil, nil)
 	a.NotNil(srv)
 
 	r1 := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -90,12 +91,12 @@ func TestRatelimit_Transfer(t *testing.T) {
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t)
-	srv := New(NewMemory(100), 1, 10*time.Second, GenIP, nil)
+	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, nil)
 	a.NotNil(srv)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
-	h := srv.Middleware(h1)
+	h := srv.MiddlewareFunc(h1)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
@@ -104,7 +105,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	// 没有令牌可用
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/test", nil)
-	h = srv.Middleware(h1)
+	h = srv.MiddlewareFunc(h1)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusTooManyRequests)
 	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
