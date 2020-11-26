@@ -26,11 +26,11 @@ func TestErrorHandler_Add(t *testing.T) {
 	a := assert.New(t)
 	eh := New()
 
-	a.NotError(eh.Add(nil, 500, 501))
-	a.Error(eh.Add(nil, 500, 502)) // 已经存在
+	a.True(eh.Add(nil, 500, 501))
+	a.False(eh.Add(nil, 500, 502)) // 已经存在
 
-	a.NotError(eh.Add(testRenderError, 400, 401))
-	a.Error(eh.Add(testRenderError, 401, 402)) // 已经存在
+	a.True(eh.Add(testRenderError, 400, 401))
+	a.False(eh.Add(testRenderError, 401, 402)) // 已经存在
 }
 
 func TestErrorHandler_Set(t *testing.T) {

@@ -14,7 +14,6 @@
 package errorhandler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/issue9/middleware/v2/recovery"
@@ -36,19 +35,19 @@ func New() *ErrorHandler {
 }
 
 // Add 添加针对指定状态码的错误处理函数
-func (e *ErrorHandler) Add(f HandleFunc, status ...int) error {
+func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
 	for _, s := range status {
 		if _, found := e.handlers[s]; found {
-			return fmt.Errorf("状态码 %d 已经存在", s)
+			return false
 		}
 
 		e.handlers[s] = f
 	}
 
-	return nil
+	return true
 }
 
-// Set 设置指定状态码对应的处理函数
+// Set 添加或修改指定状态码对应的处理函数
 //
 // 有则修改，没有则添加，如果 f 为 nil，则表示删除该状态码的处理函数。
 //
