@@ -26,8 +26,11 @@ func TestErrorHandler_Add(t *testing.T) {
 	a := assert.New(t)
 	eh := New()
 
-	a.True(eh.Add(nil, 500, 501))
-	a.False(eh.Add(nil, 500, 502)) // 已经存在
+	a.Panic(func() {
+		eh.Add(nil, 500, 501)
+	})
+	a.True(eh.Add(testRenderError, 500, 501))
+	a.False(eh.Add(testRenderError, 500, 502)) // 已经存在
 
 	a.True(eh.Add(testRenderError, 400, 401))
 	a.False(eh.Add(testRenderError, 401, 402)) // 已经存在
@@ -45,7 +48,7 @@ func TestErrorHandler_Set(t *testing.T) {
 	a.Equal(eh.handlers[500], HandleFunc(testRenderError))
 }
 
-func TestErrorHandler_New(t *testing.T) {
+func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 	a := assert.New(t)
 	eh := New()
 	a.NotNil(eh)
@@ -77,6 +80,17 @@ func TestErrorHandler_New(t *testing.T) {
 		Status(http.StatusOK).
 		Header("Content-Type", "h1").
 		StringBody("h")
+
+	// MiddlewareFunc，正常访问，采用 h 的内容
+	h = eh.Recovery(nil).MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "h1")
+		w.WriteHeader(http.StatusNoContent)
+	})
+	srv = rest.NewServer(t, h, nil)
+	srv.Get("/path").
+		Do().
+		Status(http.StatusNoContent).
+		Header("Content-Type", "h1")
 
 	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
 	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f1))

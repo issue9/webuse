@@ -19,8 +19,10 @@ import (
 	"github.com/issue9/middleware/v2/recovery"
 )
 
-// HandleFunc 错误处理函数，对某一固定的状态码可以做专门的处理
-type HandleFunc func(http.ResponseWriter, int)
+// HandleFunc 错误处理函数
+//
+// 对某一固定的状态码可以做专门的处理。
+type HandleFunc func(w http.ResponseWriter, status int)
 
 // ErrorHandler 错误处理函数的管理
 type ErrorHandler struct {
@@ -36,6 +38,10 @@ func New() *ErrorHandler {
 
 // Add 添加针对指定状态码的错误处理函数
 func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
+	if f == nil {
+		panic("参数不能为 nil")
+	}
+
 	for _, s := range status {
 		if _, found := e.handlers[s]; found {
 			return false

@@ -23,7 +23,7 @@ type RecoverFunc func(w http.ResponseWriter, msg interface{})
 
 // DefaultRecoverFunc RecoverFunc 的默认实现
 //
-// 为一个简单的 500 错误信息。不会输出 msg 参数的内容。
+// 为一个简单的状态码信息输出。不会输出 msg 参数的内容。
 func DefaultRecoverFunc(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		http.Error(w, http.StatusText(status), status)
