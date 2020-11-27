@@ -65,6 +65,16 @@ func TestResponse_Write(t *testing.T) {
 		Equal(rw.Header().Get("Content-Encoding"), "").
 		Equal(rw.Code, http.StatusOK)
 
+	// 写入空内容
+	rw = httptest.NewRecorder()
+	resp.rw = rw
+	n, err := resp.Write(nil)
+	a.NotError(err).Equal(0, n)
+	resp.close()
+	a.Empty(rw.Body.String()).
+		Equal(rw.Header().Get("Content-Encoding"), "").
+		Equal(rw.Code, http.StatusOK)
+
 	// 多次写入
 	rw = httptest.NewRecorder()
 	resp.rw = rw

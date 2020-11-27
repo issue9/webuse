@@ -16,11 +16,10 @@ type response struct {
 	// 可能是 rw 也有可能是 gzw，根据第一次调用 Write
 	// 时，判断引用哪个对象。
 	writer io.Writer
+	gzw    io.WriteCloser      // gzw 是根据当前的 f 值生成的压缩对象实例。
+	rw     http.ResponseWriter // 旧的 ResponseWriter
+	wrote  bool                // 是否有写入内容
 
-	// gzw 是根据当前的 f 值生成的压缩对象实例。
-	gzw io.WriteCloser
-
-	rw           http.ResponseWriter // 旧的 ResponseWriter
 	c            *Compress
 	f            WriterFunc
 	encodingName string
@@ -41,6 +40,10 @@ func (resp *response) WriteHeader(code int) {
 
 // 根据接口要求，第一次调用 Write 时，会发送报头内容，即 WriteHeader 自动调用。
 func (resp *response) Write(bs []byte) (int, error) {
+	if len(bs) == 0 {
+		return 0, nil
+	}
+
 	if resp.writer == nil {
 		h := resp.Header()
 
@@ -53,6 +56,7 @@ func (resp *response) Write(bs []byte) (int, error) {
 		resp.genWriter(ct)
 	}
 
+	resp.wrote = true
 	return resp.writer.Write(bs)
 }
 

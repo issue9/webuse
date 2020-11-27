@@ -43,6 +43,11 @@ var f4 = func(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("f1\nf2"))
 }
 
+var f5 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+	w.Write(nil)
+}
+
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
@@ -434,6 +439,66 @@ func TestCompress_f4(t *testing.T) {
 		//Header("Content-Type", "").
 		Header("Content-Encoding", "deflate").
 		Header("Vary", "Content-Encoding")
+}
+
+func TestCompress_f5(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+		"br":      NewBrotli,
+	}, "text/*")
+	a.NotNil(c)
+
+	srv := rest.NewServer(t, c.MiddlewareFunc(f5), nil)
+
+	// 指定 accept-encoding = *
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-Encoding", "*").
+		Do().
+		Status(http.StatusNoContent).
+		Header("Content-Encoding", "")
+
+	// 指定 accept-encoding = identity
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-Encoding", "identity").
+		Do().
+		Status(http.StatusNoContent).
+		Header("Content-Encoding", "")
+
+	// 指定 accept-encoding 为空
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-Encoding", "").
+		Do().
+		Status(http.StatusNoContent).
+		Header("Content-Encoding", "")
+
+	// accept-encoding = deflate
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-encoding", "gzip;q=0.8,deflate").
+		Do().
+		Status(http.StatusNoContent).
+		Header("Content-Encoding", "").
+		Header("Vary", "")
+
+	// *
+	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
+		"gzip":    NewGzip,
+		"deflate": NewDeflate,
+	}, "*")
+	a.NotNil(c)
+
+	srv = rest.NewServer(t, c.MiddlewareFunc(f5), nil)
+	defer srv.Close()
+
+	srv.NewRequest(http.MethodGet, "/").
+		Header("Accept-encoding", "gzip;q=0.8,deflate").
+		Do().
+		Status(http.StatusNoContent).
+		BodyEmpty().
+		Header("Content-Encoding", "").
+		Header("Vary", "")
 }
 
 func TestCompress_empty(t *testing.T) {
