@@ -11,14 +11,9 @@ import (
 
 // 实现了 http.ResponseWriter 接口
 type response struct {
-	// 当前的 Write 方法实际调用的对象
-	//
-	// 可能是 rw 也有可能是 gzw，根据第一次调用 Write
-	// 时，判断引用哪个对象。
-	writer io.Writer
-	gzw    io.WriteCloser      // gzw 是根据当前的 f 值生成的压缩对象实例。
-	rw     http.ResponseWriter // 旧的 ResponseWriter
-	wrote  bool                // 是否有写入内容
+	writer         io.Writer
+	compressWriter io.WriteCloser
+	responseWriter http.ResponseWriter
 
 	c            *Compress
 	f            WriterFunc
@@ -26,19 +21,20 @@ type response struct {
 }
 
 func (resp *response) Header() http.Header {
-	return resp.rw.Header()
+	return resp.responseWriter.Header()
 }
 
 // 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
 	// https://github.com/golang/go/issues/14975
-	resp.rw.Header().Del("Content-Length")
+	resp.Header().Del("Content-Length")
 
-	resp.genWriter(resp.Header().Get("Content-Type"))
-	resp.rw.WriteHeader(code)
+	resp.genWriter(bodyAllowedForStatus(code))
+	resp.responseWriter.WriteHeader(code)
 }
 
-// 根据接口要求，第一次调用 Write 时，会发送报头内容，即 WriteHeader 自动调用。
+// NOTE: 根据接口要求，第一次调用 Write 时，会发送报头内容，
+// 即 WriteHeader(200) 自动调用，即使写入的是空内容。
 func (resp *response) Write(bs []byte) (int, error) {
 	if len(bs) == 0 {
 		return 0, nil
@@ -46,51 +42,63 @@ func (resp *response) Write(bs []byte) (int, error) {
 
 	if resp.writer == nil {
 		h := resp.Header()
-
-		ct := h.Get("Content-Type")
-		if ct == "" {
+		if ct := h.Get("Content-Type"); ct == "" {
 			ct = http.DetectContentType(bs)
 			h.Set("Content-Type", ct)
 		}
 
-		resp.genWriter(ct)
+		resp.genWriter(true)
 	}
 
-	resp.wrote = true
 	return resp.writer.Write(bs)
 }
 
-func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	if hj, ok := resp.rw.(http.Hijacker); ok {
-		return hj.Hijack()
+func (resp *response) genWriter(bodyAllowed bool) {
+	h := resp.Header()
+
+	if !bodyAllowed || !resp.c.canCompressed(h.Get("Content-Type")) {
+		resp.writer = resp.responseWriter
+		return
 	}
 
+	if compressWriter, err := resp.f(resp.responseWriter); err != nil { // 转换出错，退化成 responseWriter
+		resp.c.printError(err)
+		resp.writer = resp.responseWriter
+	} else {
+		h.Set("Content-Encoding", resp.encodingName)
+		h.Add("Vary", "Content-Encoding")
+		resp.compressWriter = compressWriter
+		resp.writer = resp.compressWriter
+	}
+}
+
+func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hj, ok := resp.responseWriter.(http.Hijacker); ok {
+		return hj.Hijack()
+	}
 	panic("未实现 http.Hijacker")
 }
 
 func (resp *response) close() {
-	if resp.gzw != nil {
-		if err := resp.gzw.Close(); err != nil {
+	if resp.compressWriter != nil {
+		if err := resp.compressWriter.Close(); err != nil {
 			resp.c.printError(err)
 		}
 	}
 }
 
-func (resp *response) genWriter(ct string) {
-	h := resp.Header()
-
-	if !resp.c.canCompressed(ct) {
-		resp.writer = resp.rw
-		return
+// 以下内容复制于官方标准库
+//
+// bodyAllowedForStatus reports whether a given response status code
+// permits a body. See RFC 7230, section 3.3.
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == 204:
+		return false
+	case status == 304:
+		return false
 	}
-
-	if gzw, err := resp.f(resp.rw); err != nil {
-		resp.c.printError(err)
-		resp.writer = resp.rw
-	} else {
-		h.Set("Content-Encoding", resp.encodingName)
-		h.Add("Vary", "Content-Encoding")
-		resp.gzw = gzw
-		resp.writer = resp.gzw
-	}
+	return true
 }
