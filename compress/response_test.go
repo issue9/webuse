@@ -24,7 +24,7 @@ var (
 	_ WriterFunc = newErrorWriter
 )
 
-func newErrorWriter(w io.Writer) (io.WriteCloser, error) {
+func newErrorWriter(w io.Writer) (Writer, error) {
 	return nil, errors.New("error")
 }
 
@@ -38,10 +38,10 @@ func TestResponse_Write(t *testing.T) {
 	a.NotNil(c)
 
 	resp := &response{
-		rw:           rw,
-		c:            c,
-		f:            NewDeflate,
-		encodingName: "deflate",
+		responseWriter: rw,
+		c:              c,
+		f:              NewDeflate,
+		encodingName:   "deflate",
 	}
 
 	// 压缩
@@ -59,7 +59,7 @@ func TestResponse_Write(t *testing.T) {
 	// 没有写入内容
 	rw = httptest.NewRecorder()
 	resp.writer = nil
-	resp.rw = rw
+	resp.responseWriter = rw
 	resp.close()
 	a.Empty(rw.Body.String()).
 		Equal(rw.Header().Get("Content-Encoding"), "").
@@ -67,7 +67,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 写入空内容
 	rw = httptest.NewRecorder()
-	resp.rw = rw
+	resp.responseWriter = rw
 	n, err := resp.Write(nil)
 	a.NotError(err).Equal(0, n)
 	resp.close()
@@ -77,7 +77,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 多次写入
 	rw = httptest.NewRecorder()
-	resp.rw = rw
+	resp.responseWriter = rw
 	resp.writer = nil
 	_, err = resp.Write([]byte("123"))
 	a.NotError(err)
@@ -94,7 +94,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 可压缩，但是压缩时构建压缩实例出错
 	rw = httptest.NewRecorder()
-	resp.rw = rw
+	resp.responseWriter = rw
 	resp.writer = nil
 	resp.f = newErrorWriter
 	_, err = resp.Write([]byte("1234567890\n123"))
@@ -105,7 +105,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 可压缩
 	rw = httptest.NewRecorder()
-	resp.rw = rw
+	resp.responseWriter = rw
 	resp.writer = nil
 	resp.f = NewGzip
 	_, err = resp.Write([]byte("1234567890\n123"))

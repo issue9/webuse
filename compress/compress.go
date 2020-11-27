@@ -16,21 +16,27 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
+// Writer 所有压缩对象实现的接口
+type Writer interface {
+	io.WriteCloser
+	Reset(io.Writer)
+}
+
 // WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
-type WriterFunc func(w io.Writer) (io.WriteCloser, error)
+type WriterFunc func(w io.Writer) (Writer, error)
 
 // NewGzip 新建 gzip 算法
-func NewGzip(w io.Writer) (io.WriteCloser, error) {
+func NewGzip(w io.Writer) (Writer, error) {
 	return gzip.NewWriter(w), nil
 }
 
 // NewDeflate 新建 deflate 算法
-func NewDeflate(w io.Writer) (io.WriteCloser, error) {
+func NewDeflate(w io.Writer) (Writer, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
 }
 
 // NewBrotli 新建 br 算法
-func NewBrotli(w io.Writer) (io.WriteCloser, error) {
+func NewBrotli(w io.Writer) (Writer, error) {
 	return brotli.NewWriter(w), nil
 }
 
@@ -170,10 +176,10 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 		}
 
 		resp := &response{
-			rw:           w,
-			c:            c,
-			f:            wf,
-			encodingName: accept.Value,
+			responseWriter: w,
+			c:              c,
+			f:              wf,
+			encodingName:   accept.Value,
 		}
 
 		defer resp.close()
