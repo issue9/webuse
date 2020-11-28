@@ -175,13 +175,7 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		resp := &response{
-			responseWriter: w,
-			c:              c,
-			f:              wf,
-			encodingName:   accept.Value,
-		}
-
+		resp := c.newResponse(w, wf, accept.Value)
 		defer resp.close()
 
 		// 此处可能 panic，所以得保证在 panic 之前，resp 已经关闭

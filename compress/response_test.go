@@ -37,12 +37,7 @@ func TestResponse_Write(t *testing.T) {
 	}, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
-	resp := &response{
-		responseWriter: rw,
-		c:              c,
-		f:              NewDeflate,
-		encodingName:   "deflate",
-	}
+	resp := c.newResponse(rw, NewDeflate, "deflate")
 
 	// 压缩
 	_, err := resp.Write([]byte("123"))
@@ -58,8 +53,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 没有写入内容
 	rw = httptest.NewRecorder()
-	resp.writer = nil
-	resp.responseWriter = rw
+	resp = c.newResponse(rw, NewDeflate, "deflate")
 	resp.close()
 	a.Empty(rw.Body.String()).
 		Equal(rw.Header().Get("Content-Encoding"), "").
@@ -67,18 +61,17 @@ func TestResponse_Write(t *testing.T) {
 
 	// 写入空内容
 	rw = httptest.NewRecorder()
-	resp.responseWriter = rw
+	resp = c.newResponse(rw, NewDeflate, "deflate")
 	n, err := resp.Write(nil)
 	a.NotError(err).Equal(0, n)
 	resp.close()
-	a.Empty(rw.Body.String()).
-		Equal(rw.Header().Get("Content-Encoding"), "").
+	a.NotEmpty(rw.Body.String()).
+		Equal(rw.Header().Get("Content-Encoding"), "deflate").
 		Equal(rw.Code, http.StatusOK)
 
 	// 多次写入
 	rw = httptest.NewRecorder()
-	resp.responseWriter = rw
-	resp.writer = nil
+	resp = c.newResponse(rw, NewDeflate, "deflate")
 	_, err = resp.Write([]byte("123"))
 	a.NotError(err)
 	_, err = resp.Write([]byte("4567890\n"))
@@ -94,8 +87,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 可压缩，但是压缩时构建压缩实例出错
 	rw = httptest.NewRecorder()
-	resp.responseWriter = rw
-	resp.writer = nil
+	resp = c.newResponse(rw, newErrorWriter, "deflate")
 	resp.f = newErrorWriter
 	_, err = resp.Write([]byte("1234567890\n123"))
 	a.NotError(err)
@@ -105,9 +97,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 可压缩
 	rw = httptest.NewRecorder()
-	resp.responseWriter = rw
-	resp.writer = nil
-	resp.f = NewGzip
+	resp = c.newResponse(rw, NewGzip, "deflate")
 	_, err = resp.Write([]byte("1234567890\n123"))
 	a.NotError(err)
 	resp.close()

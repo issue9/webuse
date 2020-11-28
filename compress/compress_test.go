@@ -48,7 +48,7 @@ var (
 		// 在 204 状态下写入空值，但是压缩格式本身是带内容的，一旦输出该内容，
 		// 会报 http.ErrBodyNotAllowed 的错误。
 		w.WriteHeader(http.StatusNoContent)
-		w.Write(nil)
+		w.Write(nil) // nil 和 []byte{} 会被检测为 text/plain; charset=utf-8
 	}
 
 	// 设置了内容类型，但是实际未输出任何内容
@@ -428,9 +428,9 @@ func TestCompress_f4(t *testing.T) {
 		Status(http.StatusAccepted).
 		BodyNotNil().
 		ReadBody(buf).
-		Header("Content-Type", "text/plain; charset=utf-8"). // 未动用压缩，在调用默认的 Write 时会检测内容类型
-		Header("Content-Encoding", "").
-		Header("Vary", "")
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
 
 	// *
 	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
@@ -448,10 +448,6 @@ func TestCompress_f4(t *testing.T) {
 		Status(http.StatusAccepted).
 		BodyNotNil().
 		ReadBody(buf).
-		// 启用了压缩，此时还不知道类型，所以此值可能为空，
-		// go 1.13 会被此值默认设置为 application/octet-stream。
-		// f4 的实现是先调用 WriteHeader，一旦调用之后的报头输出也不再启作用。
-		//Header("Content-Type", "").
 		Header("Content-Encoding", "deflate").
 		Header("Vary", "Content-Encoding")
 }
@@ -553,9 +549,10 @@ func TestCompress_f6(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/").
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
+		BodyNotEmpty(). // 有压缩文件本身的内容
 		Status(http.StatusOK).
-		Header("Content-Encoding", "").
-		Header("Vary", "")
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
 
 	// *
 	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
@@ -571,9 +568,9 @@ func TestCompress_f6(t *testing.T) {
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
 		Status(http.StatusOK).
-		BodyEmpty().
-		Header("Content-Encoding", "").
-		Header("Vary", "")
+		BodyNotEmpty().
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
 }
 
 func TestCompress_f7(t *testing.T) {
@@ -614,8 +611,8 @@ func TestCompress_f7(t *testing.T) {
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
 		Status(http.StatusOK).
-		Header("Content-Encoding", "").
-		Header("Vary", "")
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
 
 	// *
 	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
@@ -631,9 +628,9 @@ func TestCompress_f7(t *testing.T) {
 		Header("Accept-encoding", "gzip;q=0.8,deflate").
 		Do().
 		Status(http.StatusOK).
-		BodyEmpty().
-		Header("Content-Encoding", "").
-		Header("Vary", "")
+		BodyNotEmpty().
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
 }
 
 func TestCompress_empty(t *testing.T) {
@@ -647,8 +644,8 @@ func TestCompress_empty(t *testing.T) {
 	a.NotNil(c)
 
 	// 不输出任何信息
-	f5 := func(w http.ResponseWriter, r *http.Request) {}
-	srv := rest.NewServer(t, c.MiddlewareFunc(f5), nil)
+	f := func(w http.ResponseWriter, r *http.Request) {}
+	srv := rest.NewServer(t, c.MiddlewareFunc(f), nil)
 	// accept-encoding = deflate
 	buf := new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
@@ -662,10 +659,10 @@ func TestCompress_empty(t *testing.T) {
 	a.Equal(0, buf.Len())
 
 	// 不输出任何信息
-	f5 = func(w http.ResponseWriter, r *http.Request) {
+	f = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 	}
-	srv = rest.NewServer(t, c.MiddlewareFunc(f5), nil)
+	srv = rest.NewServer(t, c.MiddlewareFunc(f), nil)
 	// accept-encoding = deflate
 	buf = new(bytes.Buffer)
 	srv.NewRequest(http.MethodGet, "/").
@@ -673,10 +670,10 @@ func TestCompress_empty(t *testing.T) {
 		Do().
 		ReadBody(buf).
 		Status(http.StatusAccepted).
-		Header("Content-Type", "").
-		Header("Content-Encoding", "").
-		Header("Vary", "")
-	a.Equal(0, buf.Len())
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
+	a.True(buf.Len() > 0) // 压缩文件的本身内容
 }
 
 func TestCompress_canCompressed(t *testing.T) {
@@ -692,10 +689,7 @@ func TestCompress_canCompressed(t *testing.T) {
 	}, "text/*", "application/json")
 	a.NotNil(c)
 
-	// 长度不够
-	a.False(c.canCompressed(""))
-
-	// 长度够，但是未指定 content-type
+	// 未指定 content-type
 	a.False(c.canCompressed(""))
 
 	a.True(c.canCompressed("text/html;charset=utf-8"))

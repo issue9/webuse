@@ -14,10 +14,20 @@ type response struct {
 	writer         io.Writer
 	compressWriter io.WriteCloser
 	responseWriter http.ResponseWriter
+	wroteHeader    bool
 
 	c            *Compress
 	f            WriterFunc
 	encodingName string
+}
+
+func (c *Compress) newResponse(resp http.ResponseWriter, f WriterFunc, encodingName string) *response {
+	return &response{
+		responseWriter: resp,
+		c:              c,
+		f:              f,
+		encodingName:   encodingName,
+	}
 }
 
 func (resp *response) Header() http.Header {
@@ -26,37 +36,39 @@ func (resp *response) Header() http.Header {
 
 // 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
-	// https://github.com/golang/go/issues/14975
-	resp.Header().Del("Content-Length")
-
-	resp.genWriter(bodyAllowedForStatus(code))
-	resp.responseWriter.WriteHeader(code)
+	resp.write(code, nil)
 }
 
 // NOTE: 根据接口要求，第一次调用 Write 时，会发送报头内容，
 // 即 WriteHeader(200) 自动调用，即使写入的是空内容。
 func (resp *response) Write(bs []byte) (int, error) {
+	if !resp.wroteHeader {
+		resp.write(http.StatusOK, bs)
+	}
+
 	if len(bs) == 0 {
 		return 0, nil
 	}
-
-	if resp.writer == nil {
-		h := resp.Header()
-		if ct := h.Get("Content-Type"); ct == "" {
-			ct = http.DetectContentType(bs)
-			h.Set("Content-Type", ct)
-		}
-
-		resp.genWriter(true)
-	}
-
 	return resp.writer.Write(bs)
 }
 
-func (resp *response) genWriter(bodyAllowed bool) {
+func (resp *response) write(status int, bs []byte) {
+	defer func() {
+		resp.responseWriter.WriteHeader(status)
+		resp.wroteHeader = true
+	}()
+
 	h := resp.Header()
 
-	if !bodyAllowed || !resp.c.canCompressed(h.Get("Content-Type")) {
+	// https://github.com/golang/go/issues/14975
+	h.Del("Content-Length")
+
+	ct := h.Get("Content-Type")
+	if ct == "" {
+		ct = http.DetectContentType(bs)
+		h.Set("Content-Type", ct)
+	}
+	if !bodyAllowedForStatus(status) || !resp.c.canCompressed(ct) {
 		resp.writer = resp.responseWriter
 		return
 	}
