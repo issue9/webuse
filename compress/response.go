@@ -45,10 +45,6 @@ func (resp *response) Write(bs []byte) (int, error) {
 	if !resp.wroteHeader {
 		resp.write(http.StatusOK, bs)
 	}
-
-	if len(bs) == 0 {
-		return 0, nil
-	}
 	return resp.writer.Write(bs)
 }
 

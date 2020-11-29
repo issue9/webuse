@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,46 +22,6 @@ var (
 	_ WriterFunc = NewDeflate
 	_ WriterFunc = NewGzip
 	_ WriterFunc = NewBrotli
-)
-
-var (
-	f1 = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("f1\nf2"))
-	}
-
-	f2 = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte("f1\nf2"))
-	}
-
-	f3 = func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("f1\nf2"))
-	}
-
-	f4 = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("f1\nf2"))
-	}
-
-	f5 = func(w http.ResponseWriter, r *http.Request) {
-		// 在 204 状态下写入空值，但是压缩格式本身是带内容的，一旦输出该内容，
-		// 会报 http.ErrBodyNotAllowed 的错误。
-		w.WriteHeader(http.StatusNoContent)
-		w.Write(nil) // nil 和 []byte{} 会被检测为 text/plain; charset=utf-8
-	}
-
-	// 设置了内容类型，但是实际未输出任何内容
-	f6 = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write(nil)
-	}
-
-	// 输出空内容
-	f7 = func(w http.ResponseWriter, r *http.Request) {
-		w.Write(nil)
-	}
 )
 
 func TestNew(t *testing.T) {
@@ -120,517 +81,537 @@ func TestCompress_Types(t *testing.T) {
 		False(c.any)
 }
 
-func TestCompress_f1(t *testing.T) {
+var funcs = map[string]WriterFunc{
+	"br":      NewBrotli,
+	"deflate": NewDeflate,
+	"gzip":    NewGzip,
+	"error":   newErrorWriter,
+}
+
+var data = []*struct {
+	name string
+
+	types []string
+
+	handler http.HandlerFunc
+
+	// req
+	reqHeaders map[string]string
+
+	// response
+	respStatus  int
+	respHeaders map[string]string
+	respBody    string
+}{
+	{
+		name: "空",
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+		},
+		respStatus: http.StatusAccepted,
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=deflate",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=gzip",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "gzip"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "gzip"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Content-type && WriteHeader && Write() accept-encoding=br",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "br"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "br"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "不匹配的类型 accept-encoding=br",
+		types: []string{"image/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "br"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "content-type && write, accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "content-type && write, accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "content-type && write, accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "content-type && write, accept-encodding=br",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "br"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "br"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "content-type && write, accept-encodding=br",
+		types: []string{"image/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.Write([]byte("text\nhtml"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "br"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Write(content), accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Write(content), accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Write(content), accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "Write(content), accept-encodding=deflate",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "WriteHeader && Write(), accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "WriteHeader && Write(), accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "WriteHeader && Write(), accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "WriteHeader && Write(), accept-encodding=gzip",
+		types: []string{"text/plain"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate;q=0.9,gzip"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "gzip"},
+		respBody:    "text\nhtml",
+	},
+
+	{
+		name:  "WriteHeader(204) && Write(nil), accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusNoContent,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader(204) && Write(nil), accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusNoContent,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader(204) && Write(nil), accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusNoContent,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader(204) && Write(nil), accept-encodding=gzip",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "gzip,deflate;q=0.8"},
+		respStatus:  http.StatusNoContent,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader && Write(nil), accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader && Write(nil), accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader && Write(nil), accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "WriteHeader && Write(nil), accept-encodding=gzip",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "gzip"},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "gzip"},
+	},
+
+	{
+		name:  "Write(nil), accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "Write(nil), accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "Write(nil), accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+	},
+
+	{
+		name:  "Write(nil), accept-encodding=gzip",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "gzip"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "gzip"},
+	},
+
+	{
+		name:  "多次调用 Write, accept-encodding=*",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text/html",
+	},
+
+	{
+		name:  "多次调用 Write, accept-encodding=identity",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text/html",
+	},
+
+	{
+		name:  "多次调用 Write, accept-encodding=",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": ""},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "text/html",
+	},
+
+	{
+		name:  "多次调用 Write, accept-encodding=deflate",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
+		respBody:    "text/html",
+	},
+}
+
+func TestCompress_MiddlewareFunc(t *testing.T) {
 	a := assert.New(t)
-
-	c := New(nil, nil)
-	a.NotNil(c)
-
-	// 空的 options
 	buf := new(bytes.Buffer)
-	srv := rest.NewServer(t, c.MiddlewareFunc(f1), nil)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip,deflate;q=0.8").
-		Do().
-		BodyNotNil().
-		ReadBody(buf).
-		Status(http.StatusAccepted).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "").
-		Header("Vary", "")
-	a.Equal(buf.String(), "f1\nf2")
-	srv.Close()
 
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f1), nil)
-	defer srv.Close()
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		StringBody("f1\nf2").
-		Status(http.StatusAccepted).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		StringBody("f1\nf2").
-		Status(http.StatusAccepted).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		StringBody("f1\nf2").
-		Status(http.StatusAccepted).
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	buf = new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		BodyNotNil().
-		ReadBody(buf).
-		Status(http.StatusAccepted).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-
-	// 解码后相等
-	a.True(len(buf.Bytes()) > 0)
-	data, err := ioutil.ReadAll(flate.NewReader(buf))
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "f1\nf2")
-
-	// accept-encoding = gzip
-	buf = new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip,deflate;q=0.8").
-		Do().
-		BodyNotNil().
-		ReadBody(buf).
-		Status(http.StatusAccepted).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-
-	// 解码后相等
-	a.True(len(buf.Bytes()) > 0)
-	reader, err := gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err = ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "f1\nf2")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f1), nil)
-	defer srv.Close()
-
-	// accept-encoding = gzip
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip,deflate;q=0.8").
-		Do().
-		BodyNotNil().
-		Status(http.StatusAccepted).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-}
-
-func TestCompress_f2(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f2), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		StringBody("f1\nf2").
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		StringBody("f1\nf2").
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusOK).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	buf := new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip,deflate;q=0.8").
-		Do().
-		Status(http.StatusOK).
-		BodyNotNil().
-		ReadBody(buf).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-
-	// 解码后相等
-	a.True(len(buf.Bytes()) > 0)
-	reader, err := gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err := ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "f1\nf2")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f2), nil)
-	defer srv.Close()
-
-	// accept-encoding = deflate
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip,deflate;q=0.8").
-		Do().
-		Status(http.StatusOK).
-		BodyNotNil().
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-}
-
-func TestCompress_f3(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f3), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		Status(http.StatusOK).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		Status(http.StatusOK).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusOK).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// accept-encoding = br
-	buf := new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,br").
-		Do().
-		Status(http.StatusOK).
-		BodyNotNil().
-		ReadBody(buf).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "br").
-		Header("Vary", "Content-Encoding")
-
-	// 解码后相等
-	a.True(len(buf.Bytes()) > 0)
-	data, err := ioutil.ReadAll(brotli.NewReader(buf))
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "f1\nf2")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f3), nil)
-	defer srv.Close()
-
-	// accept-encoding = deflate
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusOK).
-		BodyNotNil().
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-}
-
-func TestCompress_f4(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f4), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		Status(http.StatusAccepted).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		Status(http.StatusAccepted).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusAccepted).
-		StringBody("f1\nf2").
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	buf := new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusAccepted).
-		BodyNotNil().
-		ReadBody(buf).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f4), nil)
-	defer srv.Close()
-
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusAccepted).
-		BodyNotNil().
-		ReadBody(buf).
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-}
-
-func TestCompress_f5(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f5), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		Status(http.StatusNoContent).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		Status(http.StatusNoContent).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusNoContent).
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusNoContent).
-		Header("Content-Encoding", "").
-		Header("Vary", "")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f5), nil)
-	defer srv.Close()
-
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusNoContent).
-		BodyEmpty().
-		Header("Content-Encoding", "").
-		Header("Vary", "")
-}
-
-func TestCompress_f6(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f6), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		BodyNotEmpty(). // 有压缩文件本身的内容
-		Status(http.StatusOK).
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f6), nil)
-	defer srv.Close()
-
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusOK).
-		BodyNotEmpty().
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-}
-
-func TestCompress_f7(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	srv := rest.NewServer(t, c.MiddlewareFunc(f7), nil)
-
-	// 指定 accept-encoding = *
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "*").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding = identity
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "identity").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// 指定 accept-encoding 为空
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-Encoding", "").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "")
-
-	// accept-encoding = deflate
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusOK).
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-
-	// *
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
-	a.NotNil(c)
-
-	srv = rest.NewServer(t, c.MiddlewareFunc(f7), nil)
-	defer srv.Close()
-
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusOK).
-		BodyNotEmpty().
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
+	for index, item := range data {
+		c := New(nil, funcs, item.types...)
+		a.NotNil(c, "构建 Compress 对象出错，%d,%s", index, item.name)
+
+		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), nil)
+		defer srv.Close()
+
+		// req
+		req := srv.NewRequest(http.MethodGet, "/")
+		for k, v := range item.reqHeaders {
+			req.Header(k, v)
+		}
+
+		// resp
+		resp := req.Do()
+		resp.Status(item.respStatus)
+		for k, v := range item.respHeaders {
+			resp.Header(k, v, "返回报头[%s:%s]错误，位于:%d,%s ", k, v, index, item.name)
+		}
+
+		// resp body
+		buf.Reset()
+		resp.ReadBody(buf)
+		var reader io.Reader
+		var err error
+		switch item.respHeaders["Content-Encoding"] {
+		case "br":
+			reader = brotli.NewReader(buf)
+		case "deflate":
+			reader = flate.NewReader(buf)
+		case "gzip":
+			reader, err = gzip.NewReader(buf)
+		default:
+			reader = buf
+		}
+		a.NotError(err).NotNil(reader)
+
+		data, err := ioutil.ReadAll(reader)
+		a.NotError(err).NotNil(data)
+		a.Equal(string(data), item.respBody)
+	}
 }
 
 func TestCompress_empty(t *testing.T) {

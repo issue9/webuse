@@ -12,6 +12,12 @@ import (
 	"github.com/issue9/assert/rest"
 )
 
+func f1(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "text/html")
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("text\nhtml"))
+}
+
 func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
 	a := assert.New(b)
 	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
