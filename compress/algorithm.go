@@ -47,6 +47,8 @@ func NewBrotli(w io.Writer) (Writer, error) {
 // 如果已经存在，返回 true。
 // 当前用户的 Accept-Encoding 的匹配到 * 时，按添加顺序查找真正的匹配项。
 // 不能添加名为 identity 和 * 的算法。
+//
+// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
 func (c *Compress) AddAlgorithm(name string, w WriterFunc) (exists bool) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
