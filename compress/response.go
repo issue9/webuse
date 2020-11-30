@@ -11,22 +11,27 @@ import (
 
 // 实现了 http.ResponseWriter 接口
 type response struct {
+	c *Compress
+
 	writer         io.Writer
 	compressWriter io.WriteCloser
 	responseWriter http.ResponseWriter
 	wroteHeader    bool
 
-	c            *Compress
+	// 压缩相关的字段
+	//
+	// 如果 f 为 nil，表示不需要压缩
 	f            WriterFunc
 	encodingName string
 }
 
 func (c *Compress) newResponse(resp http.ResponseWriter, f WriterFunc, encodingName string) *response {
 	return &response{
-		responseWriter: resp,
 		c:              c,
-		f:              f,
-		encodingName:   encodingName,
+		responseWriter: resp,
+
+		f:            f,
+		encodingName: encodingName,
 	}
 }
 
@@ -36,19 +41,19 @@ func (resp *response) Header() http.Header {
 
 // 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
-	resp.write(code, nil)
+	resp.writeHeader(code, nil)
 }
 
 // NOTE: 根据接口要求，第一次调用 Write 时，会发送报头内容，
 // 即 WriteHeader(200) 自动调用，即使写入的是空内容。
 func (resp *response) Write(bs []byte) (int, error) {
 	if !resp.wroteHeader {
-		resp.write(http.StatusOK, bs)
+		resp.writeHeader(http.StatusOK, bs)
 	}
 	return resp.writer.Write(bs)
 }
 
-func (resp *response) write(status int, bs []byte) {
+func (resp *response) writeHeader(status int, bs []byte) {
 	defer func() {
 		resp.responseWriter.WriteHeader(status)
 		resp.wroteHeader = true
@@ -64,12 +69,12 @@ func (resp *response) write(status int, bs []byte) {
 		ct = http.DetectContentType(bs)
 		h.Set("Content-Type", ct)
 	}
-	if !bodyAllowedForStatus(status) || !resp.c.canCompressed(ct) {
+	if resp.f == nil || !bodyAllowedForStatus(status) || !resp.c.canCompressed(ct) {
 		resp.writer = resp.responseWriter
 		return
 	}
 
-	if compressWriter, err := resp.f(resp.responseWriter); err != nil { // 转换出错，退化成 responseWriter
+	if compressWriter, err := resp.f(resp.responseWriter); err != nil { // 出错，退化成 responseWriter
 		resp.c.printError(err)
 		resp.writer = resp.responseWriter
 	} else {

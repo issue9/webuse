@@ -18,47 +18,32 @@ import (
 	"github.com/issue9/assert/rest"
 )
 
-var (
-	_ WriterFunc = NewDeflate
-	_ WriterFunc = NewGzip
-	_ WriterFunc = NewBrotli
-)
+func newCompress(a *assert.Assertion, types ...string) *Compress {
+	c := New(log.New(os.Stderr, "", 0), types...)
+	a.NotNil(c)
+
+	a.False(c.AddAlgorithm("deflate", NewDeflate))
+	a.False(c.AddAlgorithm("gzip", NewGzip))
+	a.False(c.AddAlgorithm("br", NewBrotli))
+	a.False(c.AddAlgorithm("error", newErrorWriter))
+
+	return c
+}
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
 	a.Equal(c.prefix, []string{"text/"})
 	a.Equal(c.types, []string{"application/xml", "application/json"})
 }
 
-func TestCompress_SetWriter(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "application/xml", "text/*", "application/json")
-	a.NotNil(c)
-
-	a.Equal(1, len(c.writers))
-	c.SetWriter("gzip", nil)
-	a.Equal(0, len(c.writers))
-
-	c.SetWriter("gzip", NewGzip)
-	c.SetWriter("br", NewBrotli)
-	a.Equal(2, len(c.writers))
-}
-
 func TestCompress_Types(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
 	a.Equal(2, len(c.types)).
@@ -79,13 +64,6 @@ func TestCompress_Types(t *testing.T) {
 	a.Equal(0, len(c.types)).
 		Equal(0, len(c.prefix)).
 		False(c.any)
-}
-
-var funcs = map[string]WriterFunc{
-	"br":      NewBrotli,
-	"deflate": NewDeflate,
-	"gzip":    NewGzip,
-	"error":   newErrorWriter,
 }
 
 var data = []*struct {
@@ -121,7 +99,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "*"},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text\nhtml",
 	},
 
@@ -216,9 +194,9 @@ var data = []*struct {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
 		},
-		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		reqHeaders:  map[string]string{"Accept-encoding": "br,*"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "br"},
 		respBody:    "text\nhtml",
 	},
 
@@ -282,7 +260,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "*"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text\nhtml",
 	},
 
@@ -329,9 +307,9 @@ var data = []*struct {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
 		},
-		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate,*"},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text\nhtml",
 	},
 
@@ -383,7 +361,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "*"},
 		respStatus:  http.StatusNoContent,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -395,7 +373,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusNoContent,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -407,7 +385,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusNoContent,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -429,9 +407,9 @@ var data = []*struct {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
 		},
-		reqHeaders:  map[string]string{"Accept-encoding": "*"},
+		reqHeaders:  map[string]string{"Accept-encoding": "br,*,deflate;q=0.9"},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "br"},
 	},
 
 	{
@@ -443,7 +421,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -455,7 +433,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -478,7 +456,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "*"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 	},
 
 	{
@@ -489,7 +467,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -500,7 +478,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -523,7 +501,7 @@ var data = []*struct {
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "*"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text/html",
 	},
 
@@ -572,7 +550,8 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 	buf := new(bytes.Buffer)
 
 	for index, item := range data {
-		c := New(nil, funcs, item.types...)
+		c := newCompress(a, item.types...)
+		c.SetAlgorithm("error", newErrorWriter)
 		a.NotNil(c, "构建 Compress 对象出错，%d,%s", index, item.name)
 
 		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), nil)
@@ -604,6 +583,8 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 		case "gzip":
 			reader, err = gzip.NewReader(buf)
 		default:
+			name := item.respHeaders["Content-Encoding"]
+			a.Empty(name, "Content-Encoding 不为空 %s,位于:%d,%s", name, index, item.name)
 			reader = buf
 		}
 		a.NotError(err).NotNil(reader)
@@ -614,61 +595,15 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 	}
 }
 
-func TestCompress_empty(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-		"br":      NewBrotli,
-	}, "text/*")
-	a.NotNil(c)
-
-	// 不输出任何信息
-	f := func(w http.ResponseWriter, r *http.Request) {}
-	srv := rest.NewServer(t, c.MiddlewareFunc(f), nil)
-	// accept-encoding = deflate
-	buf := new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		Status(http.StatusOK).
-		ReadBody(buf).
-		Header("Content-Type", "").
-		Header("Content-Encoding", "").
-		Header("Vary", "")
-	a.Equal(0, buf.Len())
-
-	// 不输出任何信息
-	f = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusAccepted)
-	}
-	srv = rest.NewServer(t, c.MiddlewareFunc(f), nil)
-	// accept-encoding = deflate
-	buf = new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/").
-		Header("Accept-encoding", "gzip;q=0.8,deflate").
-		Do().
-		ReadBody(buf).
-		Status(http.StatusAccepted).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "deflate").
-		Header("Vary", "Content-Encoding")
-	a.True(buf.Len() > 0) // 压缩文件的本身内容
-}
-
 func TestCompress_canCompressed(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(nil, nil)
+	c := New(nil)
 	a.NotNil(c)
 
 	a.False(c.canCompressed(""))
 
-	c = New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "text/*", "application/json")
-	a.NotNil(c)
+	c = newCompress(a, "text/*", "application/json")
 
 	// 未指定 content-type
 	a.False(c.canCompressed(""))

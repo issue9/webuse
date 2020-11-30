@@ -20,10 +20,7 @@ func f1(w http.ResponseWriter, r *http.Request) {
 
 func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
 	a := assert.New(b)
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "*")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "*")
 	a.NotNil(c)
 
 	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
@@ -38,10 +35,7 @@ func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
 
 func BenchmarkCompress_ServeHTTP(b *testing.B) {
 	a := assert.New(b)
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip":    NewGzip,
-		"deflate": NewDeflate,
-	}, "text/*")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "text/*")
 	a.NotNil(c)
 
 	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
@@ -57,9 +51,7 @@ func BenchmarkCompress_ServeHTTP(b *testing.B) {
 func BenchmarkCompress_canCompress_any(b *testing.B) {
 	a := assert.New(b)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "*")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "*")
 	a.NotNil(c)
 
 	for i := 0; i < b.N; i++ {
@@ -70,9 +62,7 @@ func BenchmarkCompress_canCompress_any(b *testing.B) {
 func BenchmarkCompress_canCompress(b *testing.B) {
 	a := assert.New(b)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"gzip": NewGzip,
-	}, "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), "text/*", "application/json")
 	a.NotNil(c)
 
 	for i := 0; i < b.N; i++ {

@@ -5,13 +5,9 @@ package compress
 import (
 	"compress/flate"
 	"compress/gzip"
-	"errors"
-	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -20,22 +16,13 @@ import (
 var (
 	_ http.ResponseWriter = &response{}
 	_ http.Hijacker       = &response{}
-
-	_ WriterFunc = newErrorWriter
 )
-
-func newErrorWriter(w io.Writer) (Writer, error) {
-	return nil, errors.New("error")
-}
 
 func TestResponse_Write(t *testing.T) {
 	a := assert.New(t)
 	rw := httptest.NewRecorder()
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), map[string]WriterFunc{
-		"deflate": NewDeflate,
-	}, "application/xml", "text/*", "application/json")
-	a.NotNil(c)
+	c := newCompress(a, "application/xml", "text/*", "application/json")
 
 	resp := c.newResponse(rw, NewDeflate, "deflate")
 
@@ -109,4 +96,13 @@ func TestResponse_Write(t *testing.T) {
 	data, err = ioutil.ReadAll(gzw)
 	a.NotError(err).NotNil(data).
 		Equal(string(data), "1234567890\n123")
+}
+
+func TestBodyAllowedForStatus(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(bodyAllowedForStatus(http.StatusAccepted))
+	a.True(bodyAllowedForStatus(http.StatusOK))
+	a.False(bodyAllowedForStatus(http.StatusNoContent))
+	a.False(bodyAllowedForStatus(100))
 }
