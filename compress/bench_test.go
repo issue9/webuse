@@ -20,7 +20,7 @@ func f1(w http.ResponseWriter, r *http.Request) {
 
 func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
 	a := assert.New(b)
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "*")
+	c := newCompress(a, "*")
 	a.NotNil(c)
 
 	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
@@ -29,13 +29,14 @@ func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srv.NewRequest(http.MethodGet, "/").
 			Header("Accept-encoding", "gzip;q=0.8,deflate").
-			Do()
+			Do().
+			Header("Content-Encoding", "deflate")
 	}
 }
 
 func BenchmarkCompress_ServeHTTP(b *testing.B) {
 	a := assert.New(b)
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "text/*")
+	c := newCompress(a, "text/*")
 	a.NotNil(c)
 
 	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
@@ -44,7 +45,8 @@ func BenchmarkCompress_ServeHTTP(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srv.NewRequest(http.MethodGet, "/").
 			Header("Accept-encoding", "gzip;q=0.8,deflate").
-			Do()
+			Do().
+			Header("Content-Encoding", "deflate")
 	}
 }
 

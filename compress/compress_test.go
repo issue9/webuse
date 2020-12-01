@@ -543,6 +543,33 @@ var data = []*struct {
 		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text/html",
 	},
+
+	{
+		name:  "write(nil) && Write(content), accept-encodding=deflate",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		respStatus:  http.StatusOK,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
+		respBody:    "/html",
+	},
+
+	{
+		name:  "writeHeader(204) && Write(content), accept-encodding=deflate",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write([]byte("/html"))
+		},
+		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		respStatus:  http.StatusNoContent,
+		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respBody:    "",
+	},
 }
 
 func TestCompress_MiddlewareFunc(t *testing.T) {

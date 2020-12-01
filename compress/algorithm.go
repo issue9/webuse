@@ -19,7 +19,7 @@ type Writer interface {
 	Reset(io.Writer)
 }
 
-// WriterFunc 定义了将一个 io.Writer 声明为具有压缩功能的 io.WriteCloser
+// WriterFunc 将普通的 io.Writer 封装成 Writer 接口对象
 type WriterFunc func(w io.Writer) (Writer, error)
 
 type algorithm struct {
