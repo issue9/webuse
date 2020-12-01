@@ -7,7 +7,14 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sync"
 )
+
+var respPool = &sync.Pool{
+	New: func() interface{} {
+		return &response{}
+	},
+}
 
 // 实现了 http.ResponseWriter 接口
 type response struct {
@@ -26,13 +33,15 @@ type response struct {
 }
 
 func (c *Compress) newResponse(resp http.ResponseWriter, f WriterFunc, encodingName string) *response {
-	return &response{
-		c:              c,
-		responseWriter: resp,
-
-		f:            f,
-		encodingName: encodingName,
-	}
+	r := respPool.Get().(*response)
+	r.c = c
+	r.writer = nil
+	r.compressWriter = nil
+	r.responseWriter = resp
+	r.wroteHeader = false
+	r.f = f
+	r.encodingName = encodingName
+	return r
 }
 
 func (resp *response) Header() http.Header {
@@ -98,6 +107,8 @@ func (resp *response) close() {
 			resp.c.printError(err)
 		}
 	}
+
+	respPool.Put(resp)
 }
 
 // 以下内容复制于官方标准库
