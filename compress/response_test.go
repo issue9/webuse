@@ -3,6 +3,7 @@
 package compress
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"io/ioutil"
@@ -18,13 +19,19 @@ var (
 	_ http.Hijacker       = &response{}
 )
 
+func newWriter(a *assert.Assertion, f WriterFunc) Writer {
+	w, err := f(new(bytes.Buffer))
+	a.NotError(err).NotNil(w)
+	return w
+}
+
 func TestResponse_Write(t *testing.T) {
 	a := assert.New(t)
 	rw := httptest.NewRecorder()
 
 	c := newCompress(a, "application/xml", "text/*", "application/json")
 
-	resp := c.newResponse(rw, NewDeflate, "deflate")
+	resp := c.newResponse(rw, newWriter(a, NewDeflate), "deflate")
 
 	// 压缩
 	_, err := resp.Write([]byte("123"))
@@ -40,7 +47,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 没有写入内容
 	rw = httptest.NewRecorder()
-	resp = c.newResponse(rw, NewDeflate, "deflate")
+	resp = c.newResponse(rw, newWriter(a, NewDeflate), "deflate")
 	resp.close()
 	a.Empty(rw.Body.String()).
 		Equal(rw.Header().Get("Content-Encoding"), "").
@@ -48,7 +55,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 写入空内容
 	rw = httptest.NewRecorder()
-	resp = c.newResponse(rw, NewDeflate, "deflate")
+	resp = c.newResponse(rw, newWriter(a, NewDeflate), "deflate")
 	n, err := resp.Write(nil)
 	a.NotError(err).Equal(0, n)
 	resp.close()
@@ -58,7 +65,7 @@ func TestResponse_Write(t *testing.T) {
 
 	// 多次写入
 	rw = httptest.NewRecorder()
-	resp = c.newResponse(rw, NewDeflate, "deflate")
+	resp = c.newResponse(rw, newWriter(a, NewDeflate), "deflate")
 	_, err = resp.Write([]byte("123"))
 	a.NotError(err)
 	_, err = resp.Write([]byte("4567890\n"))
@@ -72,19 +79,9 @@ func TestResponse_Write(t *testing.T) {
 	a.NotError(err).NotNil(data).
 		Equal(string(data), "1234567890\n123")
 
-	// 可压缩，但是压缩时构建压缩实例出错
-	rw = httptest.NewRecorder()
-	resp = c.newResponse(rw, newErrorWriter, "deflate")
-	resp.f = newErrorWriter
-	_, err = resp.Write([]byte("1234567890\n123"))
-	a.NotError(err)
-	resp.close()
-	a.Equal(rw.Body.String(), "1234567890\n123").
-		Equal(rw.Header().Get("Content-Encoding"), "")
-
 	// 可压缩
 	rw = httptest.NewRecorder()
-	resp = c.newResponse(rw, NewGzip, "deflate")
+	resp = c.newResponse(rw, newWriter(a, NewGzip), "deflate")
 	_, err = resp.Write([]byte("1234567890\n123"))
 	a.NotError(err)
 	resp.close()

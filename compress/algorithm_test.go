@@ -22,7 +22,7 @@ var (
 )
 
 func newErrorWriter(w io.Writer) (Writer, error) {
-	return nil, errors.New("error")
+	return nil, errors.New("errorWriter")
 }
 
 func TestCompress_AddAlgorithm(t *testing.T) {
@@ -31,10 +31,13 @@ func TestCompress_AddAlgorithm(t *testing.T) {
 	c := New(log.New(os.Stderr, "", 0), "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
-	a.False(c.AddAlgorithm("br", NewBrotli))
+	a.NotError(c.AddAlgorithm("br", NewBrotli))
 	a.Equal(1, len(c.algorithms))
 
-	a.True(c.AddAlgorithm("br", NewBrotli))
+	a.ErrorIs(c.AddAlgorithm("br", NewBrotli), ErrExists)
+	a.Equal(1, len(c.algorithms))
+
+	a.ErrorString(c.AddAlgorithm("err", newErrorWriter), "errorWriter")
 	a.Equal(1, len(c.algorithms))
 
 	a.Panic(func() {

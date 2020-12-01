@@ -3,8 +3,10 @@
 package compress
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"errors"
 	"io"
 	"net/http"
 
@@ -12,6 +14,11 @@ import (
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
 )
+
+// ErrExists 表示已经存在名称相同的压缩算法
+var ErrExists = errors.New("已经存在相同名称的算法")
+
+var emptyWriter = new(bytes.Buffer)
 
 // Writer 所有压缩对象实现的接口
 type Writer interface {
@@ -24,7 +31,7 @@ type WriterFunc func(w io.Writer) (Writer, error)
 
 type algorithm struct {
 	name   string
-	writer WriterFunc
+	writer Writer
 }
 
 // NewGzip 新建 gzip 算法
@@ -44,47 +51,55 @@ func NewBrotli(w io.Writer) (Writer, error) {
 
 // AddAlgorithm 添加压缩算法
 //
-// 如果已经存在，返回 true。
 // 当前用户的 Accept-Encoding 的匹配到 * 时，按添加顺序查找真正的匹配项。
 // 不能添加名为 identity 和 * 的算法。
 //
 // 如果未添加任何算法，则每个请求都相当于是 identity 规则。
-func (c *Compress) AddAlgorithm(name string, w WriterFunc) (exists bool) {
+func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
 
-	if w == nil {
+	if wf == nil {
 		panic("参数 w 不能为空")
 	}
 
 	if sliceutil.Count(c.algorithms, func(i int) bool { return c.algorithms[i].name == name }) > 0 {
-		return true
+		return ErrExists
 	}
 
+	w, err := wf(emptyWriter)
+	if err != nil {
+		return err
+	}
 	c.algorithms = append(c.algorithms, algorithm{name: name, writer: w})
-	return false
+	return nil
 }
 
 // SetAlgorithm 设置压缩算法
 //
 // 如果 w 为 nil，则表示去掉此算法的支持。
-func (c *Compress) SetAlgorithm(name string, w WriterFunc) {
+func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
 
-	if w == nil {
+	if wf == nil {
 		size := sliceutil.Delete(c.algorithms, func(i int) bool { return c.algorithms[i].name == name })
 		c.algorithms = c.algorithms[:size]
-		return
+		return nil
 	}
 
+	w, err := wf(emptyWriter)
+	if err != nil {
+		return err
+	}
 	c.algorithms = append(c.algorithms, algorithm{name: name, writer: w})
+	return nil
 }
 
 // 如果返回的 f 为空值，表示不需要压缩
-func (c *Compress) findAlgorithm(r *http.Request) (name string, f WriterFunc, notAcceptable bool) {
+func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcceptable bool) {
 	accepts := qheader.AcceptEncoding(r)
 	for _, accept := range accepts {
 		if accept.Err != nil {

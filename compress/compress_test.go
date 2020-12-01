@@ -22,10 +22,9 @@ func newCompress(a *assert.Assertion, types ...string) *Compress {
 	c := New(log.New(os.Stderr, "", 0), types...)
 	a.NotNil(c)
 
-	a.False(c.AddAlgorithm("deflate", NewDeflate))
-	a.False(c.AddAlgorithm("gzip", NewGzip))
-	a.False(c.AddAlgorithm("br", NewBrotli))
-	a.False(c.AddAlgorithm("error", newErrorWriter))
+	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
+	a.NotError(c.AddAlgorithm("gzip", NewGzip))
+	a.NotError(c.AddAlgorithm("br", NewBrotli))
 
 	return c
 }

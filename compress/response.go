@@ -28,11 +28,11 @@ type response struct {
 	// 压缩相关的字段
 	//
 	// 如果 f 为 nil，表示不需要压缩
-	f            WriterFunc
+	f            Writer
 	encodingName string
 }
 
-func (c *Compress) newResponse(resp http.ResponseWriter, f WriterFunc, encodingName string) *response {
+func (c *Compress) newResponse(resp http.ResponseWriter, f Writer, encodingName string) *response {
 	r := respPool.Get().(*response)
 	r.c = c
 	r.writer = nil
@@ -83,15 +83,11 @@ func (resp *response) writeHeader(status int, bs []byte) {
 		return
 	}
 
-	if compressWriter, err := resp.f(resp.responseWriter); err != nil { // 出错，退化成 responseWriter
-		resp.c.printError(err)
-		resp.writer = resp.responseWriter
-	} else {
-		h.Set("Content-Encoding", resp.encodingName)
-		h.Add("Vary", "Content-Encoding")
-		resp.compressWriter = compressWriter
-		resp.writer = resp.compressWriter
-	}
+	resp.f.Reset(resp.responseWriter)
+	h.Set("Content-Encoding", resp.encodingName)
+	h.Add("Vary", "Content-Encoding")
+	resp.compressWriter = resp.f
+	resp.writer = resp.compressWriter
 }
 
 func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
