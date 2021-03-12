@@ -11,6 +11,7 @@ package recovery
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/issue9/source"
@@ -31,6 +32,8 @@ func DefaultRecoverFunc(status int) RecoverFunc {
 }
 
 // TraceStack 打印调用的堆栈信息的 RecoverFunc 实现
+//
+// 调用堆栈信息将输出到客户端。
 func TraceStack(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		w.WriteHeader(status)
@@ -43,6 +46,14 @@ func TraceStack(status int) RecoverFunc {
 		if _, err = fmt.Fprint(w, data); err != nil {
 			panic(err)
 		}
+	}
+}
+
+// LogTraceStack 打印调用信息到日志的 RecoverFunc 实现
+func LogTraceStack(l *log.Logger, status int) RecoverFunc {
+	return func(w http.ResponseWriter, msg interface{}) {
+		w.WriteHeader(status)
+		l.Println(msg)
 	}
 }
 
