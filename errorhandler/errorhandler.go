@@ -10,11 +10,13 @@ import (
 )
 
 // HandleFunc 错误处理函数
-//
-// 对某一固定的状态码可以做专门的处理。
 type HandleFunc func(w http.ResponseWriter, status int)
 
 // ErrorHandler 错误页面处理函数管理
+//
+// NOTE: 外层必须包含由 ErrorHandler.Recovery 声明的 recovery 中间件。
+// 一旦写入由 ErrorHandler 托管的状态码，会直接中间整个中间件链的执行以 panic 的形式退出，
+// 直接被 recovery 捕获。
 type ErrorHandler struct {
 	handlers map[int]HandleFunc
 }
