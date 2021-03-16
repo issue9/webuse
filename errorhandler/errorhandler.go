@@ -1,16 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package errorhandler 提供自定义错误处理功能
-//
-// net/http 包中对于错误的处理是通过 http.Error() 进行的，
-// 我们无法直接修改该方法，实现自定义的错误处理功能。
-// 只能对 http.ResponseWriter.WriteHeader() 进行自定义，
-// 在指定的状态下，抛出异常，再通过 recover 实现错误处理。
-//
-// 需要注意的是，如果采用了当前包的方案，那么默认情况下，
-// 所有大于 400 的 WriteHeader 操作，都会被 panic，
-// 如果你对某些操作不想按正常流程处理，可以使用 errorhandler.WriteHeader
-// 代替默认的 ResponseWriter.WriteHeader 操作。
+// Package errorhandler 提供自定义错误页面的功能
 package errorhandler
 
 import (
@@ -24,7 +14,7 @@ import (
 // 对某一固定的状态码可以做专门的处理。
 type HandleFunc func(w http.ResponseWriter, status int)
 
-// ErrorHandler 错误处理函数的管理
+// ErrorHandler 错误页面处理函数管理
 type ErrorHandler struct {
 	handlers map[int]HandleFunc
 }
@@ -37,6 +27,8 @@ func New() *ErrorHandler {
 }
 
 // Add 添加针对指定状态码的错误处理函数
+//
+// NOTE: 如果指定了 400 以下的状态码，那么该状态码也会被当作错误页面进行托管。
 func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
 	if f == nil {
 		panic("参数不能为 nil")
@@ -57,9 +49,7 @@ func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
 //
 // 有则修改，没有则添加，如果 f 为 nil，则表示删除该状态码的处理函数。
 //
-// status 表示处理函数 f 对应的状态码，仅对大于等于 400 的启作用，
-// 同时还有一个特殊的状态码 0，表示那些未设置的状态码会统一采和此处理函数。
-// 如果也没设置 0，则仅简单地输出状态码对应的错误信息。
+// NOTE: 如果指定了 400 以下的状态码，那么该状态码也会被当作错误页面进行托管。
 func (e *ErrorHandler) Set(f HandleFunc, status ...int) {
 	if f == nil {
 		for _, s := range status {
@@ -77,10 +67,6 @@ func (e *ErrorHandler) Set(f HandleFunc, status ...int) {
 func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 	f, found := e.handlers[status]
 	if !found {
-		if f, found = e.handlers[0]; !found || f == nil {
-			f = defaultRender
-		}
-	} else if f == nil {
 		f = defaultRender
 	}
 
@@ -88,26 +74,23 @@ func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
 }
 
 // Middleware 将当前中间件应用于 next
-//
-// NOTE: 要求在最外层
 func (e *ErrorHandler) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(&response{ResponseWriter: w}, r)
+		next.ServeHTTP(&response{ResponseWriter: w, eh: e}, r)
 	})
 }
 
 // MiddlewareFunc 将当前中间件应用于 next
-//
-// NOTE: 要求在最外层
 func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
 	return e.Middleware(http.HandlerFunc(next))
 }
 
-// Recovery 生成一个 recovery.RecoverFunc 函数用于捕获由 panic 触发的事件
+// Recovery 生成一个可正确处理错误页面的 recovery.RecoverFunc 函数
 //
-// 相较于 recovery 的相关功能，此函数可以正常处理 errorhandler 的错误代码。
-// rf 表示在处理完 errorhandler 的相关功能之后，后续的处理方式，如果为空则采用
-// recovery.DefaultRecoverFunc(500)。
+// NOTE: ErrorHandler 最终是以特定的 panic 形式退出当前处理进程的，
+// 所以必须要有 recover 函数捕获该 panic，否则会导致整个程序直接退出。
+// 我们采用与 recovery 相结合的形式处理 panic，所以在 ErrorHandler
+// 的外层必须要有一个由 ErrorHandler.Recovery 声明的 recovery.RecoverFunc 中间件。
 func (e *ErrorHandler) Recovery(rf recovery.RecoverFunc) recovery.RecoverFunc {
 	if rf == nil {
 		rf = recovery.DefaultRecoverFunc(http.StatusInternalServerError)

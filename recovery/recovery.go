@@ -53,7 +53,12 @@ func TraceStack(status int) RecoverFunc {
 func LogTraceStack(l *log.Logger, status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		w.WriteHeader(status)
-		l.Println(msg)
+
+		data, err := source.TraceStack(2, msg)
+		if err != nil {
+			panic(err)
+		}
+		l.Println(data)
 	}
 }
 

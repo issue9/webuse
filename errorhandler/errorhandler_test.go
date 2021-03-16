@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/middleware/v3/recovery"
 )
 
-func testRenderError(w http.ResponseWriter, status int) {
+func errorHandlerFunc(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-type", "test")
 	w.WriteHeader(status)
 	w.Write([]byte("test"))
@@ -29,11 +29,11 @@ func TestErrorHandler_Add(t *testing.T) {
 	a.Panic(func() {
 		eh.Add(nil, 500, 501)
 	})
-	a.True(eh.Add(testRenderError, 500, 501))
-	a.False(eh.Add(testRenderError, 500, 502)) // 已经存在
+	a.True(eh.Add(errorHandlerFunc, 500, 501))
+	a.False(eh.Add(errorHandlerFunc, 500, 502)) // 已经存在
 
-	a.True(eh.Add(testRenderError, 400, 401))
-	a.False(eh.Add(testRenderError, 401, 402)) // 已经存在
+	a.True(eh.Add(errorHandlerFunc, 400, 401))
+	a.False(eh.Add(errorHandlerFunc, 401, 402)) // 已经存在
 }
 
 func TestErrorHandler_Set(t *testing.T) {
@@ -44,27 +44,41 @@ func TestErrorHandler_Set(t *testing.T) {
 	f, found := eh.handlers[500]
 	a.False(found).Nil(f)
 
-	eh.Set(testRenderError, 500, 502)
-	a.Equal(eh.handlers[500], HandleFunc(testRenderError))
+	eh.Set(errorHandlerFunc, 500, 502)
+	a.Equal(eh.handlers[500], HandleFunc(errorHandlerFunc))
 }
 
 func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 	a := assert.New(t)
 	eh := New()
 	a.NotNil(eh)
-	a.NotError(eh.Add(testRenderError, http.StatusBadRequest, http.StatusNotFound))
+	a.NotError(eh.Add(errorHandlerFunc, http.StatusBadRequest, http.StatusNotFound, http.StatusAccepted))
 
-	f1 := func(w http.ResponseWriter, r *http.Request) {
+	f400 := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("f1"))
+		w.Write([]byte("400"))
 	}
 
-	// MiddlewareFunc，400 错误，不会采用 f1 的内容，而是 testRenderError
-	h := eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f1))
+	f202 := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+		w.Write([]byte("400"))
+	}
+
+	// MiddlewareFunc，400 错误，不会采用 f400 的内容，而是 errorHandlerFunc
+	h := eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f400))
 	srv := rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
 		Status(http.StatusBadRequest).
+		Header("Content-Type", "test").
+		StringBody("test")
+
+		// MiddlewareFunc，202 错误，不会采用 f400 的内容，而是 errorHandlerFunc
+	h = eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f202))
+	srv = rest.NewServer(t, h, nil)
+	srv.Get("/path").
+		Do().
+		Status(http.StatusAccepted).
 		Header("Content-Type", "test").
 		StringBody("test")
 
@@ -93,7 +107,7 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		Header("Content-Type", "h1")
 
 	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
-	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f1))
+	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
@@ -118,39 +132,11 @@ func TestErrorHandler_Render(t *testing.T) {
 	eh.Render(w, http.StatusInternalServerError)
 	a.Equal(w.Code, http.StatusInternalServerError)
 
-	// 设置为 testRenderError
-	eh.Set(testRenderError, http.StatusInternalServerError)
+	// 设置为 errorHandlerFunc
+	eh.Set(errorHandlerFunc, http.StatusInternalServerError)
 	w = httptest.NewRecorder()
 	eh.Render(w, http.StatusInternalServerError)
 	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), "test").
-		Equal(w.Body.String(), "test")
-}
-
-func TestErrorHandler_Render_0(t *testing.T) {
-	a := assert.New(t)
-	eh := New()
-
-	eh.Add(testRenderError, 401, 402)
-	w := httptest.NewRecorder()
-	eh.Render(w, 401)
-	a.Equal(w.Code, 401).
-		Equal(w.Header().Get("Content-Type"), "test").
-		Equal(w.Body.String(), "test")
-	w = httptest.NewRecorder()
-	eh.Render(w, 405) // 不存在
-	a.Equal(w.Code, 405)
-
-	// 设置为 testRender
-	eh.Set(testRenderError, 0, 401, 402)
-	w = httptest.NewRecorder()
-	eh.Render(w, 401)
-	a.Equal(w.Code, 401).
-		Equal(w.Header().Get("Content-Type"), "test").
-		Equal(w.Body.String(), "test")
-	w = httptest.NewRecorder()
-	eh.Render(w, 405) // 采用 0
-	a.Equal(w.Code, 405).
 		Equal(w.Header().Get("Content-Type"), "test").
 		Equal(w.Body.String(), "test")
 }
