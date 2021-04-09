@@ -2,12 +2,12 @@ github.com/andybalholm/brotli v1.0.1 h1:KqhlKozYbRtJvsPrrEeXcO+N2l6NYT5A2QAFmSUL
 github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
 github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b/go.mod h1:H0wQNHz2YrLsuXOZozoeDmnHXkNCRmMW0gwFWDfEZDA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/gomodule/redigo v1.8.2/go.mod h1:P9dn9mFrCBvWhGE1wpxx6fgq7BAeLBk+UUUzlpkBYO0=
+github.com/gomodule/redigo v1.8.4/go.mod h1:P9dn9mFrCBvWhGE1wpxx6fgq7BAeLBk+UUUzlpkBYO0=
 github.com/issue9/assert v1.4.0/go.mod h1:Yktk83hAVl1SPSYtd9kjhBizuiBIqUQyj+D5SE2yjVY=
 github.com/issue9/assert v1.4.1 h1:gUtOpMTeaE4JTe9kACma5foOHBvVt1p5XTFrULDwdXI=
 github.com/issue9/assert v1.4.1/go.mod h1:Yktk83hAVl1SPSYtd9kjhBizuiBIqUQyj+D5SE2yjVY=
-github.com/issue9/cache v0.2.0 h1:KX679cCJK6wLs9RPbr4F4rKVe/S/SkspdtOknxGqw+k=
-github.com/issue9/cache v0.2.0/go.mod h1:nwzru2EDdL62V9CnC2gPkoTEMcb16XT7ALqHfIGtWUo=
+github.com/issue9/cache v0.2.1 h1:6oJc4F6vACHxbo8ZSCxpOw0RUh4U03n7Q6VPpprOI6E=
+github.com/issue9/cache v0.2.1/go.mod h1:G1HwYhfVWM04kujJuV9ZFZdN2mYVVNT5f9ihZhwLYdQ=
 github.com/issue9/errwrap v0.1.2 h1:5TEX7YJdbaYbEn8UNphxc0hC/xi8/vb3ulZYhyWj0nw=
 github.com/issue9/errwrap v0.1.2/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
 github.com/issue9/qheader v0.5.4 h1:EJWT4VCtto4+J4A4sYpSwBVBldklQ8iOdOJyXnsIUDo=
