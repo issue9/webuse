@@ -577,7 +577,6 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 
 	for index, item := range data {
 		c := newCompress(a, item.types...)
-		c.SetAlgorithm("error", newErrorWriter)
 		a.NotNil(c, "构建 Compress 对象出错，%d,%s", index, item.name)
 
 		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), nil)
@@ -616,7 +615,7 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 		a.NotError(err).NotNil(reader)
 
 		data, err := ioutil.ReadAll(reader)
-		a.NotError(err).NotNil(data)
+		a.NotError(err, "%s 位于 %d:%s", err, index, item.name).NotNil(data)
 		a.Equal(string(data), item.respBody)
 	}
 }

@@ -21,7 +21,6 @@ type response struct {
 	c *Compress
 
 	writer         io.Writer
-	compressWriter io.WriteCloser
 	responseWriter http.ResponseWriter
 	wroteHeader    bool
 
@@ -36,7 +35,6 @@ func (c *Compress) newResponse(resp http.ResponseWriter, f Writer, encodingName 
 	r := respPool.Get().(*response)
 	r.c = c
 	r.writer = nil
-	r.compressWriter = nil
 	r.responseWriter = resp
 	r.wroteHeader = false
 	r.f = f
@@ -62,6 +60,7 @@ func (resp *response) Write(bs []byte) (int, error) {
 	return resp.writer.Write(bs)
 }
 
+// bs 仅作为检测 content-type 类型值
 func (resp *response) writeHeader(status int, bs []byte) {
 	defer func() {
 		resp.responseWriter.WriteHeader(status)
@@ -80,14 +79,15 @@ func (resp *response) writeHeader(status int, bs []byte) {
 	}
 	if resp.f == nil || !bodyAllowedForStatus(status) || !resp.c.canCompressed(ct) {
 		resp.writer = resp.responseWriter
+		resp.c.putAlgorithm(resp.encodingName, resp.f)
+		resp.f = nil
 		return
 	}
 
 	resp.f.Reset(resp.responseWriter)
 	h.Set("Content-Encoding", resp.encodingName)
 	h.Add("Vary", "Content-Encoding")
-	resp.compressWriter = resp.f
-	resp.writer = resp.compressWriter
+	resp.writer = resp.f
 }
 
 func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -98,10 +98,12 @@ func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func (resp *response) close() {
-	if resp.compressWriter != nil {
-		if err := resp.compressWriter.Close(); err != nil {
+	if resp.f != nil {
+		if err := resp.f.Close(); err != nil {
 			resp.c.printError(err)
 		}
+		resp.c.putAlgorithm(resp.encodingName, resp.f)
+		resp.f = nil
 	}
 
 	respPool.Put(resp)

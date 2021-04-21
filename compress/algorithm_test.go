@@ -37,8 +37,12 @@ func TestCompress_AddAlgorithm(t *testing.T) {
 	a.ErrorIs(c.AddAlgorithm("br", NewBrotli), ErrExists)
 	a.Equal(1, len(c.algorithms))
 
-	a.ErrorString(c.AddAlgorithm("err", newErrorWriter), "errorWriter")
-	a.Equal(1, len(c.algorithms))
+	a.NotError(c.AddAlgorithm("err", newErrorWriter), "errorWriter")
+	a.Panic(func() {
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set("accept-encoding", "err")
+		c.findAlgorithm(r)
+	})
 
 	a.Panic(func() {
 		c.AddAlgorithm("", NewGzip)

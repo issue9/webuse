@@ -17,7 +17,7 @@ type Compress struct {
 	// 若未指定，则不输出内容。
 	errlog *log.Logger
 
-	algorithms []algorithm
+	algorithms []*algorithm
 
 	prefix []string // 保存通配符匹配的值列表；
 	types  []string // 表示完全匹配的值列表。
@@ -32,7 +32,7 @@ type Compress struct {
 //  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
 func New(errlog *log.Logger, types ...string) *Compress {
 	c := &Compress{
-		algorithms: make([]algorithm, 0, 4),
+		algorithms: make([]*algorithm, 0, 4),
 		errlog:     errlog,
 	}
 

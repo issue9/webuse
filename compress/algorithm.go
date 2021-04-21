@@ -3,12 +3,12 @@
 package compress
 
 import (
-	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/qheader"
@@ -17,8 +17,6 @@ import (
 
 // ErrExists 表示已经存在名称相同的压缩算法
 var ErrExists = errors.New("已经存在相同名称的算法")
-
-var emptyWriter = new(bytes.Buffer)
 
 // Writer 所有压缩对象实现的接口
 type Writer interface {
@@ -30,8 +28,8 @@ type Writer interface {
 type WriterFunc func(w io.Writer) (Writer, error)
 
 type algorithm struct {
-	name   string
-	writer Writer
+	name string
+	pool *sync.Pool
 }
 
 // NewGzip 新建 gzip 算法
@@ -68,11 +66,16 @@ func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
 		return ErrExists
 	}
 
-	w, err := wf(emptyWriter)
-	if err != nil {
-		return err
-	}
-	c.algorithms = append(c.algorithms, algorithm{name: name, writer: w})
+	c.algorithms = append(c.algorithms, &algorithm{
+		name: name,
+		pool: &sync.Pool{New: func() interface{} {
+			w, err := wf(nil)
+			if err != nil {
+				panic(err)
+			}
+			return w
+		}},
+	})
 	return nil
 }
 
@@ -90,11 +93,16 @@ func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
 		return nil
 	}
 
-	w, err := wf(emptyWriter)
-	if err != nil {
-		return err
-	}
-	c.algorithms = append(c.algorithms, algorithm{name: name, writer: w})
+	c.algorithms = append(c.algorithms, &algorithm{
+		name: name,
+		pool: &sync.Pool{New: func() interface{} {
+			w, err := wf(nil)
+			if err != nil {
+				panic(err)
+			}
+			return w
+		}},
+	})
 	return nil
 }
 
@@ -115,7 +123,7 @@ func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcc
 			for _, a := range c.algorithms {
 				for _, item := range accepts {
 					if item.Value != a.name {
-						return a.name, a.writer, false
+						return a.name, a.pool.Get().(Writer), false
 					}
 				}
 			}
@@ -131,10 +139,19 @@ func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcc
 
 		for _, a := range c.algorithms {
 			if a.name == accept.Value {
-				return a.name, a.writer, false
+				return a.name, a.pool.Get().(Writer), false
 			}
 		}
 	}
 
 	return // 没有匹配，表示不需要进行压缩
+}
+
+func (c *Compress) putAlgorithm(name string, w Writer) {
+	for _, a := range c.algorithms {
+		if a.name == name {
+			a.pool.Put(w)
+			return
+		}
+	}
 }
