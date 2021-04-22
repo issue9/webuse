@@ -17,7 +17,7 @@ type Compress struct {
 	// 若未指定，则不输出内容。
 	errlog *log.Logger
 
-	algorithms []*algorithm
+	algorithms []*algorithm // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
 	prefix []string // 保存通配符匹配的值列表；
 	types  []string // 表示完全匹配的值列表。

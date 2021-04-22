@@ -3,6 +3,7 @@
 package compress
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"errors"
@@ -69,7 +70,7 @@ func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
 	c.algorithms = append(c.algorithms, &algorithm{
 		name: name,
 		pool: &sync.Pool{New: func() interface{} {
-			w, err := wf(nil)
+			w, err := wf(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
 			if err != nil {
 				panic(err)
 			}
@@ -96,7 +97,7 @@ func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
 	c.algorithms = append(c.algorithms, &algorithm{
 		name: name,
 		pool: &sync.Pool{New: func() interface{} {
-			w, err := wf(nil)
+			w, err := wf(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
 			if err != nil {
 				panic(err)
 			}
