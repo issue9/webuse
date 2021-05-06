@@ -140,8 +140,8 @@ func (c *Compress) canCompressed(typ string) bool {
 	return false
 }
 
-func (c *Compress) printError(err error) {
+func (c *Compress) printError(v ...interface{}) {
 	if c.errlog != nil {
-		c.errlog.Println(err)
+		c.errlog.Println(v...)
 	}
 }

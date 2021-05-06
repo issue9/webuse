@@ -11,9 +11,7 @@ import (
 )
 
 var respPool = &sync.Pool{
-	New: func() interface{} {
-		return &response{}
-	},
+	New: func() interface{} { return &response{} },
 }
 
 // 实现了 http.ResponseWriter 接口
@@ -42,13 +40,13 @@ func (c *Compress) newResponse(resp http.ResponseWriter, f Writer, encodingName 
 	return r
 }
 
-func (resp *response) Header() http.Header {
-	return resp.responseWriter.Header()
-}
+func (resp *response) Header() http.Header { return resp.responseWriter.Header() }
 
 // 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
-	resp.writeHeader(code, nil)
+	if !resp.wroteHeader {
+		resp.writeHeader(code, nil)
+	}
 }
 
 // NOTE: 根据接口要求，第一次调用 Write 时，会发送报头内容，

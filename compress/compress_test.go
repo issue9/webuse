@@ -10,12 +10,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+
+	"github.com/issue9/middleware/v3"
 )
 
 func newCompress(a *assert.Assertion, types ...string) *Compress {
@@ -638,4 +641,52 @@ func TestCompress_canCompressed(t *testing.T) {
 	a.True(c.canCompressed("application/json"))
 
 	a.False(c.canCompressed("application/octet"))
+}
+
+// 在任何输出中间件之前应用了压缩中间件
+func TestCompress_Middleware_Before(t *testing.T) {
+	a := assert.New(t)
+
+	f201 := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated) // 在中间件中提早输出了内容，此处应该不启作用。
+		_, err := w.Write([]byte("201"))
+		a.NotError(err)
+	}
+	m := middleware.NewManager(http.HandlerFunc(f201))
+	a.NotNil(m)
+
+	m.After(func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := w.Write([]byte("after"))
+			a.NotError(err)
+			h.ServeHTTP(w, r)
+		})
+	})
+	c := New(log.Default(), "*")
+	a.NotNil(c)
+	a.NotError(c.AddAlgorithm("gzip", NewGzip))
+	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
+	m.Before(c.Middleware) // 插到之前
+
+	// 未请求压缩
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	m.ServeHTTP(w, r)
+	a.Equal(w.Body.String(), "after201")
+	a.Equal(w.Header().Get("Content-Encoding"), "")
+	a.Equal(http.StatusOK, w.Result().StatusCode)
+
+	// 请求压缩
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept-Encoding", "deflate;q=0.8")
+
+	m.ServeHTTP(w, r)
+	a.Equal(w.Header().Get("Content-Encoding"), "deflate")
+	a.Equal(w.Header().Get("Content-Type"), "text/plain; charset=utf-8")
+	a.Equal(http.StatusOK, w.Result().StatusCode)
+	reader := flate.NewReader(w.Body)
+	data, err := io.ReadAll(reader)
+	a.NotError(err).NotNil(data)
+	a.Equal(string(data), "after201")
 }
