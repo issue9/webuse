@@ -149,6 +149,10 @@ func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcc
 }
 
 func (c *Compress) putAlgorithm(name string, w Writer) {
+	if w == nil {
+		return
+	}
+
 	for _, a := range c.algorithms {
 		if a.name == name {
 			a.pool.Put(w)

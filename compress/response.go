@@ -42,7 +42,6 @@ func (c *Compress) newResponse(resp http.ResponseWriter, f Writer, encodingName 
 
 func (resp *response) Header() http.Header { return resp.responseWriter.Header() }
 
-// 根据接口要求：一旦调用此函数，之后产生的报头将不再启作用。
 func (resp *response) WriteHeader(code int) {
 	if !resp.wroteHeader {
 		resp.writeHeader(code, nil)

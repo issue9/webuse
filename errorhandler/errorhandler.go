@@ -10,6 +10,8 @@ import (
 )
 
 // HandleFunc 错误处理函数
+//
+// status 表示状态码，必须在第一时间输出；
 type HandleFunc func(w http.ResponseWriter, status int)
 
 // ErrorHandler 错误页面处理函数管理
@@ -23,9 +25,7 @@ type ErrorHandler struct {
 
 // New 声明 ErrorHandler 变量
 func New() *ErrorHandler {
-	return &ErrorHandler{
-		handlers: make(map[int]HandleFunc, 20),
-	}
+	return &ErrorHandler{handlers: make(map[int]HandleFunc, 20)}
 }
 
 // Add 添加针对指定状态码的错误处理函数
@@ -33,7 +33,7 @@ func New() *ErrorHandler {
 // NOTE: 如果指定了 400 以下的状态码，那么该状态码也会被当作错误页面进行托管。
 func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
 	if f == nil {
-		panic("参数不能为 nil")
+		panic("参数 f 不能为 nil")
 	}
 
 	for _, s := range status {
@@ -45,6 +45,12 @@ func (e *ErrorHandler) Add(f HandleFunc, status ...int) (ok bool) {
 	}
 
 	return true
+}
+
+// Exists 指定状态码对应的处理函数是否存在
+func (e *ErrorHandler) Exists(status int) bool {
+	_, exists := e.handlers[status]
+	return exists
 }
 
 // Set 添加或修改指定状态码对应的处理函数

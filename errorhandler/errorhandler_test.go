@@ -30,7 +30,9 @@ func TestErrorHandler_Add(t *testing.T) {
 		eh.Add(nil, 500, 501)
 	})
 	a.True(eh.Add(errorHandlerFunc, 500, 501))
+	a.True(eh.Exists(500)).True(eh.Exists(501))
 	a.False(eh.Add(errorHandlerFunc, 500, 502)) // 已经存在
+	a.True(eh.Exists(500)).True(eh.Exists(501))
 
 	a.True(eh.Add(errorHandlerFunc, 400, 401))
 	a.False(eh.Add(errorHandlerFunc, 401, 402)) // 已经存在
@@ -41,11 +43,14 @@ func TestErrorHandler_Set(t *testing.T) {
 	eh := New()
 
 	eh.Set(nil, 500, 501)
-	f, found := eh.handlers[500]
-	a.False(found).Nil(f)
+	a.False(eh.Exists(500)).False(eh.Exists(501))
 
 	eh.Set(errorHandlerFunc, 500, 502)
+	a.True(eh.Exists(500)).False(eh.Exists(501))
 	a.Equal(eh.handlers[500], HandleFunc(errorHandlerFunc))
+
+	eh.Set(nil, 500, 501)
+	a.False(eh.Exists(500)).True(eh.Exists(502))
 }
 
 func TestErrorHandler_MiddlewareFunc(t *testing.T) {
@@ -73,7 +78,7 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		Header("Content-Type", "test").
 		StringBody("test")
 
-		// MiddlewareFunc，202 错误，不会采用 f400 的内容，而是 errorHandlerFunc
+	// MiddlewareFunc，202 错误，不会采用 f202 的内容，而是 errorHandlerFunc
 	h = eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f202))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
