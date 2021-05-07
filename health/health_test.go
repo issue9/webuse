@@ -3,12 +3,15 @@
 package health
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/cache/memory"
 )
 
 func f200(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +32,7 @@ func f500(w http.ResponseWriter, r *http.Request) {
 func TestHealth(t *testing.T) {
 	a := assert.New(t)
 
-	mem := NewMemory(100)
+	mem := NewCache(memory.New(1*time.Minute), "health_", log.New(os.Stderr, "[HEALTH]", 0))
 	h := New(mem)
 	state := mem.Get(http.MethodGet, "/")
 	a.Equal(0, state.Count)

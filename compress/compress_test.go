@@ -686,7 +686,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	a.Equal(w.Header().Get("Content-Type"), "text/plain; charset=utf-8")
 	a.Equal(http.StatusOK, w.Result().StatusCode)
 	reader := flate.NewReader(w.Body)
-	data, err := io.ReadAll(reader)
+	data, err := ioutil.ReadAll(reader)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "after201")
 }

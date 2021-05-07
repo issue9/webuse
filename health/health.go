@@ -8,17 +8,19 @@ import (
 	"time"
 )
 
-// Store 存储 API 状态的处理接口
+// Store 存储 API 状态的接口
 type Store interface {
-	// 获取指定 API 的数据
+	// Get 获取指定 API 的数据
 	//
 	// 如果还不存在，则返回空对象。
 	Get(method, path string) *State
 
+	// Save 保存数据内容
+	//
 	// 每生成一条数据，均会以异步的方式调用 Save，由处理具体的操作方式。
 	Save(*State)
 
-	// 返回所有接口的状态信息
+	// All 返回所有接口的状态信息
 	All() []*State
 }
 
@@ -47,10 +49,17 @@ func New(store Store) *Health {
 	}
 }
 
-// States 返回所有的状态列表
-func (h *Health) States() []*State {
-	return h.store.All()
+// Register 注册 api
+//
+// 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
+// 会自动将该 api 的信息进行保存，此操作相当于提前进行一次访问。
+// 此操作对部分冷门的 api 可以保证其出现在 States() 中。
+func (h *Health) Register(method, path string) {
+	h.store.Save(&State{Method: method, Path: path})
 }
+
+// States 返回所有的状态列表
+func (h *Health) States() []*State { return h.store.All() }
 
 // MiddlewareFunc 将当前中间件应用于 next
 func (h *Health) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
