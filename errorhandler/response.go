@@ -17,7 +17,11 @@ type response struct {
 }
 
 func (r *response) WriteHeader(status int) {
-	r.eh.Exit(r.ResponseWriter, status)
+	if r.eh.Exists(status) {
+		r.eh.Exit(r.ResponseWriter, status)
+		return
+	}
+	r.ResponseWriter.WriteHeader(status)
 }
 
 // WriteHeader 写入 HTTP 状态值
