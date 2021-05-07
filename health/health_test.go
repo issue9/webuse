@@ -41,7 +41,7 @@ func TestHealth(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	h.MiddlewareFunc(f200).ServeHTTP(w, r)
-	time.Sleep(500 * time.Microsecond) // 保存是异步的，等待完成
+	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodGet, "/")
 	a.Equal(1, state.Count)
 
@@ -49,7 +49,7 @@ func TestHealth(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/", nil)
 	h.MiddlewareFunc(f500).ServeHTTP(w, r)
-	time.Sleep(500 * time.Microsecond) // 保存是异步的，等待完成
+	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodGet, "/")
 	a.Equal(2, state.Count).Equal(1, state.ServerErrors).Equal(0, state.UserErrors)
 
@@ -57,7 +57,7 @@ func TestHealth(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodOptions, "/", nil)
 	h.MiddlewareFunc(f200).ServeHTTP(w, r)
-	time.Sleep(500 * time.Microsecond) // 保存是异步的，等待完成
+	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodOptions, "/")
 	a.Equal(1, state.Count)
 
@@ -65,7 +65,7 @@ func TestHealth(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodDelete, "/users", nil)
 	h.MiddlewareFunc(f401).ServeHTTP(w, r)
-	time.Sleep(500 * time.Microsecond) // 保存是异步的，等待完成
+	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodDelete, "/users")
 	a.Equal(1, state.Count).Equal(0, state.ServerErrors).Equal(1, state.UserErrors)
 

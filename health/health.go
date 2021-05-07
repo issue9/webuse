@@ -77,7 +77,7 @@ func (h *Health) Middleware(next http.Handler) http.Handler {
 		start := time.Now()
 		resp := &response{ResponseWriter: w}
 		next.ServeHTTP(resp, r)
-		go h.save(r.Method, r.URL.Path, time.Now().Sub(start), resp.status)
+		go h.save(r.Method, r.URL.Path, time.Since(start), resp.status)
 	})
 }
 
