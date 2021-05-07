@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/middleware/v3/recovery"
+	"github.com/issue9/middleware/v4/recovery"
 )
 
 func errorHandlerFunc(w http.ResponseWriter, status int) {

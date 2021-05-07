@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/middleware/v3/auth"
+	"github.com/issue9/middleware/v4/auth"
 )
 
 var (

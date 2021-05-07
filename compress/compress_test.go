@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/middleware/v3"
+	"github.com/issue9/middleware/v4"
 )
 
 func newCompress(a *assert.Assertion, types ...string) *Compress {
