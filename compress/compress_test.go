@@ -662,7 +662,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	})
-	c := New(log.Default(), "*")
+	c := New(log.New(os.Stderr, "", 0), "*")
 	a.NotNil(c)
 	a.NotError(c.AddAlgorithm("gzip", NewGzip))
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
