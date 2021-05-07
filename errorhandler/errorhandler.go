@@ -4,15 +4,14 @@
 package errorhandler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/issue9/middleware/v4/recovery"
 )
 
 // HandleFunc 错误处理函数
-//
-// status 表示状态码，必须在第一时间输出；
-type HandleFunc func(w http.ResponseWriter, status int)
+type HandleFunc func(w io.Writer, status int)
 
 // ErrorHandler 错误页面处理函数管理
 //
@@ -72,12 +71,11 @@ func (e *ErrorHandler) Set(f HandleFunc, status ...int) {
 }
 
 // Render 向客户端输出指定状态码的错误内容
-func (e *ErrorHandler) Render(w http.ResponseWriter, status int) {
+func (e *ErrorHandler) Render(w io.Writer, status int) {
 	f, found := e.handlers[status]
 	if !found {
 		f = defaultRender
 	}
-
 	f(w, status)
 }
 
@@ -105,20 +103,13 @@ func (e *ErrorHandler) Recovery(rf recovery.RecoverFunc) recovery.RecoverFunc {
 	}
 
 	return func(w http.ResponseWriter, msg interface{}) {
-		// 通 httpStatus 退出的，并不能算是 panic，所以此处不输出调用堆栈信息。
-		if status, ok := msg.(httpStatus); ok {
-			if status > 0 {
-				e.Render(w, int(status))
-			}
-			return
+		if _, ok := msg.(httpStatus); !ok { // 非 httpStatus 的退出，调用 rf 处理。
+			rf(w, msg)
 		}
-
-		// 非 httpStatus 的退出，打印相关的错误信息到日志
-		rf(w, msg)
 	}
 }
 
 // 仅向客户端输出状态码
-func defaultRender(w http.ResponseWriter, status int) {
-	http.Error(w, http.StatusText(status), status)
+func defaultRender(w io.Writer, status int) {
+	io.WriteString(w, http.StatusText(status))
 }

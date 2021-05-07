@@ -3,6 +3,8 @@
 package errorhandler
 
 import (
+	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,9 +18,7 @@ import (
 	"github.com/issue9/middleware/v4/recovery"
 )
 
-func errorHandlerFunc(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-type", "test")
-	w.WriteHeader(status)
+func errorHandlerFunc(w io.Writer, status int) {
 	w.Write([]byte("test"))
 }
 
@@ -75,7 +75,6 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 	srv.Get("/path").
 		Do().
 		Status(http.StatusBadRequest).
-		Header("Content-Type", "test").
 		StringBody("test")
 
 	// MiddlewareFunc，202 错误，不会采用 f202 的内容，而是 errorHandlerFunc
@@ -84,7 +83,6 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 	srv.Get("/path").
 		Do().
 		Status(http.StatusAccepted).
-		Header("Content-Type", "test").
 		StringBody("test")
 
 	// MiddlewareFunc，正常访问，采用 h 的内容
@@ -112,38 +110,38 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		Header("Content-Type", "h1")
 
 	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
+	// NOTE: recovery.DefaultRecoverFunc 的 WriteHeader 会与 errorhandler 中的相关突。
 	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
-		Status(http.StatusInternalServerError)
+		Status(http.StatusBadRequest).                                              // 报头已经在 errorhandler 中输出
+		StringBody("test" + http.StatusText(http.StatusInternalServerError) + "\n") // 输出内容也是结合了 errorhandler 和 recovery
 }
 
 func TestErrorHandler_Render(t *testing.T) {
 	a := assert.New(t)
 	eh := New()
 
-	w := httptest.NewRecorder()
+	w := &bytes.Buffer{}
 	eh.Render(w, http.StatusOK)
-	a.Equal(w.Code, http.StatusOK)
+	a.Equal(w.String(), http.StatusText(http.StatusOK))
 
-	w = httptest.NewRecorder()
+	w.Reset()
 	eh.Render(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError)
+	a.Equal(w.String(), http.StatusText(http.StatusInternalServerError))
 
 	// 设置为空，依然采用 defaultRender
+	w.Reset()
 	eh.Set(nil, http.StatusInternalServerError)
-	w = httptest.NewRecorder()
 	eh.Render(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError)
+	a.Equal(w.String(), http.StatusText(http.StatusInternalServerError))
 
 	// 设置为 errorHandlerFunc
+	w.Reset()
 	eh.Set(errorHandlerFunc, http.StatusInternalServerError)
-	w = httptest.NewRecorder()
 	eh.Render(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), "test").
-		Equal(w.Body.String(), "test")
+	a.Equal(w.String(), "test")
 }
 
 func TestErrorHandler_Recovery(t *testing.T) {
@@ -165,7 +163,7 @@ func TestErrorHandler_Recovery(t *testing.T) {
 	// httpStatus
 	w = httptest.NewRecorder()
 	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
-	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
+	a.Equal(w.Result().StatusCode, http.StatusOK) // 不需要调用 recovery，输出黑认的 200
 
 	// 以下为自定义 rf 参数
 
@@ -190,7 +188,7 @@ func TestErrorHandler_Recovery(t *testing.T) {
 	// httpStatus，没有输出日志，算是正常退出。
 	w = httptest.NewRecorder()
 	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
-	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
 	msg, err = ioutil.ReadAll(w.Result().Body)
-	a.NotError(err).NotEmpty(msg)
+	a.NotError(err).Empty(msg)
 }
