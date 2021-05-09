@@ -8,51 +8,66 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/mux/v4"
 )
 
-func f1(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("f1-"))
+var _ http.Handler = &Middlewares{}
+
+func buildMiddleware(a *assert.Assertion, text string) mux.MiddlewareFunc {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			a.NotError(w.Write([]byte(text)))
+			h.ServeHTTP(w, r)
+		})
+	}
 }
 
-var h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("h1-"))
-})
-
-func m1(h http.Handler) http.Handler {
+func buildHandler(a *assert.Assertion, code int, content string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("1"))
-		h.ServeHTTP(w, r)
+		w.WriteHeader(code)
+		a.NotError(w.Write([]byte(content)))
 	})
 }
 
-func m2(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("2"))
-		h.ServeHTTP(w, r)
-	})
-}
-
-func m3(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("3"))
-		h.ServeHTTP(w, r)
-	})
-}
-
-func TestHandlerFunc(t *testing.T) {
+func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
 
-	h := HandlerFunc(f1, m1, m2, m3)
+	m := NewMiddlewares(buildHandler(a, http.StatusCreated, "test"))
+	a.NotNil(m)
+
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Body.String(), "123f1-")
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusCreated). // 没有中间件
+						Equal(w.Body.String(), "test")
 
-	// 未指定 middleware
-
-	h = HandlerFunc(f1)
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Body.String(), "f1-")
+	m.InsertFirst(buildMiddleware(a, "a0"))
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
+					Equal(w.Body.String(), "a0test")
+
+	// 执行过程中添加中间件
+	m.InsertFirst(buildMiddleware(a, "a1"))
+	m.InsertFirst(buildMiddleware(a, "a2"))
+	m.InsertLast(buildMiddleware(a, "b1"))
+	m.InsertLast(buildMiddleware(a, "b2"))
+	w = httptest.NewRecorder()
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
+					Equal(w.Body.String(), "b2b1a0a1a2test")
+
+	// 重置中间件。同时状态码输出也改为 1
+	m.Reset()
+	w = httptest.NewRecorder()
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), "test")
+
+	// 执行过程中添加中间件
+	m.InsertFirst(buildMiddleware(a, "m2"))
+	w = httptest.NewRecorder()
+	m.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
+					Equal(w.Body.String(), "m2test")
 }

@@ -3,22 +3,54 @@
 // Package middleware 包含了一系列 http.Handler 接口的中间件
 package middleware
 
-import "net/http"
+import (
+	"net/http"
 
-// Middleware 将一个 http.Handler 封装成另一个 http.Handler
-type Middleware func(http.Handler) http.Handler
+	"github.com/issue9/mux/v4"
+)
 
-// Handler 按顺序将所有的中间件应用于 h
-func Handler(h http.Handler, middleware ...Middleware) http.Handler {
-	if l := len(middleware); l > 0 {
-		for i := l - 1; i >= 0; i-- {
-			h = middleware[i](h)
-		}
-	}
-	return h
+// Middlewares 中间件管理
+type Middlewares struct {
+	http.Handler
+	middlewares []mux.MiddlewareFunc
+	next        http.Handler
 }
 
-// HandlerFunc 按顺序将所有的中间件应用于 h
-func HandlerFunc(h func(w http.ResponseWriter, r *http.Request), middleware ...Middleware) http.Handler {
-	return Handler(http.HandlerFunc(h), middleware...)
+// NewMiddlewares 声明新的 Middlewares 实例
+func NewMiddlewares(next http.Handler) *Middlewares {
+	return &Middlewares{
+		Handler:     next,
+		middlewares: make([]mux.MiddlewareFunc, 0, 10),
+		next:        next,
+	}
+}
+
+// InsertFirst 添加中间件到顶部
+//
+// 顶部的中间件在运行过程中将最早被调用，多次添加，则最后一次的在顶部。
+func (mgr *Middlewares) InsertFirst(m mux.MiddlewareFunc) *Middlewares {
+	mgr.middlewares = append(mgr.middlewares, m)
+	mgr.Handler = mux.ApplyMiddlewares(mgr.next, mgr.middlewares...)
+	return mgr
+}
+
+// InsertLast 添加中间件到尾部
+//
+// 尾部的中间件将最后被调用，多次添加，则最后一次的在最末尾。
+func (mgr *Middlewares) InsertLast(m mux.MiddlewareFunc) *Middlewares {
+	ms := make([]mux.MiddlewareFunc, 0, 1+len(mgr.middlewares))
+	ms = append(ms, m)
+	if len(mgr.middlewares) > 0 {
+		ms = append(ms, mgr.middlewares...)
+	}
+	mgr.middlewares = ms
+	mgr.Handler = mux.ApplyMiddlewares(mgr.next, mgr.middlewares...)
+	return mgr
+}
+
+// Reset 清除中间件
+func (mgr *Middlewares) Reset() *Middlewares {
+	mgr.middlewares = mgr.middlewares[:0]
+	mgr.Handler = mgr.next
+	return mgr
 }
