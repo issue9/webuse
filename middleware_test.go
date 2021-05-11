@@ -42,20 +42,20 @@ func TestMiddlewares(t *testing.T) {
 						Equal(w.Body.String(), "test")
 
 	w = httptest.NewRecorder()
-	m.InsertFirst(buildMiddleware(a, "a0"))
+	m.Prepend(buildMiddleware(a, "a0"))
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
 					Equal(w.Body.String(), "a0test")
 
 	// 执行过程中添加中间件
-	m.InsertFirst(buildMiddleware(a, "a1"))
-	m.InsertFirst(buildMiddleware(a, "a2"))
-	m.InsertLast(buildMiddleware(a, "b1"))
-	m.InsertLast(buildMiddleware(a, "b2"))
+	m.Prepend(buildMiddleware(a, "a1")).
+		Append(buildMiddleware(a, "b1")).
+		Prepend(buildMiddleware(a, "a2")).
+		Append(buildMiddleware(a, "b2"))
 	w = httptest.NewRecorder()
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200
-					Equal(w.Body.String(), "b2b1a0a1a2test")
+					Equal(w.Body.String(), "a2a1a0b1b2test")
 
 	// 重置中间件。同时状态码输出也改为 1
 	m.Reset()
@@ -65,7 +65,7 @@ func TestMiddlewares(t *testing.T) {
 		Equal(w.Body.String(), "test")
 
 	// 执行过程中添加中间件
-	m.InsertFirst(buildMiddleware(a, "m2"))
+	m.Prepend(buildMiddleware(a, "m2"))
 	w = httptest.NewRecorder()
 	m.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK). // 中间件有输出，将状态码改为 200

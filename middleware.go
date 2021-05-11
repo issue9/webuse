@@ -25,25 +25,25 @@ func NewMiddlewares(next http.Handler) *Middlewares {
 	}
 }
 
-// InsertFirst 添加中间件到顶部
+// Prepend 添加中间件到顶部
 //
 // 顶部的中间件在运行过程中将最早被调用，多次添加，则最后一次的在顶部。
-func (mgr *Middlewares) InsertFirst(m mux.MiddlewareFunc) *Middlewares {
+func (mgr *Middlewares) Prepend(m mux.MiddlewareFunc) *Middlewares {
+	mgr.middlewares = append(mgr.middlewares, m)
+	mgr.Handler = mux.ApplyMiddlewares(mgr.next, mgr.middlewares...)
+	return mgr
+}
+
+// Append 添加中间件到尾部
+//
+// 尾部的中间件将最后被调用，多次添加，则最后一次的在最末尾。
+func (mgr *Middlewares) Append(m mux.MiddlewareFunc) *Middlewares {
 	ms := make([]mux.MiddlewareFunc, 0, 1+len(mgr.middlewares))
 	ms = append(ms, m)
 	if len(mgr.middlewares) > 0 {
 		ms = append(ms, mgr.middlewares...)
 	}
 	mgr.middlewares = ms
-	mgr.Handler = mux.ApplyMiddlewares(mgr.next, mgr.middlewares...)
-	return mgr
-}
-
-// InsertLast 添加中间件到尾部
-//
-// 尾部的中间件将最后被调用，多次添加，则最后一次的在最末尾。
-func (mgr *Middlewares) InsertLast(m mux.MiddlewareFunc) *Middlewares {
-	mgr.middlewares = append(mgr.middlewares, m)
 	mgr.Handler = mux.ApplyMiddlewares(mgr.next, mgr.middlewares...)
 	return mgr
 }

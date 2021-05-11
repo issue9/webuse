@@ -655,7 +655,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	m := middleware.NewMiddlewares(http.HandlerFunc(f201))
 	a.NotNil(m)
 
-	m.InsertFirst(func(h http.Handler) http.Handler {
+	m.Prepend(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := w.Write([]byte("after"))
 			a.NotError(err)
@@ -666,7 +666,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	a.NotNil(c)
 	a.NotError(c.AddAlgorithm("gzip", NewGzip))
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
-	m.InsertLast(c.Middleware) // 插到之前
+	m.Append(c.Middleware) // 插到之前
 
 	// 未请求压缩
 	w := httptest.NewRecorder()
