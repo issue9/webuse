@@ -666,7 +666,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	a.NotNil(c)
 	a.NotError(c.AddAlgorithm("gzip", NewGzip))
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
-	m.Append(c.Middleware) // 插到之前
+	m.Prepend(c.Middleware) // 插到之前
 
 	// 未请求压缩
 	w := httptest.NewRecorder()
