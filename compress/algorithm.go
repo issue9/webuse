@@ -112,7 +112,7 @@ func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcc
 	accepts := qheader.AcceptEncoding(r)
 	for _, accept := range accepts {
 		if accept.Err != nil {
-			c.printError(accept.Err)
+			c.errlog.Println(accept.Err)
 			continue
 		}
 

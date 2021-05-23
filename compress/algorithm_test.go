@@ -28,7 +28,7 @@ func newErrorWriter(w io.Writer) (Writer, error) {
 func TestCompress_AddAlgorithm(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", 0), "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
 	a.NotError(c.AddAlgorithm("br", NewBrotli))
@@ -57,7 +57,7 @@ func TestCompress_AddAlgorithm(t *testing.T) {
 func TestCompress_SetAlgorithm(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", 0), "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 
 	a.Equal(0, len(c.algorithms))
 	c.SetAlgorithm("gzip", NewGzip)
@@ -140,7 +140,7 @@ func TestCompress_findAlgorithm(t *testing.T) {
 	a.True(na).Empty(name).Nil(f)
 
 	// 未指定算法
-	c = New(log.New(os.Stderr, "", 0), "application/xml", "text/*", "application/json")
+	c = New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 	r = httptest.NewRequest(http.MethodDelete, "/", nil)
 	r.Header.Add("accept-encoding", "n1,n2")
 	name, f, na = c.findAlgorithm(r)

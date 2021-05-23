@@ -22,24 +22,33 @@ type Compress struct {
 
 	algorithms []*algorithm // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
-	prefix []string // 保存通配符匹配的值列表；
-	types  []string // 表示完全匹配的值列表。
-	any    bool     // 表示任何类型都需要压缩
+	typePrefix []string // 保存通配符匹配的值列表；
+	types      []string // 表示完全匹配的值列表。
+	anyTypes   bool     // 表示任何类型都需要压缩
+
+	ignoreMethods []string
 }
 
 // New 构建一个支持压缩的中间件
 //
+// errlog 错误日志的输出通道；
+// ignoreMethods 忽略的请求方法，如果不为空，则这些请求方法的请求将不会被压缩；
 // types 表示需要进行压缩处理的 mimetype 类型，可以是以下格式：
 //  - application/json 具体类型；
 //  - text* 表示以 text 开头的所有类型；
 //  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
-func New(errlog *log.Logger, types ...string) *Compress {
-	c := &Compress{
-		algorithms: make([]*algorithm, 0, 4),
-		errlog:     errlog,
+func New(errlog *log.Logger, ignoreMethods []string, types ...string) *Compress {
+	if errlog == nil {
+		panic("参数 errlog 不能为空")
 	}
 
-	c.prefix = make([]string, 0, len(types))
+	c := &Compress{
+		algorithms:    make([]*algorithm, 0, 4),
+		errlog:        errlog,
+		ignoreMethods: ignoreMethods,
+	}
+
+	c.typePrefix = make([]string, 0, len(types))
 	c.types = make([]string, 0, len(types))
 	c.AddType(types...)
 
@@ -56,9 +65,9 @@ func (c *Compress) AddType(types ...string) {
 	for _, typ := range types {
 		switch {
 		case typ == "*":
-			c.any = true
+			c.anyTypes = true
 		case typ[len(typ)-1] == '*':
-			c.prefix = append(c.prefix, typ[:len(typ)-1])
+			c.typePrefix = append(c.typePrefix, typ[:len(typ)-1])
 		default:
 			c.types = append(c.types, typ)
 		}
@@ -74,12 +83,12 @@ func (c *Compress) DeleteType(types ...string) {
 	for _, typ := range types {
 		switch {
 		case typ == "*":
-			c.any = false
-			c.prefix = c.prefix[:0]
+			c.anyTypes = false
+			c.typePrefix = c.typePrefix[:0]
 			c.types = c.types[:0]
 		case typ[len(typ)-1] == '*':
-			index := sliceutil.Delete(c.prefix, func(i int) bool { return strings.HasPrefix(c.prefix[i], typ[:len(typ)-1]) })
-			c.prefix = c.prefix[:index]
+			index := sliceutil.Delete(c.typePrefix, func(i int) bool { return strings.HasPrefix(c.typePrefix[i], typ[:len(typ)-1]) })
+			c.typePrefix = c.typePrefix[:index]
 
 			index = sliceutil.Delete(c.types, func(i int) bool { return strings.HasPrefix(c.types[i], typ[:len(typ)-1]) })
 			c.types = c.types[:index]
@@ -98,7 +107,7 @@ func (c *Compress) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Reque
 // Middleware 将当前中间件应用于 next
 func (c *Compress) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(c.algorithms) == 0 {
+		if len(c.algorithms) == 0 || c.isIgnore(r.Method) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -115,12 +124,17 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func (c *Compress) canCompressed(typ string) bool {
-	if len(c.algorithms) == 0 {
-		return false
+func (c *Compress) isIgnore(method string) bool {
+	for _, m := range c.ignoreMethods {
+		if m == method {
+			return true
+		}
 	}
+	return false
+}
 
-	if c.any {
+func (c *Compress) canCompressed(typ string) bool {
+	if c.anyTypes {
 		return true
 	}
 
@@ -134,17 +148,11 @@ func (c *Compress) canCompressed(typ string) bool {
 		}
 	}
 
-	for _, prefix := range c.prefix {
+	for _, prefix := range c.typePrefix {
 		if strings.HasPrefix(typ, prefix) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func (c *Compress) printError(v ...interface{}) {
-	if c.errlog != nil {
-		c.errlog.Println(v...)
-	}
 }

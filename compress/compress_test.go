@@ -22,7 +22,7 @@ import (
 )
 
 func newCompress(a *assert.Assertion, types ...string) *Compress {
-	c := New(log.New(os.Stderr, "", 0), types...)
+	c := New(log.New(os.Stderr, "", 0), nil, types...)
 	a.NotNil(c)
 
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
@@ -35,37 +35,40 @@ func newCompress(a *assert.Assertion, types ...string) *Compress {
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
-
-	a.Equal(c.prefix, []string{"text/"})
+	a.Equal(c.typePrefix, []string{"text/"})
 	a.Equal(c.types, []string{"application/xml", "application/json"})
+
+	a.PanicString(func() {
+		New(nil, nil)
+	}, "参数 errlog 不能为空")
 }
 
 func TestCompress_Types(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
 	a.Equal(2, len(c.types)).
-		Equal(1, len(c.prefix)).
-		False(c.any)
+		Equal(1, len(c.typePrefix)).
+		False(c.anyTypes)
 
 	c.DeleteType("application/")
 	a.Equal(2, len(c.types)).
-		Equal(1, len(c.prefix)).
-		False(c.any)
+		Equal(1, len(c.typePrefix)).
+		False(c.anyTypes)
 
 	c.DeleteType("application/*")
 	a.Equal(0, len(c.types)).
-		Equal(1, len(c.prefix)).
-		False(c.any)
+		Equal(1, len(c.typePrefix)).
+		False(c.anyTypes)
 
 	c.DeleteType("*")
 	a.Equal(0, len(c.types)).
-		Equal(0, len(c.prefix)).
-		False(c.any)
+		Equal(0, len(c.typePrefix)).
+		False(c.anyTypes)
 }
 
 var data = []*struct {
@@ -626,7 +629,7 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 func TestCompress_canCompressed(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(nil)
+	c := New(log.New(os.Stderr, "", 0), nil)
 	a.NotNil(c)
 
 	a.False(c.canCompressed(""))
@@ -662,7 +665,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	})
-	c := New(log.New(os.Stderr, "", 0), "*")
+	c := New(log.New(os.Stderr, "", 0), nil, "*")
 	a.NotNil(c)
 	a.NotError(c.AddAlgorithm("gzip", NewGzip))
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
@@ -689,4 +692,13 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	data, err := ioutil.ReadAll(reader)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "after201")
+}
+
+func TestCompress_isIgnore(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(log.New(os.Stderr, "", 0), []string{http.MethodDelete, http.MethodOptions})
+	a.True(c.isIgnore(http.MethodDelete)).
+		True(c.isIgnore(http.MethodOptions)).
+		False(c.isIgnore(http.MethodPost))
 }

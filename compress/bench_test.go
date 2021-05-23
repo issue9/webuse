@@ -53,7 +53,7 @@ func BenchmarkCompress_ServeHTTP(b *testing.B) {
 func BenchmarkCompress_canCompress_any(b *testing.B) {
 	a := assert.New(b)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "*")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "*")
 	a.NotNil(c)
 
 	for i := 0; i < b.N; i++ {
@@ -64,7 +64,7 @@ func BenchmarkCompress_canCompress_any(b *testing.B) {
 func BenchmarkCompress_canCompress(b *testing.B) {
 	a := assert.New(b)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "text/*", "application/json")
 	a.NotNil(c)
 
 	for i := 0; i < b.N; i++ {

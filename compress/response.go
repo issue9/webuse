@@ -97,7 +97,7 @@ func (resp *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (resp *response) close() {
 	if resp.f != nil {
 		if err := resp.f.Close(); err != nil {
-			resp.c.printError(err)
+			resp.c.errlog.Println(err)
 		}
 		resp.c.putAlgorithm(resp.encodingName, resp.f)
 		resp.f = nil
