@@ -130,7 +130,7 @@ func TestCompress_findAlgorithm(t *testing.T) {
 	r = httptest.NewRequest(http.MethodDelete, "/", nil)
 	r.Header.Add("accept-encoding", "n1,n2,identity;q=0")
 	name, f, na = c.findAlgorithm(r)
-	a.True(na).Empty(name).Nil(f)
+	a.False(na).Empty(name).Nil(f)
 
 	// n1,n2,*;q=0
 	c = newCompress(a, "application/xml", "text/*", "application/json")

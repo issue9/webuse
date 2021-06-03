@@ -118,6 +118,11 @@ func (c *Compress) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		if wf == nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		resp := c.newResponse(w, wf, name)
 		defer resp.close()
 		next.ServeHTTP(resp, r) // 此处可能 panic，所以得保证在 panic 之前，resp 已经关闭

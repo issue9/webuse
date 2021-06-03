@@ -131,10 +131,7 @@ func (c *Compress) findAlgorithm(r *http.Request) (name string, f Writer, notAcc
 			continue
 		}
 
-		if accept.Value == "identity" {
-			if accept.Q == 0.0 {
-				return "", nil, true
-			}
+		if accept.Value == "identity" { // 指示身份功能（即不压缩，也不修改）。即使不存在，该值始终被认为是可以接受的。
 			return "", nil, false
 		}
 

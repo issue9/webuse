@@ -374,11 +374,11 @@ var data = []*struct {
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil) // identity 不压缩，不修改，且始终不会 406
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusNoContent,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -386,11 +386,11 @@ var data = []*struct {
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil)
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusNoContent,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -422,11 +422,11 @@ var data = []*struct {
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil)
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -434,11 +434,11 @@ var data = []*struct {
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil)
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusAccepted,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
@@ -468,22 +468,22 @@ var data = []*struct {
 		name:  "Write(nil), accept-encodding=identity",
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil)
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": "identity"},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
 		name:  "Write(nil), accept-encodding=",
 		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
-			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
+			w.Write(nil)
 		},
 		reqHeaders:  map[string]string{"Accept-encoding": ""},
 		respStatus:  http.StatusOK,
-		respHeaders: map[string]string{"Content-Type": "text/plain; charset=utf-8", "Vary": "", "Content-Encoding": ""},
+		respHeaders: map[string]string{"Content-Type": "", "Vary": "", "Content-Encoding": ""},
 	},
 
 	{
