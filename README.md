@@ -14,7 +14,6 @@ middleware Go HTTP 的中间件，提供了大部分实用的功能。
 - auth 基本的验证处理；
 - compress 对内容进行压缩；
 - errorhandler 处理各类状态码下的输出；
-- header 输出指定的报头；
 - health 接口状态的监测；
 - ratelimit x-rate-limit 的相关实现；
 - recovery 对 Panic 的处理；
