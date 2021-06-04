@@ -36,6 +36,10 @@ func TestNew(t *testing.T) {
 	a.PanicString(func() {
 		New(nil, nil)
 	}, "参数 errlog 不能为空")
+
+	a.PanicString(func() {
+		New(log.New(os.Stderr, "", log.LstdFlags), nil, "*")
+	}, "无效的值 *")
 }
 
 var data = []*struct {
