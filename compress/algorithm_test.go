@@ -31,13 +31,13 @@ func TestCompress_AddAlgorithm(t *testing.T) {
 	c := New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
 
-	a.NotError(c.AddAlgorithm("br", NewBrotli))
+	a.True(c.AddAlgorithm("br", NewBrotli))
 	a.Equal(1, len(c.algorithms))
 
-	a.ErrorIs(c.AddAlgorithm("br", NewBrotli), ErrExists)
+	a.False(c.AddAlgorithm("br", NewBrotli))
 	a.Equal(1, len(c.algorithms))
 
-	a.NotError(c.AddAlgorithm("err", newErrorWriter), "errorWriter")
+	a.True(c.AddAlgorithm("err", newErrorWriter), "errorWriter")
 	a.Panic(func() {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("accept-encoding", "err")

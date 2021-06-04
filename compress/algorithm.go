@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -15,9 +14,6 @@ import (
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
 )
-
-// ErrExists 表示已经存在名称相同的压缩算法
-var ErrExists = errors.New("已经存在相同名称的算法")
 
 // Writer 所有压缩对象实现的接口
 type Writer interface {
@@ -54,7 +50,9 @@ func NewBrotli(w io.Writer) (Writer, error) {
 // 不能添加名为 identity 和 * 的算法。
 //
 // 如果未添加任何算法，则每个请求都相当于是 identity 规则。
-func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
+//
+// 返回值表示是否添加成功，若为 false，则表示已经存在相同名称的对象。
+func (c *Compress) AddAlgorithm(name string, wf WriterFunc) (ok bool) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
@@ -64,7 +62,7 @@ func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
 	}
 
 	if sliceutil.Count(c.algorithms, func(i int) bool { return c.algorithms[i].name == name }) > 0 {
-		return ErrExists
+		return false
 	}
 
 	c.algorithms = append(c.algorithms, &algorithm{
@@ -77,13 +75,13 @@ func (c *Compress) AddAlgorithm(name string, wf WriterFunc) error {
 			return w
 		}},
 	})
-	return nil
+	return true
 }
 
 // SetAlgorithm 设置压缩算法
 //
 // 如果 w 为 nil，则表示去掉此算法的支持。
-func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
+func (c *Compress) SetAlgorithm(name string, wf WriterFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
@@ -91,7 +89,7 @@ func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
 	if wf == nil {
 		size := sliceutil.Delete(c.algorithms, func(i int) bool { return c.algorithms[i].name == name })
 		c.algorithms = c.algorithms[:size]
-		return nil
+		return
 	}
 
 	c.algorithms = append(c.algorithms, &algorithm{
@@ -104,7 +102,6 @@ func (c *Compress) SetAlgorithm(name string, wf WriterFunc) error {
 			return w
 		}},
 	})
-	return nil
 }
 
 // 如果返回的 f 为空值，表示不需要压缩

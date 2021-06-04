@@ -22,14 +22,7 @@ import (
 )
 
 func newCompress(a *assert.Assertion, types ...string) *Compress {
-	c := New(log.New(os.Stderr, "", 0), nil, types...)
-	a.NotNil(c)
-
-	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
-	a.NotError(c.AddAlgorithm("gzip", NewGzip))
-	a.NotError(c.AddAlgorithm("br", NewBrotli))
-
-	return c
+	return Default(log.New(os.Stderr, "", 0), types...)
 }
 
 func TestNew(t *testing.T) {

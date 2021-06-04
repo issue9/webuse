@@ -29,6 +29,24 @@ type Compress struct {
 	ignoreMethods []string
 }
 
+// Default 简单的初始化 Compress 方式
+//
+// ignoreMethods 被设置为  HEAD 和 OPTIONS；同时添加 deflate, gzip 和 br 三种压缩方式。
+func Default(errlog *log.Logger, types ...string) *Compress {
+	chk := func(ok bool) {
+		if !ok {
+			panic("存在相同的算法名称")
+		}
+	}
+
+	c := New(errlog, []string{http.MethodHead, http.MethodOptions}, types...)
+	chk(c.AddAlgorithm("deflate", NewDeflate))
+	chk(c.AddAlgorithm("gzip", NewGzip))
+	chk(c.AddAlgorithm("br", NewBrotli))
+
+	return c
+}
+
 // New 构建一个支持压缩的中间件
 //
 // errlog 错误日志的输出通道；
