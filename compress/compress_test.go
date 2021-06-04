@@ -94,6 +94,19 @@ var data = []*struct {
 		respStatus: http.StatusAccepted,
 	},
 
+	{ // 在 Accept-Encoding 为空时， roundTrip 会自动处理 Accept-Encoding 为 gzip
+		name:  "Content-type && WriteHeader && Write() 无 accept-encoding",
+		types: []string{"text/*"},
+		handler: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte("text\nhtml"))
+		},
+		respStatus:  http.StatusAccepted,
+		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": ""},
+		respBody:    "text\nhtml",
+	},
+
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=*",
 		types: []string{"text/*"},
@@ -144,7 +157,7 @@ var data = []*struct {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml"))
 		},
-		reqHeaders:  map[string]string{"Accept-encoding": "deflate"},
+		reqHeaders:  map[string]string{"Accept-Encoding": "deflate"},
 		respStatus:  http.StatusAccepted,
 		respHeaders: map[string]string{"Content-Type": "text/html", "Vary": "Content-Encoding", "Content-Encoding": "deflate"},
 		respBody:    "text\nhtml",
@@ -585,7 +598,7 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 		c := newCompress(a, item.types...)
 		a.NotNil(c, "构建 Compress 对象出错，%d,%s", index, item.name)
 
-		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), nil)
+		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), &http.Client{})
 		defer srv.Close()
 
 		// req

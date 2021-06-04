@@ -77,7 +77,7 @@ func TestCompress_SetAlgorithm(t *testing.T) {
 func TestCompress_findAlgorithm(t *testing.T) {
 	a := assert.New(t)
 
-	// 空值相当于 identity
+	// 未指定 accept-encoding
 	c := newCompress(a, "application/xml", "text/*", "application/json")
 	r := httptest.NewRequest(http.MethodDelete, "/", nil)
 	name, f, na := c.findAlgorithm(r)
