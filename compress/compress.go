@@ -27,6 +27,11 @@ type Compress struct {
 	anyTypes   bool     // 表示任何类型都需要压缩
 
 	ignoreMethods []string
+
+	// 是否启用压缩功能
+	//
+	// 在诸如服务器性能吃紧的情况下，可通过修改此值，临时开关压缩功能。
+	Enable bool
 }
 
 // Default 简单的初始化 Compress 方式
@@ -64,6 +69,7 @@ func New(errlog *log.Logger, ignoreMethods []string, types ...string) *Compress 
 		algorithms:    make([]*algorithm, 0, 4),
 		errlog:        errlog,
 		ignoreMethods: ignoreMethods,
+		Enable:        true,
 	}
 
 	c.typePrefix = make([]string, 0, len(types))
@@ -125,7 +131,7 @@ func (c *Compress) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Reque
 // Middleware 将当前中间件应用于 next
 func (c *Compress) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(c.algorithms) == 0 || c.isIgnore(r.Method) {
+		if len(c.algorithms) == 0 || c.isIgnore(r.Method) || !c.Enable {
 			next.ServeHTTP(w, r)
 			return
 		}
