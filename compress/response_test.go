@@ -29,7 +29,7 @@ func TestResponse_Write(t *testing.T) {
 	a := assert.New(t)
 	rw := httptest.NewRecorder()
 
-	c := newCompress(a, "application/xml", "text/*", "application/json")
+	c := newCompress(a)
 
 	resp := c.newResponse(rw, newWriter(a, NewDeflate), "deflate")
 

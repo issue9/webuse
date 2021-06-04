@@ -28,10 +28,10 @@ func newCompress(a *assert.Assertion, types ...string) *Compress {
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "application/xml", "text/*", "application/json")
+	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "text/*", "application/xml", "application/json")
 	a.NotNil(c)
-	a.Equal(c.typePrefix, []string{"text/"})
-	a.Equal(c.types, []string{"application/xml", "application/json"})
+	a.Equal(c.ignoreTypePrefix, []string{"text/"})
+	a.Equal(c.ignoreTypes, []string{"application/xml", "application/json"})
 
 	a.PanicString(func() {
 		New(nil, nil)
@@ -63,7 +63,7 @@ var data = []*struct {
 
 	{ // 在 Accept-Encoding 为空时， roundTrip 会自动处理 Accept-Encoding 为 gzip
 		name:  "Content-type && WriteHeader && Write() 无 accept-encoding",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -76,7 +76,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=*",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -90,7 +90,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=identity",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -104,7 +104,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -118,7 +118,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=deflate",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -132,7 +132,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=gzip",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -146,7 +146,7 @@ var data = []*struct {
 
 	{
 		name:  "Content-type && WriteHeader && Write() accept-encoding=br",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -159,8 +159,8 @@ var data = []*struct {
 	},
 
 	{
-		name:  "不匹配的类型 accept-encoding=br",
-		types: []string{"image/*"},
+		name:  "忽略的类型 accept-encoding=br",
+		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.WriteHeader(http.StatusAccepted)
@@ -174,7 +174,7 @@ var data = []*struct {
 
 	{
 		name:  "content-type && write, accept-encodding=*",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
@@ -187,7 +187,7 @@ var data = []*struct {
 
 	{
 		name:  "content-type && write, accept-encodding=identity",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
@@ -200,7 +200,7 @@ var data = []*struct {
 
 	{
 		name:  "content-type && write, accept-encodding=",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
@@ -213,7 +213,7 @@ var data = []*struct {
 
 	{
 		name:  "content-type && write, accept-encodding=br",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
@@ -226,7 +226,7 @@ var data = []*struct {
 
 	{
 		name:  "content-type && write, accept-encodding=br",
-		types: []string{"image/*"},
+		types: []string{"text/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte("text\nhtml"))
@@ -239,7 +239,7 @@ var data = []*struct {
 
 	{
 		name:  "Write(content), accept-encodding=*",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -251,7 +251,7 @@ var data = []*struct {
 
 	{
 		name:  "Write(content), accept-encodding=identity",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -263,7 +263,7 @@ var data = []*struct {
 
 	{
 		name:  "Write(content), accept-encodding=",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -275,7 +275,7 @@ var data = []*struct {
 
 	{
 		name:  "Write(content), accept-encodding=deflate",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -287,7 +287,7 @@ var data = []*struct {
 
 	{
 		name:  "WriteHeader && Write(), accept-encodding=*",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
@@ -300,7 +300,7 @@ var data = []*struct {
 
 	{
 		name:  "WriteHeader && Write(), accept-encodding=identity",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
@@ -313,7 +313,7 @@ var data = []*struct {
 
 	{
 		name:  "WriteHeader && Write(), accept-encodding=",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
@@ -326,7 +326,7 @@ var data = []*struct {
 
 	{
 		name:  "WriteHeader && Write(), accept-encodding=gzip",
-		types: []string{"text/plain"},
+		types: []string{"application/plain"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write([]byte("text\nhtml")) // 默认被检测为 text/plain; charset=utf-8
@@ -339,7 +339,7 @@ var data = []*struct {
 
 	{
 		name:  "WriteHeader(204) && Write(nil), accept-encodding=*",
-		types: []string{"text/*"},
+		types: []string{"application/*"},
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
@@ -350,8 +350,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader(204) && Write(nil), accept-encodding=identity",
-		types: []string{"text/*"},
+		name: "WriteHeader(204) && Write(nil), accept-encodding=identity",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			w.Write(nil) // identity 不压缩，不修改，且始终不会 406
@@ -362,8 +361,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader(204) && Write(nil), accept-encodding=",
-		types: []string{"text/*"},
+		name: "WriteHeader(204) && Write(nil), accept-encodding=",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			w.Write(nil)
@@ -374,8 +372,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader(204) && Write(nil), accept-encodding=gzip",
-		types: []string{"text/*"},
+		name: "WriteHeader(204) && Write(nil), accept-encodding=gzip",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
@@ -386,8 +383,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader && Write(nil), accept-encodding=*",
-		types: []string{"text/*"},
+		name: "WriteHeader && Write(nil), accept-encodding=*",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
@@ -398,8 +394,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader && Write(nil), accept-encodding=identity",
-		types: []string{"text/*"},
+		name: "WriteHeader && Write(nil), accept-encodding=identity",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write(nil)
@@ -410,8 +405,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader && Write(nil), accept-encodding=",
-		types: []string{"text/*"},
+		name: "WriteHeader && Write(nil), accept-encodding=",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write(nil)
@@ -422,8 +416,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "WriteHeader && Write(nil), accept-encodding=gzip",
-		types: []string{"text/*"},
+		name: "WriteHeader && Write(nil), accept-encodding=gzip",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
@@ -434,8 +427,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "Write(nil), accept-encodding=*",
-		types: []string{"text/*"},
+		name: "Write(nil), accept-encodding=*",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -445,8 +437,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "Write(nil), accept-encodding=identity",
-		types: []string{"text/*"},
+		name: "Write(nil), accept-encodding=identity",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write(nil)
 		},
@@ -456,8 +447,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "Write(nil), accept-encodding=",
-		types: []string{"text/*"},
+		name: "Write(nil), accept-encodding=",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write(nil)
 		},
@@ -467,8 +457,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "Write(nil), accept-encodding=gzip",
-		types: []string{"text/*"},
+		name: "Write(nil), accept-encodding=gzip",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
 		},
@@ -478,8 +467,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "多次调用 Write, accept-encodding=*",
-		types: []string{"text/*"},
+		name: "多次调用 Write, accept-encodding=*",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
 			w.Write([]byte("/html"))
@@ -491,8 +479,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "多次调用 Write, accept-encodding=identity",
-		types: []string{"text/*"},
+		name: "多次调用 Write, accept-encodding=identity",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
 			w.Write([]byte("/html"))
@@ -504,8 +491,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "多次调用 Write, accept-encodding=",
-		types: []string{"text/*"},
+		name: "多次调用 Write, accept-encodding=",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
 			w.Write([]byte("/html"))
@@ -517,8 +503,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "多次调用 Write, accept-encodding=deflate",
-		types: []string{"text/*"},
+		name: "多次调用 Write, accept-encodding=deflate",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("text")) // 默认被检测为 text/plain; charset=utf-8
 			w.Write([]byte("/html"))
@@ -530,8 +515,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "write(nil) && Write(content), accept-encodding=deflate",
-		types: []string{"text/*"},
+		name: "write(nil) && Write(content), accept-encodding=deflate",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
 			w.Write([]byte("/html"))
@@ -543,8 +527,7 @@ var data = []*struct {
 	},
 
 	{
-		name:  "writeHeader(204) && Write(content), accept-encodding=deflate",
-		types: []string{"text/*"},
+		name: "writeHeader(204) && Write(content), accept-encodding=deflate",
 		handler: func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			w.Write(nil) // 默认被检测为 text/plain; charset=utf-8
@@ -612,18 +595,18 @@ func TestCompress_canCompressed(t *testing.T) {
 	c := New(log.New(os.Stderr, "", 0), nil)
 	a.NotNil(c)
 
-	a.False(c.canCompressed(""))
+	a.True(c.canCompressed(""))
 
 	c = newCompress(a, "text/*", "application/json")
 
 	// 未指定 content-type
-	a.False(c.canCompressed(""))
+	a.True(c.canCompressed(""))
 
-	a.True(c.canCompressed("text/html;charset=utf-8"))
+	a.False(c.canCompressed("text/html;charset=utf-8"))
 
-	a.True(c.canCompressed("application/json"))
+	a.False(c.canCompressed("application/json"))
 
-	a.False(c.canCompressed("application/octet"))
+	a.True(c.canCompressed("application/octet"))
 }
 
 // 在任何输出中间件之前应用了压缩中间件
@@ -645,7 +628,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	})
-	c := New(log.New(os.Stderr, "", 0), nil, "*")
+	c := New(log.New(os.Stderr, "", 0), nil)
 	a.NotNil(c)
 	a.NotError(c.AddAlgorithm("gzip", NewGzip))
 	a.NotError(c.AddAlgorithm("deflate", NewDeflate))

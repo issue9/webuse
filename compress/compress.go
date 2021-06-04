@@ -20,9 +20,9 @@ type Compress struct {
 
 	algorithms []*algorithm // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
-	typePrefix []string // 保存通配符匹配的值列表；
-	types      []string // 表示完全匹配的值列表。
-	anyTypes   bool     // 表示任何类型都需要压缩
+	ignoreTypePrefix []string // 保存通配符匹配的值列表；
+	ignoreTypes      []string // 表示完全匹配的值列表。
+	anyType          bool
 
 	ignoreMethods []string
 
@@ -54,11 +54,10 @@ func Default(errlog *log.Logger, types ...string) *Compress {
 //
 // errlog 错误日志的输出通道；
 // ignoreMethods 忽略的请求方法，如果不为空，则这些请求方法的请求将不会被压缩；
-// types 表示需要进行压缩处理的 mimetype 类型，可以是以下格式：
+// ignoreTypes 表示不需要进行压缩处理的 mimetype 类型，可以是以下格式：
 //  - application/json 具体类型；
 //  - text* 表示以 text 开头的所有类型；
-//  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
-func New(errlog *log.Logger, ignoreMethods []string, types ...string) *Compress {
+func New(errlog *log.Logger, ignoreMethods []string, ignoreTypes ...string) *Compress {
 	if errlog == nil {
 		panic("参数 errlog 不能为空")
 	}
@@ -70,16 +69,20 @@ func New(errlog *log.Logger, ignoreMethods []string, types ...string) *Compress 
 		Enable:        true,
 	}
 
-	c.typePrefix = make([]string, 0, len(types))
-	c.types = make([]string, 0, len(types))
-	for _, typ := range types {
-		switch {
-		case typ == "*":
-			c.anyTypes = true
-		case typ[len(typ)-1] == '*':
-			c.typePrefix = append(c.typePrefix, typ[:len(typ)-1])
-		default:
-			c.types = append(c.types, typ)
+	c.ignoreTypePrefix = make([]string, 0, len(ignoreTypes))
+	c.ignoreTypes = make([]string, 0, len(ignoreTypes))
+	if len(ignoreTypes) == 0 {
+		c.anyType = true
+	} else {
+		for _, typ := range ignoreTypes {
+			switch {
+			case typ == "*":
+				panic("无效的值 *")
+			case typ[len(typ)-1] == '*':
+				c.ignoreTypePrefix = append(c.ignoreTypePrefix, typ[:len(typ)-1])
+			default:
+				c.ignoreTypes = append(c.ignoreTypes, typ)
+			}
 		}
 	}
 
@@ -126,7 +129,7 @@ func (c *Compress) isIgnore(method string) bool {
 }
 
 func (c *Compress) canCompressed(typ string) bool {
-	if c.anyTypes {
+	if c.anyType {
 		return true
 	}
 
@@ -134,17 +137,17 @@ func (c *Compress) canCompressed(typ string) bool {
 		typ = strings.TrimSpace(typ[:index])
 	}
 
-	for _, val := range c.types {
+	for _, val := range c.ignoreTypes {
 		if val == typ {
-			return true
+			return false
 		}
 	}
 
-	for _, prefix := range c.typePrefix {
+	for _, prefix := range c.ignoreTypePrefix {
 		if strings.HasPrefix(typ, prefix) {
-			return true
+			return false
 		}
 	}
 
-	return false
+	return true
 }
