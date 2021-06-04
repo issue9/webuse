@@ -38,32 +38,6 @@ func TestNew(t *testing.T) {
 	}, "参数 errlog 不能为空")
 }
 
-func TestCompress_Types(t *testing.T) {
-	a := assert.New(t)
-
-	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "application/xml", "text/*", "application/json")
-	a.NotNil(c)
-
-	a.Equal(2, len(c.types)).
-		Equal(1, len(c.typePrefix)).
-		False(c.anyTypes)
-
-	c.DeleteType("application/")
-	a.Equal(2, len(c.types)).
-		Equal(1, len(c.typePrefix)).
-		False(c.anyTypes)
-
-	c.DeleteType("application/*")
-	a.Equal(0, len(c.types)).
-		Equal(1, len(c.typePrefix)).
-		False(c.anyTypes)
-
-	c.DeleteType("*")
-	a.Equal(0, len(c.types)).
-		Equal(0, len(c.typePrefix)).
-		False(c.anyTypes)
-}
-
 var data = []*struct {
 	name string
 

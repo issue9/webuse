@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/issue9/sliceutil"
 )
 
 // Compress 提供压缩功能的中件间
@@ -74,18 +72,6 @@ func New(errlog *log.Logger, ignoreMethods []string, types ...string) *Compress 
 
 	c.typePrefix = make([]string, 0, len(types))
 	c.types = make([]string, 0, len(types))
-	c.AddType(types...)
-
-	return c
-}
-
-// AddType 添加对媒体类型的支持
-//
-// types 表示需要进行压缩处理的 mimetype 类型，可以是以下格式：
-//  - application/json 具体类型；
-//  - text* 表示以 text 开头的所有类型；
-//  - * 表示所有类型，一旦指定此值，则其它设置都将被忽略；
-func (c *Compress) AddType(types ...string) {
 	for _, typ := range types {
 		switch {
 		case typ == "*":
@@ -96,31 +82,8 @@ func (c *Compress) AddType(types ...string) {
 			c.types = append(c.types, typ)
 		}
 	}
-}
 
-// DeleteType 删除对媒体类型的支持
-//
-// types 的格式可参考 AddType 方法。
-//
-// NOTE: 仅用于删除通过 AddType 添加的内容。
-func (c *Compress) DeleteType(types ...string) {
-	for _, typ := range types {
-		switch {
-		case typ == "*":
-			c.anyTypes = false
-			c.typePrefix = c.typePrefix[:0]
-			c.types = c.types[:0]
-		case typ[len(typ)-1] == '*':
-			index := sliceutil.Delete(c.typePrefix, func(i int) bool { return strings.HasPrefix(c.typePrefix[i], typ[:len(typ)-1]) })
-			c.typePrefix = c.typePrefix[:index]
-
-			index = sliceutil.Delete(c.types, func(i int) bool { return strings.HasPrefix(c.types[i], typ[:len(typ)-1]) })
-			c.types = c.types[:index]
-		default:
-			index := sliceutil.Delete(c.types, func(i int) bool { return c.types[i] == typ })
-			c.types = c.types[:index]
-		}
-	}
+	return c
 }
 
 // MiddlewareFunc 将当前中间件应用于 next
