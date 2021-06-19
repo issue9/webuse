@@ -22,7 +22,7 @@ type Compress struct {
 
 	ignoreTypePrefix []string // 保存通配符匹配的值列表；
 	ignoreTypes      []string // 表示完全匹配的值列表。
-	anyType          bool
+	allowAny         bool
 
 	ignoreMethods []string
 
@@ -32,17 +32,17 @@ type Compress struct {
 	Enable bool
 }
 
-// Default 简单的初始化 Compress 方式
+// Classic 简单的初始化 Compress 方式
 //
 // ignoreMethods 被设置为  HEAD 和 OPTIONS；同时添加 deflate, gzip 和 br 三种压缩方式。
-func Default(errlog *log.Logger, types ...string) *Compress {
+func Classic(errlog *log.Logger, ignoreTypes ...string) *Compress {
 	chk := func(ok bool) {
 		if !ok {
 			panic("存在相同的算法名称")
 		}
 	}
 
-	c := New(errlog, []string{http.MethodHead, http.MethodOptions}, types...)
+	c := New(errlog, []string{http.MethodHead, http.MethodOptions}, ignoreTypes...)
 	chk(c.AddAlgorithm("deflate", NewDeflate))
 	chk(c.AddAlgorithm("gzip", NewGzip))
 	chk(c.AddAlgorithm("br", NewBrotli))
@@ -57,6 +57,7 @@ func Default(errlog *log.Logger, types ...string) *Compress {
 // ignoreTypes 表示不需要进行压缩处理的 mimetype 类型，可以是以下格式：
 //  - application/json 具体类型；
 //  - text* 表示以 text 开头的所有类型；
+// 不能传递 *，如果要禁用，可以直接将 Enable 设置为 false。
 func New(errlog *log.Logger, ignoreMethods []string, ignoreTypes ...string) *Compress {
 	if errlog == nil {
 		panic("参数 errlog 不能为空")
@@ -72,7 +73,7 @@ func New(errlog *log.Logger, ignoreMethods []string, ignoreTypes ...string) *Com
 	c.ignoreTypePrefix = make([]string, 0, len(ignoreTypes))
 	c.ignoreTypes = make([]string, 0, len(ignoreTypes))
 	if len(ignoreTypes) == 0 {
-		c.anyType = true
+		c.allowAny = true
 	} else {
 		for _, typ := range ignoreTypes {
 			switch {
@@ -129,7 +130,7 @@ func (c *Compress) isIgnore(method string) bool {
 }
 
 func (c *Compress) canCompressed(typ string) bool {
-	if c.anyType {
+	if c.allowAny {
 		return true
 	}
 

@@ -22,7 +22,7 @@ import (
 )
 
 func newCompress(a *assert.Assertion, types ...string) *Compress {
-	return Default(log.New(os.Stderr, "", 0), types...)
+	return Classic(log.New(os.Stderr, "", 0), types...)
 }
 
 func TestNew(t *testing.T) {
