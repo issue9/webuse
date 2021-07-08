@@ -6,7 +6,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/issue9/mux/v4"
+	"github.com/issue9/mux/v5"
 )
 
 // Middlewares 中间件管理

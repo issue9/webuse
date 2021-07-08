@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/middleware/v4/recovery"
+	"github.com/issue9/middleware/v5/recovery"
 )
 
 func errorHandlerFunc(w io.Writer, status int) {
