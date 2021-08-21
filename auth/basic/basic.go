@@ -7,7 +7,6 @@ package basic
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"log"
 	"net/http"
@@ -102,8 +101,7 @@ func (b *Basic) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), auth.ValueKey, v)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, auth.WithValue(r, v))
 	})
 
 }
