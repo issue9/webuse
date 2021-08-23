@@ -13,7 +13,7 @@ import (
 )
 
 var h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(1)
+	w.WriteHeader(http.StatusCreated)
 })
 
 var _ GenFunc = GenIP
@@ -98,7 +98,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	h := srv.MiddlewareFunc(h1)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
 	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
 

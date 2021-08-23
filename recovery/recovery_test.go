@@ -11,7 +11,7 @@ import (
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(1)
+	w.WriteHeader(http.StatusCreated)
 }
 
 var h1 = http.HandlerFunc(f1)
@@ -34,7 +34,7 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
 	h.Middleware(h1).ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	a.Equal(w.Code, http.StatusCreated)
 
 	// 触发 panic
 	next := func(w http.ResponseWriter, r *http.Request) {
