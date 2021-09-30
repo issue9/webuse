@@ -7,7 +7,6 @@ require (
 	github.com/issue9/mux/v5 v5.0.0-beta.1
 	github.com/issue9/qheader v0.5.4
 	github.com/issue9/sliceutil v0.7.0
-	github.com/issue9/source v0.1.1
 )
 
 go 1.13

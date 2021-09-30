@@ -21,17 +21,17 @@ func TestDefaultRecoverFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	DefaultRecoverFunc(http.StatusInternalServerError)(w, "not found")
+	DefaultRecover(http.StatusInternalServerError)(w, "not found")
 	a.Equal(http.StatusText(http.StatusInternalServerError)+"\n", w.Body.String())
 }
 
 func TestRecoverFunc_Middleware(t *testing.T) {
 	a := assert.New(t)
 
-	// DefaultRecoverFunc
-	h := DefaultRecoverFunc(http.StatusInternalServerError)
+	// DefaultRecover
+	h := DefaultRecover(http.StatusInternalServerError)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	r := httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
 	h.Middleware(h1).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusCreated)
@@ -41,7 +41,7 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 		panic("test")
 	}
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	r = httptest.NewRequest(http.MethodGet, "https://caixw.io/test", nil)
 	a.NotNil(h).NotNil(w).NotNil(r)
 	h.MiddlewareFunc(next).ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusInternalServerError)
@@ -49,6 +49,6 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 
 func TestTraceStack(t *testing.T) {
 	w := httptest.NewRecorder()
-	TraceStack(http.StatusNotFound)(w, "TraceStack")
+	ConsoleRecover(http.StatusNotFound)(w, "ConsoleRecover")
 	t.Log(w.Body.String())
 }

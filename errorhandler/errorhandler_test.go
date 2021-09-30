@@ -109,9 +109,9 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		Status(http.StatusNoContent).
 		Header("Content-Type", "h1")
 
-	// recovery.DefaultRecoverFunc 并不会正常处理 errorhandler 的状态码错误
-	// NOTE: recovery.DefaultRecoverFunc 的 WriteHeader 会与 errorhandler 中的相关突。
-	h = recovery.DefaultRecoverFunc(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
+	// recovery.DefaultRecover 并不会正常处理 errorhandler 的状态码错误
+	// NOTE: recovery.DefaultRecover 的 WriteHeader 会与 errorhandler 中的相关突。
+	h = recovery.DefaultRecover(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
 	srv = rest.NewServer(t, h, nil)
 	srv.Get("/path").
 		Do().
@@ -167,7 +167,7 @@ func TestErrorHandler_Recovery(t *testing.T) {
 
 	// 以下为自定义 rf 参数
 
-	fn = eh.Recovery(recovery.TraceStack(http.StatusNotFound))
+	fn = eh.Recovery(recovery.ConsoleRecover(http.StatusNotFound))
 
 	// 普通内容
 	w = httptest.NewRecorder()

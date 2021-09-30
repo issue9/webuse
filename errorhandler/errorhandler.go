@@ -99,7 +99,7 @@ func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Reque
 // 的外层必须要有一个由 ErrorHandler.Recovery 声明的 recovery.RecoverFunc 中间件。
 func (e *ErrorHandler) Recovery(rf recovery.RecoverFunc) recovery.RecoverFunc {
 	if rf == nil {
-		rf = recovery.DefaultRecoverFunc(http.StatusInternalServerError)
+		rf = recovery.DefaultRecover(http.StatusInternalServerError)
 	}
 
 	return func(w http.ResponseWriter, msg interface{}) {

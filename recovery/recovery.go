@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/issue9/source"
 )
 
 // RecoverFunc 错误处理函数
@@ -24,43 +22,34 @@ import (
 // NOTE: 并不能保证 w 是空白的，可能有内容已经输出，所以有关报头的操作可能会不启作用。
 type RecoverFunc func(w http.ResponseWriter, msg interface{})
 
-// DefaultRecoverFunc RecoverFunc 的默认实现
+// DefaultRecover RecoverFunc 的默认实现
 //
-// 为一个简单的状态码信息输出。不会输出 msg 参数的内容。
-func DefaultRecoverFunc(status int) RecoverFunc {
+// 向客户端输出 status 状态码，忽略其它任何信息。
+func DefaultRecover(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		http.Error(w, http.StatusText(status), status)
 	}
 }
 
-// TraceStack 打印调用的堆栈信息的 RecoverFunc 实现
+// ConsoleRecover 向控制台输出错误信息
 //
-// 调用堆栈信息将输出到客户端。
-func TraceStack(status int) RecoverFunc {
+// status 表示向客户端输出的状态码。
+func ConsoleRecover(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(status)
-
-		data, err := source.TraceStack(2, msg)
-		if err != nil {
-			panic(err)
-		}
-
-		if _, err = fmt.Fprint(w, data); err != nil {
+		http.Error(w, http.StatusText(status), status)
+		if _, err := fmt.Fprint(w, msg); err != nil {
 			panic(err)
 		}
 	}
 }
 
-// LogTraceStack 打印调用信息到日志的 RecoverFunc 实现
-func LogTraceStack(l *log.Logger, status int) RecoverFunc {
+// LogRecover 将错误信息输出到日志
+//
+// l 为输出的日志；status 表示向客户端输出的状态码。
+func LogRecover(l *log.Logger, status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(status)
-
-		data, err := source.TraceStack(2, msg)
-		if err != nil {
-			panic(err)
-		}
-		l.Println(data)
+		http.Error(w, http.StatusText(status), status)
+		l.Println(msg)
 	}
 }
 
