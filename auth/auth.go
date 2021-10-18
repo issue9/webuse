@@ -23,6 +23,4 @@ func WithValue(r *http.Request, v interface{}) *http.Request {
 }
 
 // Value 从 r 获取值
-func Value(r *http.Request) interface{} {
-	return r.Context().Value(ValueKey)
-}
+func Value(r *http.Request) interface{} { return r.Context().Value(ValueKey) }

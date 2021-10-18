@@ -19,7 +19,7 @@ import (
 //
 // username,password 表示用户登录信息。
 // 返回值中，ok 表示是否成功验证。如果成功验证，
-// 则 v 用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
+// 则 v 为用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
 type AuthFunc func(username, password []byte) (v interface{}, ok bool)
 
 // Basic 验证中间件
