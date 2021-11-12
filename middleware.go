@@ -12,6 +12,8 @@ import (
 // Middlewares 中间件管理
 type Middlewares = mux.Middlewares
 
+type MiddlewareFunc = mux.MiddlewareFunc
+
 // NewMiddlewares 声明新的 Middlewares 实例
 func NewMiddlewares(next http.Handler) *Middlewares {
 	return mux.NewMiddlewares(next)

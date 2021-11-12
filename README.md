@@ -8,8 +8,8 @@
 
 middleware Go HTTP 的中间件，提供了大部分实用的功能。
 
-可以选择与 [mux](https://github.com/issue9/mux) 一起使用；
-也可以采用 Manager 直接与标准库的 net/http 一起使用。
+可以选择与 [mux](https://pkg.go.dev/github.com/issue9/mux/v5) 一起使用；
+也可以采用 Middlewares 直接与标准库的 net/http 一起使用。
 
 - auth 基本的验证处理；
 - compress 对内容进行压缩；
