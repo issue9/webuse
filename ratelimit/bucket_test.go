@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 func TestBucket_allow(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// NOTE: 根据机器配置，部分测试可能失败
 	b := newBucket(5, 10*time.Microsecond)

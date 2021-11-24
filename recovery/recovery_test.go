@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 var h1 = http.HandlerFunc(f1)
 
 func TestDefaultRecoverFunc(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
@@ -26,7 +26,7 @@ func TestDefaultRecoverFunc(t *testing.T) {
 }
 
 func TestRecoverFunc_Middleware(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// DefaultRecover
 	h := DefaultRecover(http.StatusInternalServerError)
@@ -47,7 +47,7 @@ func TestRecoverFunc_Middleware(t *testing.T) {
 	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
-func TestTraceStack(t *testing.T) {
+func TestConsoleRecover(t *testing.T) {
 	w := httptest.NewRecorder()
 	ConsoleRecover(http.StatusNotFound)(w, "ConsoleRecover")
 	t.Log(w.Body.String())

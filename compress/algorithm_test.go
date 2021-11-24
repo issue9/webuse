@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 var (
@@ -26,7 +26,7 @@ func newErrorWriter(w io.Writer) (Writer, error) {
 }
 
 func TestCompress_AddAlgorithm(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	c := New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 	a.NotNil(c)
@@ -55,7 +55,7 @@ func TestCompress_AddAlgorithm(t *testing.T) {
 }
 
 func TestCompress_SetAlgorithm(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	c := New(log.New(os.Stderr, "", 0), nil, "application/xml", "text/*", "application/json")
 
@@ -75,7 +75,7 @@ func TestCompress_SetAlgorithm(t *testing.T) {
 }
 
 func TestCompress_findAlgorithm(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// 未指定 accept-encoding
 	c := newCompress(a, "application/xml", "text/*", "application/json")

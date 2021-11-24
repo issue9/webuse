@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 )
 
 func f1(w http.ResponseWriter, r *http.Request) {
@@ -19,39 +19,37 @@ func f1(w http.ResponseWriter, r *http.Request) {
 }
 
 func BenchmarkCompress_ServeHTTP_any(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	c := newCompress(a, "*")
 	a.NotNil(c)
 
-	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, c.MiddlewareFunc(f1), nil)
 
 	for i := 0; i < b.N; i++ {
 		srv.NewRequest(http.MethodGet, "/").
 			Header("Accept-encoding", "gzip;q=0.8,deflate").
-			Do().
+			Do(nil).
 			Header("Content-Encoding", "deflate")
 	}
 }
 
 func BenchmarkCompress_ServeHTTP(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	c := newCompress(a, "text/*")
 	a.NotNil(c)
 
-	srv := rest.NewServer(b, c.MiddlewareFunc(f1), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, c.MiddlewareFunc(f1), nil)
 
 	for i := 0; i < b.N; i++ {
 		srv.NewRequest(http.MethodGet, "/").
 			Header("Accept-encoding", "gzip;q=0.8,deflate").
-			Do().
+			Do(nil).
 			Header("Content-Encoding", "deflate")
 	}
 }
 
 func BenchmarkCompress_canCompress_any(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 
 	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "*")
 	a.NotNil(c)
@@ -62,7 +60,7 @@ func BenchmarkCompress_canCompress_any(b *testing.B) {
 }
 
 func BenchmarkCompress_canCompress(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 
 	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "text/*", "application/json")
 	a.NotNil(c)

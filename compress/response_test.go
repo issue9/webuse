@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 var (
@@ -26,7 +26,7 @@ func newWriter(a *assert.Assertion, f WriterFunc) Writer {
 }
 
 func TestResponse_Write(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	rw := httptest.NewRecorder()
 
 	c := newCompress(a)
@@ -96,7 +96,7 @@ func TestResponse_Write(t *testing.T) {
 }
 
 func TestBodyAllowedForStatus(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	a.True(bodyAllowedForStatus(http.StatusAccepted))
 	a.True(bodyAllowedForStatus(http.StatusOK))

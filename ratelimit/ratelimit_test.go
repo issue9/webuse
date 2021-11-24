@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/cache/memory"
 )
 
@@ -19,7 +19,7 @@ var h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 var _ GenFunc = GenIP
 
 func TestGenIP(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	ip4 := "1.1.1.1"
 	ip6 := "[::0]"
 
@@ -42,7 +42,7 @@ func TestGenIP(t *testing.T) {
 }
 
 func TestRatelimit_bucket(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := New(memory.New(24*time.Hour), 10, 50*time.Second, nil, nil)
 	a.NotNil(srv)
 
@@ -68,7 +68,7 @@ func TestRatelimit_bucket(t *testing.T) {
 }
 
 func TestRatelimit_Transfer(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := New(memory.New(24*time.Hour), 10, 50*time.Second, nil, nil)
 	a.NotNil(srv)
 
@@ -90,7 +90,7 @@ func TestRatelimit_Transfer(t *testing.T) {
 }
 
 func TestRatelimit_Middleware(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, nil)
 	a.NotNil(srv)
 

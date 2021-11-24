@@ -27,7 +27,7 @@ func (r *response) WriteHeader(status int) {
 // WriteHeader 写入 HTTP 状态值
 //
 // 通过 errorhandler 的封装之后，默认会将注册的状态码 响应重定向到指定的处理函数，
-// 如果不需要特殊处理， 可以调用此函数，按照正常流程处理。
+// 如果不需要特殊处理，可以调用此函数，按照正常流程处理。
 func WriteHeader(w http.ResponseWriter, status int) {
 	if resp, ok := w.(*response); ok {
 		resp.ResponseWriter.WriteHeader(status)

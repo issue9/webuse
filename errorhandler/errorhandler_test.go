@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 
 	"github.com/issue9/middleware/v5/recovery"
 )
@@ -23,7 +23,7 @@ func errorHandlerFunc(w io.Writer, status int) {
 }
 
 func TestErrorHandler_Add(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	eh := New()
 
 	a.Panic(func() {
@@ -39,7 +39,7 @@ func TestErrorHandler_Add(t *testing.T) {
 }
 
 func TestErrorHandler_Set(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	eh := New()
 
 	eh.Set(nil, 500, 501)
@@ -54,10 +54,10 @@ func TestErrorHandler_Set(t *testing.T) {
 }
 
 func TestErrorHandler_MiddlewareFunc(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	eh := New()
 	a.NotNil(eh)
-	a.NotError(eh.Add(errorHandlerFunc, http.StatusBadRequest, http.StatusNotFound, http.StatusAccepted))
+	a.True(eh.Add(errorHandlerFunc, http.StatusBadRequest, http.StatusNotFound, http.StatusAccepted))
 
 	f400 := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -71,17 +71,17 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 
 	// MiddlewareFunc，400 错误，不会采用 f400 的内容，而是 errorHandlerFunc
 	h := eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f400))
-	srv := rest.NewServer(t, h, nil)
+	srv := rest.NewServer(a, h, nil)
 	srv.Get("/path").
-		Do().
+		Do(nil).
 		Status(http.StatusBadRequest).
 		StringBody("test")
 
 	// MiddlewareFunc，202 错误，不会采用 f202 的内容，而是 errorHandlerFunc
 	h = eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f202))
-	srv = rest.NewServer(t, h, nil)
+	srv = rest.NewServer(a, h, nil)
 	srv.Get("/path").
-		Do().
+		Do(nil).
 		Status(http.StatusAccepted).
 		StringBody("test")
 
@@ -91,9 +91,9 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("h"))
 	})
-	srv = rest.NewServer(t, h, nil)
+	srv = rest.NewServer(a, h, nil)
 	srv.Get("/path").
-		Do().
+		Do(nil).
 		Status(http.StatusOK).
 		Header("Content-Type", "h1").
 		StringBody("h")
@@ -103,24 +103,24 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 		w.Header().Set("content-type", "h1")
 		w.WriteHeader(http.StatusNoContent)
 	})
-	srv = rest.NewServer(t, h, nil)
+	srv = rest.NewServer(a, h, nil)
 	srv.Get("/path").
-		Do().
+		Do(nil).
 		Status(http.StatusNoContent).
 		Header("Content-Type", "h1")
 
 	// recovery.DefaultRecover 并不会正常处理 errorhandler 的状态码错误
 	// NOTE: recovery.DefaultRecover 的 WriteHeader 会与 errorhandler 中的相关突。
 	h = recovery.DefaultRecover(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
-	srv = rest.NewServer(t, h, nil)
+	srv = rest.NewServer(a, h, nil)
 	srv.Get("/path").
-		Do().
+		Do(nil).
 		Status(http.StatusBadRequest).                                              // 报头已经在 errorhandler 中输出
 		StringBody("test" + http.StatusText(http.StatusInternalServerError) + "\n") // 输出内容也是结合了 errorhandler 和 recovery
 }
 
 func TestErrorHandler_Render(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	eh := New()
 
 	w := &bytes.Buffer{}
@@ -145,7 +145,7 @@ func TestErrorHandler_Render(t *testing.T) {
 }
 
 func TestErrorHandler_Recovery(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	eh := New()
 
 	fn := eh.Recovery(nil)

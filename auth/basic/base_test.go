@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/middleware/v5/auth"
 )
@@ -21,7 +21,7 @@ var (
 )
 
 func TestNew(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	var b *Basic
 
 	a.Panic(func() {
@@ -50,7 +50,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestServeHTTP_ok(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.ValueKey).([]byte)
@@ -74,7 +74,7 @@ func TestServeHTTP_ok(t *testing.T) {
 }
 
 func TestServeHTTP_failed(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	failed := func(w http.ResponseWriter, r *http.Request) {
 		obj := r.Context().Value(auth.ValueKey)

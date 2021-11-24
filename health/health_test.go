@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/cache/memory"
 )
 
@@ -30,7 +30,7 @@ func f500(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestHealth(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	mem := NewCache(memory.New(1*time.Minute), "health_", log.New(os.Stderr, "[HEALTH]", 0))
 	h := New(mem)

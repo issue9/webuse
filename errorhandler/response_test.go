@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 func TestResponse_WriteHeader(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	eh := New()
 	a.NotNil(eh)
@@ -40,7 +40,7 @@ func TestResponse_WriteHeader(t *testing.T) {
 }
 
 func TestWriteHeader(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	w := httptest.NewRecorder()
 	resp := &response{ResponseWriter: w}
@@ -58,7 +58,7 @@ func TestWriteHeader(t *testing.T) {
 }
 
 func TestErrorHandler_Exit(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	eh := New()
 	w := httptest.NewRecorder()

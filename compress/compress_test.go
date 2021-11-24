@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 
 	"github.com/issue9/middleware/v5"
 )
@@ -26,7 +26,7 @@ func newCompress(a *assert.Assertion, types ...string) *Compress {
 }
 
 func TestNew(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	c := New(log.New(os.Stderr, "", log.LstdFlags), nil, "text/*", "application/xml", "application/json")
 	a.NotNil(c)
@@ -545,15 +545,13 @@ var data = []*struct {
 }
 
 func TestCompress_MiddlewareFunc(t *testing.T) {
-	a := assert.New(t)
-	buf := new(bytes.Buffer)
+	a := assert.New(t, false)
 
 	for index, item := range data {
 		c := newCompress(a, item.types...)
 		a.NotNil(c, "构建 Compress 对象出错，%d,%s", index, item.name)
 
-		srv := rest.NewServer(t, c.MiddlewareFunc(item.handler), &http.Client{})
-		defer srv.Close()
+		srv := rest.NewServer(a, c.MiddlewareFunc(item.handler), &http.Client{})
 
 		// req
 		req := srv.NewRequest(http.MethodGet, "/")
@@ -562,39 +560,40 @@ func TestCompress_MiddlewareFunc(t *testing.T) {
 		}
 
 		// resp
-		resp := req.Do()
+		resp := req.Do(nil)
 		resp.Status(item.respStatus)
 		for k, v := range item.respHeaders {
 			resp.Header(k, v, "返回报头[%s:%s]错误，位于:%d,%s ", k, v, index, item.name)
 		}
 
 		// resp body
-		buf.Reset()
-		resp.ReadBody(buf)
-		var reader io.Reader
-		var err error
-		switch item.respHeaders["Content-Encoding"] {
-		case "br":
-			reader = brotli.NewReader(buf)
-		case "deflate":
-			reader = flate.NewReader(buf)
-		case "gzip":
-			reader, err = gzip.NewReader(buf)
-		default:
-			name := item.respHeaders["Content-Encoding"]
-			a.Empty(name, "Content-Encoding 不为空 %s,位于:%d,%s", name, index, item.name)
-			reader = buf
-		}
-		a.NotError(err).NotNil(reader)
+		resp.BodyFunc(func(a *assert.Assertion, body []byte) {
+			buf := bytes.NewBuffer(body)
+			var reader io.Reader
+			var err error
+			switch item.respHeaders["Content-Encoding"] {
+			case "br":
+				reader = brotli.NewReader(buf)
+			case "deflate":
+				reader = flate.NewReader(buf)
+			case "gzip":
+				reader, err = gzip.NewReader(buf)
+			default:
+				name := item.respHeaders["Content-Encoding"]
+				a.Empty(name, "Content-Encoding 不为空 %s,位于:%d,%s", name, index, item.name)
+				reader = buf
+			}
+			a.NotError(err).NotNil(reader)
 
-		data, err := ioutil.ReadAll(reader)
-		a.NotError(err, "%s 位于 %d:%s", err, index, item.name).NotNil(data)
-		a.Equal(string(data), item.respBody)
+			data, err := ioutil.ReadAll(reader)
+			a.NotError(err, "%s 位于 %d:%s", err, index, item.name).NotNil(data)
+			a.Equal(string(data), item.respBody)
+		})
 	}
 }
 
 func TestCompress_canCompressed(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	c := New(log.New(os.Stderr, "", 0), nil)
 	a.NotNil(c)
@@ -615,7 +614,7 @@ func TestCompress_canCompressed(t *testing.T) {
 
 // 在任何输出中间件之前应用了压缩中间件
 func TestCompress_Middleware_Before(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	f201 := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated) // 在中间件中提早输出了内容，此处应该不启作用。
@@ -634,8 +633,8 @@ func TestCompress_Middleware_Before(t *testing.T) {
 	})
 	c := New(log.New(os.Stderr, "", 0), nil)
 	a.NotNil(c)
-	a.NotError(c.AddAlgorithm("gzip", NewGzip))
-	a.NotError(c.AddAlgorithm("deflate", NewDeflate))
+	a.True(c.AddAlgorithm("gzip", NewGzip))
+	a.True(c.AddAlgorithm("deflate", NewDeflate))
 	m.Prepend(c.Middleware) // 插到之前
 
 	// 未请求压缩
@@ -662,7 +661,7 @@ func TestCompress_Middleware_Before(t *testing.T) {
 }
 
 func TestCompress_isIgnore(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	c := New(log.New(os.Stderr, "", 0), []string{http.MethodDelete, http.MethodOptions})
 	a.True(c.isIgnore(http.MethodDelete)).
