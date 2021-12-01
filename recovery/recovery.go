@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 // RecoverFunc 错误处理函数
@@ -37,7 +38,7 @@ func DefaultRecover(status int) RecoverFunc {
 func ConsoleRecover(status int) RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		http.Error(w, http.StatusText(status), status)
-		if _, err := fmt.Fprint(w, msg); err != nil {
+		if _, err := fmt.Fprint(os.Stderr, msg); err != nil {
 			panic(err)
 		}
 	}
