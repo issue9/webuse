@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/issue9/middleware/v5/recovery"
+	"github.com/issue9/middleware/v5"
 )
 
 // HandleFunc 错误处理函数
@@ -15,9 +15,7 @@ type HandleFunc func(w io.Writer, status int)
 
 // ErrorHandler 错误页面处理函数管理
 //
-// NOTE: 外层必须包含由 ErrorHandler.Recovery 声明的 recovery 中间件。
-// 一旦写入由 ErrorHandler 托管的状态码，会直接中间整个中间件链的执行以 panic 的形式退出，
-// 直接被 recovery 捕获。
+// 一旦写入由 ErrorHandler 托管的状态码，会直接中间整个中间件链的执行以 panic 的形式退出。
 type ErrorHandler struct {
 	handlers map[int]HandleFunc
 }
@@ -79,33 +77,33 @@ func (e *ErrorHandler) Render(w io.Writer, status int) {
 	f(w, status)
 }
 
-// Middleware 将当前中间件应用于 next
 func (e *ErrorHandler) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(&response{ResponseWriter: w, eh: e}, r)
 	})
 }
 
-// MiddlewareFunc 将当前中间件应用于 next
 func (e *ErrorHandler) MiddlewareFunc(next func(http.ResponseWriter, *http.Request)) http.Handler {
 	return e.Middleware(http.HandlerFunc(next))
 }
 
-// Recovery 生成一个可正确处理错误页面的 recovery.RecoverFunc 函数
+// Renderer 返回一个用于输出错误页面的中间件
 //
-// NOTE: ErrorHandler 最终是以特定的 panic 形式退出当前处理进程的，
-// 所以必须要有 recover 函数捕获该 panic，否则会导致整个程序直接退出。
-// 我们采用与 recovery 相结合的形式处理 panic，所以在 ErrorHandler
-// 的外层必须要有一个由 ErrorHandler.Recovery 声明的 recovery.RecoverFunc 中间件。
-func (e *ErrorHandler) Recovery(rf recovery.RecoverFunc) recovery.RecoverFunc {
-	if rf == nil {
-		rf = recovery.DefaultRecover(http.StatusInternalServerError)
-	}
+// 此中间件应该在 ErrorHandler 中间件的外层调用，
+// 只有这样 ErrorHandler 抛出的代码才能被捕获。
+func (e *ErrorHandler) Renderer() middleware.MiddlewareFunc {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if msg := recover(); msg != nil {
+					if status, ok := msg.(httpStatus); ok {
+						e.Render(w, int(status))
+					}
+				}
+			}()
 
-	return func(w http.ResponseWriter, msg interface{}) {
-		if _, ok := msg.(httpStatus); !ok { // 非 httpStatus 的退出，调用 rf 处理。
-			rf(w, msg)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 

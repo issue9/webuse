@@ -14,6 +14,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/issue9/mux/v5"
 )
 
 // RecoverFunc 错误处理函数
@@ -21,7 +23,9 @@ import (
 // msg 为输出的错误信息，可能是任意类型的数据，一般为从 recover() 返回的数据。
 //
 // NOTE: 并不能保证 w 是空白的，可能有内容已经输出，所以有关报头的操作可能会不启作用。
-type RecoverFunc func(w http.ResponseWriter, msg interface{})
+//
+// github.com/issue9/mux/v5 用户可以直接使用其 mux.Recovery 处理会更好。
+type RecoverFunc mux.RecoverFunc
 
 // DefaultRecover RecoverFunc 的默认实现
 //

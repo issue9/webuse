@@ -70,7 +70,7 @@ func TestErrorHandler_Exit(t *testing.T) {
 		defer func() {
 			msg := recover()
 			val, ok := msg.(httpStatus)
-			a.True(ok).Equal(val, 0)
+			a.True(ok).Equal(val, http.StatusNotFound)
 		}()
 
 		eh.Exit(w, http.StatusNotFound)

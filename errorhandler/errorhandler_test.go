@@ -5,17 +5,13 @@ package errorhandler
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
 
-	"github.com/issue9/middleware/v5/recovery"
+	"github.com/issue9/middleware/v5"
 )
 
 func errorHandlerFunc(w io.Writer, status int) {
@@ -59,64 +55,42 @@ func TestErrorHandler_MiddlewareFunc(t *testing.T) {
 	a.NotNil(eh)
 	a.True(eh.Add(errorHandlerFunc, http.StatusBadRequest, http.StatusNotFound, http.StatusAccepted))
 
-	f400 := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400"))
-	}
-
-	f202 := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("400"))
-	}
-
-	// MiddlewareFunc，400 错误，不会采用 f400 的内容，而是 errorHandlerFunc
-	h := eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f400))
-	srv := rest.NewServer(a, h, nil)
+	// 400 错误，不会采用 f400 的内容，而是 errorHandlerFunc
+	ms := middleware.NewMiddlewares(rest.BuildHandler(a, http.StatusBadRequest, "400", nil))
+	ms.Append(eh.Renderer()).Append(eh.Middleware)
+	srv := rest.NewServer(a, ms, nil)
 	srv.Get("/path").
 		Do(nil).
 		Status(http.StatusBadRequest).
 		StringBody("test")
 
-	// MiddlewareFunc，202 错误，不会采用 f202 的内容，而是 errorHandlerFunc
-	h = eh.Recovery(nil).Middleware(eh.MiddlewareFunc(f202))
-	srv = rest.NewServer(a, h, nil)
+	// 202 错误，不会采用 f202 的内容，而是 errorHandlerFunc
+	ms = middleware.NewMiddlewares(rest.BuildHandler(a, http.StatusAccepted, "202", nil))
+	ms.Append(eh.Renderer()).Append(eh.Middleware)
+	srv = rest.NewServer(a, ms, nil)
 	srv.Get("/path").
 		Do(nil).
 		Status(http.StatusAccepted).
 		StringBody("test")
 
-	// MiddlewareFunc，正常访问，采用 h 的内容
-	h = eh.Recovery(nil).MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "h1")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("h"))
-	})
-	srv = rest.NewServer(a, h, nil)
+	// 正常访问，采用 h 的内容
+	ms = middleware.NewMiddlewares(rest.BuildHandler(a, http.StatusOK, "200", map[string]string{"Server": "h1"}))
+	ms.Append(eh.Renderer()).Append(eh.Middleware)
+	srv = rest.NewServer(a, ms, nil)
 	srv.Get("/path").
 		Do(nil).
 		Status(http.StatusOK).
-		Header("Content-Type", "h1").
-		StringBody("h")
+		Header("Server", "h1").
+		StringBody("200")
 
-	// MiddlewareFunc，正常访问，采用 h 的内容
-	h = eh.Recovery(nil).MiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "h1")
-		w.WriteHeader(http.StatusNoContent)
-	})
-	srv = rest.NewServer(a, h, nil)
+	// 正常访问，采用 h 的内容
+	ms = middleware.NewMiddlewares(rest.BuildHandler(a, http.StatusNotAcceptable, "204", map[string]string{"Server": "h1"}))
+	ms.Append(eh.Renderer()).Append(eh.Middleware)
+	srv = rest.NewServer(a, ms, nil)
 	srv.Get("/path").
 		Do(nil).
-		Status(http.StatusNoContent).
-		Header("Content-Type", "h1")
-
-	// recovery.DefaultRecover 并不会正常处理 errorhandler 的状态码错误
-	// NOTE: recovery.DefaultRecover 的 WriteHeader 会与 errorhandler 中的相关突。
-	h = recovery.DefaultRecover(http.StatusInternalServerError).Middleware(eh.MiddlewareFunc(f400))
-	srv = rest.NewServer(a, h, nil)
-	srv.Get("/path").
-		Do(nil).
-		Status(http.StatusBadRequest).                                              // 报头已经在 errorhandler 中输出
-		StringBody("test" + http.StatusText(http.StatusInternalServerError) + "\n") // 输出内容也是结合了 errorhandler 和 recovery
+		Status(http.StatusNotAcceptable).
+		Header("Server", "h1")
 }
 
 func TestErrorHandler_Render(t *testing.T) {
@@ -142,53 +116,4 @@ func TestErrorHandler_Render(t *testing.T) {
 	eh.Set(errorHandlerFunc, http.StatusInternalServerError)
 	eh.Render(w, http.StatusInternalServerError)
 	a.Equal(w.String(), "test")
-}
-
-func TestErrorHandler_Recovery(t *testing.T) {
-	a := assert.New(t, false)
-	eh := New()
-
-	fn := eh.Recovery(nil)
-
-	// 普通内容
-	w := httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, "msg") })
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-
-	// 普通数值
-	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, http.StatusBadGateway) })
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-
-	// httpStatus
-	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
-	a.Equal(w.Result().StatusCode, http.StatusOK) // 不需要调用 recovery，输出黑认的 200
-
-	// 以下为自定义 rf 参数
-
-	fn = eh.Recovery(recovery.ConsoleRecover(http.StatusNotFound))
-
-	// 普通内容
-	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, "msg") })
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-	msg, err := ioutil.ReadAll(w.Result().Body)
-	a.NotError(err).NotNil(msg)
-	a.True(strings.Contains(string(msg), "msg"))
-
-	// 普通数值
-	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, http.StatusBadGateway) })
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-	msg, err = ioutil.ReadAll(w.Result().Body)
-	a.NotError(err).NotNil(msg)
-	a.True(strings.Contains(string(msg), strconv.FormatInt(http.StatusBadGateway, 10)))
-
-	// httpStatus，没有输出日志，算是正常退出。
-	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
-	a.Equal(w.Result().StatusCode, http.StatusOK)
-	msg, err = ioutil.ReadAll(w.Result().Body)
-	a.NotError(err).Empty(msg)
 }

@@ -42,6 +42,5 @@ func WriteHeader(w http.ResponseWriter, status int) {
 // 那么 Exit 并不能达到退出当前请求的操作。
 func (e *ErrorHandler) Exit(w http.ResponseWriter, status int) {
 	w.WriteHeader(status)
-	e.Render(w, status)
-	panic(httpStatus(0))
+	panic(httpStatus(status))
 }
