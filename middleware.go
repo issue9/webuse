@@ -6,15 +6,17 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/issue9/mux/v5"
+	"github.com/issue9/mux/v5/middleware"
 )
 
-// Middlewares 中间件管理
-type Middlewares = mux.Middlewares
+type (
+	// Middlewares 中间件管理
+	Middlewares = middleware.Middlewares
 
-type MiddlewareFunc = mux.MiddlewareFunc
+	MiddlewareFunc = middleware.Func
+)
 
 // NewMiddlewares 声明新的 Middlewares 实例
 func NewMiddlewares(next http.Handler) *Middlewares {
-	return mux.NewMiddlewares(next)
+	return middleware.NewMiddlewares(next)
 }
