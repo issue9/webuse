@@ -3,20 +3,23 @@
 package ratelimit
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/cache/memory"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
-var h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusCreated)
-})
-
-var _ GenFunc = GenIP
+var (
+	_ server.Middleware = &Ratelimit{}
+	_ GenFunc           = GenIP
+)
 
 func TestGenIP(t *testing.T) {
 	a := assert.New(t, false)
@@ -91,23 +94,30 @@ func TestRatelimit_Transfer(t *testing.T) {
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
-	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, nil)
+	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, log.Default())
 	a.NotNil(srv)
+	s := servertest.NewServer(a, nil)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/test", nil)
-	h := srv.MiddlewareFunc(h1)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
-	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
+	r := rest.Get(a, "/test").Request()
+	r.RemoteAddr = "192.168.1.1"
+	resp := srv.Middleware(servertest.BuildHandler(http.StatusCreated))(s.NewContext(w, r))
+	a.Equal(resp.Status(), http.StatusCreated).
+		Equal(resp.Body(), []byte("201"))
+	h, found := resp.GetHeader("X-Rate-Limit-Limit")
+	a.True(found).Equal(h, "1")
+	h, found = resp.GetHeader("X-Rate-Limit-Remaining")
+	a.True(found).Equal(h, "0")
 
 	// 没有令牌可用
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/test", nil)
-	h = srv.MiddlewareFunc(h1)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusTooManyRequests)
-	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
-	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
+	r = rest.Get(a, "/test").Request()
+	r.RemoteAddr = "192.168.1.1"
+	resp = srv.Middleware(servertest.BuildHandler(http.StatusTooManyRequests))(s.NewContext(w, r))
+	a.Equal(resp.Status(), http.StatusTooManyRequests).
+		Empty(resp.Body())
+	h, found = resp.GetHeader("X-Rate-Limit-Limit")
+	a.True(found).Equal(h, "1")
+	h, found = resp.GetHeader("X-Rate-Limit-Remaining")
+	a.True(found).Equal(h, "0")
 }

@@ -11,26 +11,17 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/cache/memory"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
-func f200(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-	w.Write([]byte("f200"))
-}
-
-func f401(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("f401"))
-}
-
-func f500(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte("f500"))
-}
+var _ server.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
+	srv := servertest.NewServer(a, nil)
 
 	mem := NewCache(memory.New(1*time.Minute), "health_", log.New(os.Stderr, "[HEALTH]", 0))
 	h := New(mem)
@@ -39,35 +30,39 @@ func TestHealth(t *testing.T) {
 
 	// 第一次访问 GET /
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	h.MiddlewareFunc(f200).ServeHTTP(w, r)
+	r := rest.Get(a, "/").Request()
+	h.Middleware(servertest.BuildHandler(200))(srv.NewContext(w, r))
 	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodGet, "/")
 	a.Equal(1, state.Count)
 
 	// 第二次访问 GET /
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/", nil)
-	h.MiddlewareFunc(f500).ServeHTTP(w, r)
+	r = rest.Get(a, "/").Request()
+	h.Middleware(servertest.BuildHandler(500))(srv.NewContext(w, r))
 	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodGet, "/")
-	a.Equal(2, state.Count).Equal(1, state.ServerErrors).Equal(0, state.UserErrors)
+	a.Equal(2, state.Count).
+		Equal(1, state.ServerErrors).
+		Equal(0, state.UserErrors)
 
 	// 第一次访问 OPTIONS /
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodOptions, "/", nil)
-	h.MiddlewareFunc(f200).ServeHTTP(w, r)
+	r = rest.NewRequest(a, http.MethodOptions, "/").Request()
+	h.Middleware(servertest.BuildHandler(200))(srv.NewContext(w, r))
 	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodOptions, "/")
 	a.Equal(1, state.Count)
 
 	// 第一次访问 DELETE /users
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "/users", nil)
-	h.MiddlewareFunc(f401).ServeHTTP(w, r)
+	r = rest.Delete(a, "/users").Request()
+	h.Middleware(servertest.BuildHandler(401))(srv.NewContext(w, r))
 	time.Sleep(500 * time.Millisecond) // 保存是异步的，等待完成
 	state = mem.Get(http.MethodDelete, "/users")
-	a.Equal(1, state.Count).Equal(0, state.ServerErrors).Equal(1, state.UserErrors)
+	a.Equal(1, state.Count).
+		Equal(0, state.ServerErrors).
+		Equal(1, state.UserErrors)
 
 	all := h.States()
 	a.Equal(3, len(all))

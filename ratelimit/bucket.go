@@ -3,9 +3,10 @@
 package ratelimit
 
 import (
-	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/issue9/web"
 )
 
 // Bucket 令牌桶
@@ -62,9 +63,8 @@ func (b *Bucket) resetTime() int64 {
 	return time.Now().Unix() + t
 }
 
-// 根据当前 Bucket 的情况设置报头
-func (b *Bucket) setHeader(w http.ResponseWriter) {
-	w.Header().Set("X-Rate-Limit-Limit", strconv.FormatInt(b.Capacity, 10))
-	w.Header().Set("X-Rate-Limit-Remaining", strconv.FormatInt(b.Tokens, 10))
-	w.Header().Set("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(), 10))
+func (b *Bucket) setHeader(resp *web.Response) *web.Response {
+	return resp.SetHeader("X-Rate-Limit-Limit", strconv.FormatInt(b.Capacity, 10)).
+		SetHeader("X-Rate-Limit-Remaining", strconv.FormatInt(b.Tokens, 10)).
+		SetHeader("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(), 10))
 }

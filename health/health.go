@@ -4,8 +4,9 @@
 package health
 
 import (
-	"net/http"
 	"time"
+
+	"github.com/issue9/web"
 )
 
 // Store 存储 API 状态的接口
@@ -61,24 +62,19 @@ func (h *Health) Register(method, path string) {
 // States 返回所有的状态列表
 func (h *Health) States() []*State { return h.store.All() }
 
-// MiddlewareFunc 将当前中间件应用于 next
-func (h *Health) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	return h.Middleware(http.HandlerFunc(next))
-}
-
 // Middleware 将当前中间件应用于 next
-func (h *Health) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	return func(ctx *web.Context) *web.Response {
 		if !h.Enabled {
-			next.ServeHTTP(w, r)
-			return
+			return next(ctx)
 		}
 
 		start := time.Now()
-		resp := &response{ResponseWriter: w}
-		next.ServeHTTP(resp, r)
-		go h.save(r.Method, r.URL.Path, time.Since(start), resp.status)
-	})
+		resp := next(ctx)
+		req := ctx.Request()
+		go h.save(req.Method, req.URL.Path, time.Since(start), resp.Status())
+		return resp
+	}
 }
 
 func (h *Health) save(method, path string, dur time.Duration, status int) {

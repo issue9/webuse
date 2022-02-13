@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/web"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户
@@ -114,28 +115,17 @@ func (rate *Ratelimit) printError(err error) {
 }
 
 // Middleware 将当前中间件应用于 next
-func (rate *Ratelimit) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, err := rate.bucket(r)
-
+func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	return func(ctx *web.Context) *web.Response {
+		b, err := rate.bucket(ctx.Request())
 		if err != nil {
 			rate.printError(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return web.Status(http.StatusInternalServerError)
 		}
 
-		allow := b.allow(1) // 先拿走令牌
-		b.setHeader(w)      // 再设置报头
-
-		if !allow {
-			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-			return
+		if b.allow(1) {
+			return b.setHeader(next(ctx))
 		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// MiddlewareFunc 将当前中间件应用于 next
-func (rate *Ratelimit) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	return rate.Middleware(http.HandlerFunc(next))
+		return b.setHeader(web.Status(http.StatusTooManyRequests))
+	}
 }

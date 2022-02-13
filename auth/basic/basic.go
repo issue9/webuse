@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/issue9/middleware/v5/auth"
+	"github.com/issue9/web"
+
+	"github.com/issue9/middleware/v6/auth"
 )
 
 // AuthFunc 验证登录用户的函数签名
@@ -64,49 +66,37 @@ func New(auth AuthFunc, realm string, proxy bool, log *log.Logger) *Basic {
 	}
 }
 
-// MiddlewareFunc 将当前中间件应用于 next
-func (b *Basic) MiddlewareFunc(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	return b.Middleware(http.HandlerFunc(next))
-}
+func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	return func(ctx *web.Context) *web.Response {
+		header := ctx.Request().Header.Get(b.authorization)
 
-// Middleware 将当前中间件应用于 next
-func (b *Basic) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		header := r.Header.Get(b.authorization)
-		index := strings.IndexByte(header, ' ')
-
-		if index <= 0 || index >= len(header) || header[:index] != "Basic" {
-			b.unauthorization(w)
-			return
+		p, s, ok := strings.Cut(header, " ")
+		if !ok || p != "Basic" {
+			return b.unauthorization()
 		}
 
-		secret, err := base64.StdEncoding.DecodeString(header[index+1:])
+		secret, err := base64.StdEncoding.DecodeString(s)
 		if err != nil {
 			if b.errlog != nil {
 				b.errlog.Println(err)
 			}
-			b.unauthorization(w)
-			return
+			return b.unauthorization()
 		}
 
-		index = bytes.IndexByte(secret, ':')
-		if index <= 0 {
-			b.unauthorization(w)
-			return
-		}
-
-		v, ok := b.auth(secret[:index], secret[index+1:])
+		pp, ss, ok := bytes.Cut(secret, []byte{':'})
 		if !ok {
-			b.unauthorization(w)
-			return
+			return b.unauthorization()
 		}
+		v, ok := b.auth(pp, ss)
+		if !ok {
+			return b.unauthorization()
+		}
+		ctx.Vars[auth.ValueKey] = v
 
-		next.ServeHTTP(w, auth.WithValue(r, v))
-	})
-
+		return next(ctx)
+	}
 }
 
-func (b *Basic) unauthorization(w http.ResponseWriter) {
-	w.Header().Set(b.authenticate, b.realm)
-	http.Error(w, http.StatusText(b.unauthorizationStatus), b.unauthorizationStatus)
+func (b *Basic) unauthorization() *web.Response {
+	return web.Status(b.unauthorizationStatus).SetHeader(b.authenticate, b.realm)
 }

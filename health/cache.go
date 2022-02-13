@@ -63,7 +63,7 @@ func (c *cacheStore) Save(state *State) {
 	}
 
 	all := c.keys()
-	if sliceutil.Index(all, func(i int) bool { return all[i] == key }) > -1 {
+	if sliceutil.Index(all, func(e string) bool { return e == key }) > -1 {
 		return
 	}
 	all = append(all, key)

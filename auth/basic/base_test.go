@@ -6,18 +6,22 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/web"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 
-	"github.com/issue9/middleware/v5/auth"
+	"github.com/issue9/middleware/v6/auth"
 )
 
 var (
 	authFunc = func(username, password []byte) (interface{}, bool) {
 		return username, true
 	}
+
+	_ server.Middleware = &Basic{}
 )
 
 func TestNew(t *testing.T) {
@@ -51,47 +55,58 @@ func TestNew(t *testing.T) {
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
+	b := New(authFunc, "example.com", false, nil)
+	a.NotNil(b)
 
-	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username := r.Context().Value(auth.ValueKey).([]byte)
+	srv := servertest.NewTester(a, nil)
+	r := srv.NewRouter(b)
+	r.Get("/path", func(ctx *web.Context) *web.Response {
+		username := ctx.Vars[auth.ValueKey].([]byte)
 		a.Equal(string(username), "Aladdin")
+		return web.Status(http.StatusCreated)
 	})
 
-	b := New(authFunc, "example.com", false, nil)
+	srv.GoServe()
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	b.Middleware(ok).ServeHTTP(w, r)
-	a.Equal(w.Header().Get("WWW-Authenticate"), `Basic realm="example.com"`).
-		Equal(http.StatusUnauthorized, w.Code)
+	srv.Get("/path").
+		Do(nil).
+		Header("WWW-Authenticate", `Basic realm="example.com"`).
+		Status(http.StatusUnauthorized)
 
 	// 正确的访问
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	// Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
-	r.Header.Set("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
-	b.Middleware(ok).ServeHTTP(w, r)
+	srv.Get("http://localhost:8080/path").
+		Header("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
+		Do(nil).
+		Status(http.StatusCreated)
+
+	srv.Close(0)
+	srv.Wait()
 }
 
 func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
-
-	failed := func(w http.ResponseWriter, r *http.Request) {
-		obj := r.Context().Value(auth.ValueKey)
-		a.Nil(obj)
-	}
-
 	b := New(authFunc, "example.com", false, nil)
+	a.NotNil(b)
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	b.MiddlewareFunc(failed).ServeHTTP(w, r)
-	a.Equal(w.Header().Get("WWW-Authenticate"), `Basic realm="example.com"`).
-		Equal(http.StatusUnauthorized, w.Code)
+	srv := servertest.NewTester(a, nil)
+	r := srv.NewRouter(b)
+	r.Get("/path", func(ctx *web.Context) *web.Response {
+		obj := ctx.Vars[auth.ValueKey]
+		a.Nil(obj)
+		return nil
+
+	})
+
+	srv.GoServe()
+
+	srv.Get("/path").
+		Do(nil).
+		Header("WWW-Authenticate", `Basic realm="example.com"`).
+		Status(http.StatusUnauthorized)
 
 	// 错误的编码
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ===")
-	b.MiddlewareFunc(failed).ServeHTTP(w, r)
+	srv.Get("/path").
+		Header("Authorization", "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
+		Do(nil).
+		Status(http.StatusUnauthorized)
 }
