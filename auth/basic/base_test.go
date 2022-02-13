@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	authFunc = func(username, password []byte) (interface{}, bool) {
+	authFunc = func(username, password []byte) (any, bool) {
 		return username, true
 	}
 
@@ -39,7 +39,7 @@ func TestNew(t *testing.T) {
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.unauthorizationStatus, http.StatusUnauthorized).
-		Nil(b.errlog).
+		NotNil(b.errlog).
 		NotNil(b.auth)
 
 	a.NotPanic(func() {

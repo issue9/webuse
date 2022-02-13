@@ -22,7 +22,7 @@ import (
 // username,password 表示用户登录信息。
 // 返回值中，ok 表示是否成功验证。如果成功验证，
 // 则 v 为用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
-type AuthFunc func(username, password []byte) (v interface{}, ok bool)
+type AuthFunc func(username, password []byte) (v any, ok bool)
 
 // Basic 验证中间件
 type Basic struct {
@@ -40,10 +40,14 @@ type Basic struct {
 // proxy 是否为代理，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
-// log 如果不为 nil，则在运行过程中的错误，将输出到此日志。
-func New(auth AuthFunc, realm string, proxy bool, log *log.Logger) *Basic {
+// errlog 如果为 nil，则输出到 log.Default()。
+func New(auth AuthFunc, realm string, proxy bool, errlog *log.Logger) *Basic {
 	if auth == nil {
 		panic("auth 参数不能为空")
+	}
+
+	if errlog == nil {
+		errlog = log.Default()
 	}
 
 	authorization := "Authorization"
@@ -58,7 +62,7 @@ func New(auth AuthFunc, realm string, proxy bool, log *log.Logger) *Basic {
 	return &Basic{
 		auth:   auth,
 		realm:  `Basic realm="` + realm + `"`,
-		errlog: log,
+		errlog: errlog,
 
 		authorization:         authorization,
 		authenticate:          authenticate,
@@ -77,9 +81,7 @@ func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 		secret, err := base64.StdEncoding.DecodeString(s)
 		if err != nil {
-			if b.errlog != nil {
-				b.errlog.Println(err)
-			}
+			b.errlog.Println(err)
 			return b.unauthorization()
 		}
 
