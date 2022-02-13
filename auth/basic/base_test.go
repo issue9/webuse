@@ -61,8 +61,8 @@ func TestServeHTTP_ok(t *testing.T) {
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
 	r.Get("/path", func(ctx *web.Context) *web.Response {
-		username := ctx.Vars[auth.ValueKey].([]byte)
-		a.Equal(string(username), "Aladdin")
+		username, found := auth.GetValue(ctx)
+		a.True(found).Equal(string(username.([]byte)), "Aladdin")
 		return web.Status(http.StatusCreated)
 	})
 
@@ -91,8 +91,8 @@ func TestServeHTTP_failed(t *testing.T) {
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
 	r.Get("/path", func(ctx *web.Context) *web.Response {
-		obj := ctx.Vars[auth.ValueKey]
-		a.Nil(obj)
+		obj, found := auth.GetValue(ctx)
+		a.True(found).Nil(obj)
 		return nil
 
 	})

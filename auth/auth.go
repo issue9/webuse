@@ -3,7 +3,15 @@
 // Package auth 验证类的中间件
 package auth
 
+import "github.com/issue9/web"
+
 type keyType int
 
-// ValueKey 保存于 web.Context 中的值的名称
-const ValueKey keyType = 0
+const valueKey keyType = 0
+
+func SetValue(ctx *web.Context, v interface{}) { ctx.Vars[valueKey] = v }
+
+func GetValue(ctx *web.Context) (v interface{}, found bool) {
+	v, found = ctx.Vars[valueKey]
+	return
+}

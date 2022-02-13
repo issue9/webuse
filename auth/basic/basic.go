@@ -91,7 +91,7 @@ func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !ok {
 			return b.unauthorization()
 		}
-		ctx.Vars[auth.ValueKey] = v
+		auth.SetValue(ctx, v)
 
 		return next(ctx)
 	}
