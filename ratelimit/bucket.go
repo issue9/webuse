@@ -63,8 +63,10 @@ func (b *Bucket) resetTime() int64 {
 	return time.Now().Unix() + t
 }
 
-func (b *Bucket) setHeader(resp *web.Response) *web.Response {
-	return resp.SetHeader("X-Rate-Limit-Limit", strconv.FormatInt(b.Capacity, 10)).
-		SetHeader("X-Rate-Limit-Remaining", strconv.FormatInt(b.Tokens, 10)).
-		SetHeader("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(), 10))
+func (b *Bucket) setHeader(ctx *web.Context) *web.Context {
+	h := ctx.Header()
+	h.Set("X-Rate-Limit-Limit", strconv.FormatInt(b.Capacity, 10))
+	h.Set("X-Rate-Limit-Remaining", strconv.FormatInt(b.Tokens, 10))
+	h.Set("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(), 10))
+	return ctx
 }

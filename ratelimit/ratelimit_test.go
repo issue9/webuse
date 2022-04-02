@@ -99,25 +99,23 @@ func TestRatelimit_Middleware(t *testing.T) {
 	s := servertest.NewServer(a, nil)
 
 	w := httptest.NewRecorder()
-	r := rest.Get(a, "/test").Request()
+	r := rest.Get(a, "/test").Header("accept", "text/plain").Request()
 	r.RemoteAddr = "192.168.1.1"
-	resp := srv.Middleware(servertest.BuildHandler(http.StatusCreated))(s.NewContext(w, r))
-	a.Equal(resp.Status(), http.StatusCreated).
-		Equal(resp.Body(), []byte("201"))
-	h, found := resp.GetHeader("X-Rate-Limit-Limit")
-	a.True(found).Equal(h, "1")
-	h, found = resp.GetHeader("X-Rate-Limit-Remaining")
-	a.True(found).Equal(h, "0")
+	ctx := s.NewContext(w, r)
+	srv.Middleware(servertest.BuildHandler(http.StatusCreated))(ctx).Apply(ctx)
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), []byte("201"))
+	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
+	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
 
 	// 没有令牌可用
 	w = httptest.NewRecorder()
-	r = rest.Get(a, "/test").Request()
+	r = rest.Get(a, "/test").Header("accept", "text/plain").Request()
 	r.RemoteAddr = "192.168.1.1"
-	resp = srv.Middleware(servertest.BuildHandler(http.StatusTooManyRequests))(s.NewContext(w, r))
-	a.Equal(resp.Status(), http.StatusTooManyRequests).
-		Empty(resp.Body())
-	h, found = resp.GetHeader("X-Rate-Limit-Limit")
-	a.True(found).Equal(h, "1")
-	h, found = resp.GetHeader("X-Rate-Limit-Remaining")
-	a.True(found).Equal(h, "0")
+	ctx = s.NewContext(w, r)
+	srv.Middleware(servertest.BuildHandler(http.StatusTooManyRequests))(ctx).Apply(ctx)
+	a.Equal(w.Code, http.StatusTooManyRequests).
+		Zero(w.Body.Len())
+	a.Equal(w.Header().Get("X-Rate-Limit-Limit"), "1")
+	a.Equal(w.Header().Get("X-Rate-Limit-Remaining"), "0")
 }

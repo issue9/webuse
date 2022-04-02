@@ -20,6 +20,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户
@@ -116,16 +117,17 @@ func (rate *Ratelimit) printError(err error) {
 
 // Middleware 将当前中间件应用于 next
 func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) *web.Response {
+	return func(ctx *web.Context) web.Responser {
 		b, err := rate.bucket(ctx.Request())
 		if err != nil {
 			rate.printError(err)
-			return web.Status(http.StatusInternalServerError)
+			return server.Status(http.StatusInternalServerError)
 		}
 
 		if b.allow(1) {
-			return b.setHeader(next(ctx))
+			return next(b.setHeader(ctx))
 		}
-		return b.setHeader(web.Status(http.StatusTooManyRequests))
+		b.setHeader(ctx)
+		return server.Status(http.StatusTooManyRequests)
 	}
 }

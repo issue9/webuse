@@ -50,10 +50,17 @@ func New(store Store) *Health {
 	}
 }
 
+// NewWithServer 根据 *web.Server 的缓存系统初始化 *Health 对象
+//
+// prefix 为保证所有项在缓存中的唯一性而设置的前缀；
+func NewWithServer(srv *web.Server, prefix string) *Health {
+	return New(newCache(srv, prefix))
+}
+
 // Register 注册 api
 //
 // 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
-// 会自动将该 api 的信息进行保存，此操作相当于提前进行一次访问。
+// 才会将该 api 的信息进行保存，此操作相当于提前进行一次访问。
 // 此操作对部分冷门的 api 可以保证其出现在 States() 中。
 func (h *Health) Register(method, path string) {
 	h.store.Save(&State{Method: method, Path: path})
@@ -64,16 +71,18 @@ func (h *Health) States() []*State { return h.store.All() }
 
 // Middleware 将当前中间件应用于 next
 func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) *web.Response {
+	return func(ctx *web.Context) web.Responser {
 		if !h.Enabled {
 			return next(ctx)
 		}
 
 		start := time.Now()
-		resp := next(ctx)
-		req := ctx.Request()
-		go h.save(req.Method, req.URL.Path, time.Since(start), resp.Status())
-		return resp
+		ctx.OnExit(func(status int) {
+			req := ctx.Request()
+			go h.save(req.Method, req.URL.Path, time.Since(start), status)
+		})
+
+		return next(ctx)
 	}
 }
 

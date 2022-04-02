@@ -3,8 +3,6 @@
 package basic
 
 import (
-	"io/ioutil"
-	"log"
 	"net/http"
 	"testing"
 
@@ -27,43 +25,40 @@ var (
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 	var b *Basic
+	srv := servertest.NewServer(a, nil)
 
 	a.Panic(func() {
-		b = New(nil, "", false, nil)
+		b = New(srv, nil, "", false)
 	})
 
-	a.NotPanic(func() {
-		b = New(authFunc, "", false, nil)
-	})
+	b = New(srv, authFunc, "", false)
 
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.unauthorizationStatus, http.StatusUnauthorized).
-		NotNil(b.errlog).
 		NotNil(b.auth)
 
-	a.NotPanic(func() {
-		b = New(authFunc, "", true, log.New(ioutil.Discard, "", 0))
-	})
+	b = New(srv, authFunc, "", true)
 
 	a.Equal(b.authorization, "Proxy-Authorization").
 		Equal(b.authenticate, "Proxy-Authenticate").
 		Equal(b.unauthorizationStatus, http.StatusProxyAuthRequired).
-		NotNil(b.errlog).
 		NotNil(b.auth)
 }
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
-	b := New(authFunc, "example.com", false, nil)
+	s := servertest.NewServer(a, nil)
+
+	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
-	r.Get("/path", func(ctx *web.Context) *web.Response {
+	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := auth.GetValue(ctx)
 		a.True(found).Equal(string(username.([]byte)), "Aladdin")
-		return web.Status(http.StatusCreated)
+		return server.Status(http.StatusCreated)
 	})
 
 	srv.GoServe()
@@ -85,12 +80,14 @@ func TestServeHTTP_ok(t *testing.T) {
 
 func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
-	b := New(authFunc, "example.com", false, nil)
+	s := servertest.NewServer(a, nil)
+
+	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
-	r.Get("/path", func(ctx *web.Context) *web.Response {
+	r.Get("/path", func(ctx *web.Context) web.Responser {
 		obj, found := auth.GetValue(ctx)
 		a.True(found).Nil(obj)
 		return nil

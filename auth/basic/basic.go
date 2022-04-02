@@ -8,7 +8,6 @@ package basic
 import (
 	"bytes"
 	"encoding/base64"
-	"log"
 	"net/http"
 	"strings"
 
@@ -26,9 +25,10 @@ type AuthFunc func(username, password []byte) (v any, ok bool)
 
 // Basic 验证中间件
 type Basic struct {
-	auth   AuthFunc
-	realm  string
-	errlog *log.Logger
+	srv *web.Server
+
+	auth  AuthFunc
+	realm string
 
 	authorization         string
 	authenticate          string
@@ -40,14 +40,9 @@ type Basic struct {
 // proxy 是否为代理，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
-// errlog 如果为 nil，则输出到 log.Default()。
-func New(auth AuthFunc, realm string, proxy bool, errlog *log.Logger) *Basic {
+func New(srv *web.Server, auth AuthFunc, realm string, proxy bool) *Basic {
 	if auth == nil {
 		panic("auth 参数不能为空")
-	}
-
-	if errlog == nil {
-		errlog = log.Default()
 	}
 
 	authorization := "Authorization"
@@ -60,9 +55,10 @@ func New(auth AuthFunc, realm string, proxy bool, errlog *log.Logger) *Basic {
 	}
 
 	return &Basic{
-		auth:   auth,
-		realm:  `Basic realm="` + realm + `"`,
-		errlog: errlog,
+		srv: srv,
+
+		auth:  auth,
+		realm: `Basic realm="` + realm + `"`,
 
 		authorization:         authorization,
 		authenticate:          authenticate,
@@ -71,27 +67,27 @@ func New(auth AuthFunc, realm string, proxy bool, errlog *log.Logger) *Basic {
 }
 
 func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) *web.Response {
+	return func(ctx *web.Context) web.Responser {
 		header := ctx.Request().Header.Get(b.authorization)
 
 		p, s, ok := strings.Cut(header, " ")
 		if !ok || p != "Basic" {
-			return b.unauthorization()
+			return b.unauthorization(ctx)
 		}
 
 		secret, err := base64.StdEncoding.DecodeString(s)
 		if err != nil {
-			b.errlog.Println(err)
-			return b.unauthorization()
+			b.srv.Logs().ERROR().Error(err)
+			return b.unauthorization(ctx)
 		}
 
 		pp, ss, ok := bytes.Cut(secret, []byte{':'})
 		if !ok {
-			return b.unauthorization()
+			return b.unauthorization(ctx)
 		}
 		v, ok := b.auth(pp, ss)
 		if !ok {
-			return b.unauthorization()
+			return b.unauthorization(ctx)
 		}
 		auth.SetValue(ctx, v)
 
@@ -99,6 +95,6 @@ func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
-func (b *Basic) unauthorization() *web.Response {
-	return web.Status(b.unauthorizationStatus).SetHeader(b.authenticate, b.realm)
+func (b *Basic) unauthorization(ctx *web.Context) web.Responser {
+	return ctx.Status(b.unauthorizationStatus, b.authenticate, b.realm)
 }
