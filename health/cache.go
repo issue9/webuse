@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 )
@@ -16,7 +15,7 @@ const allKey = "all_key"
 
 type cacheStore struct {
 	access cache.Access
-	errlog logs.Logger
+	errlog web.Logger
 }
 
 func newCache(srv *web.Server, prefix string) Store {
