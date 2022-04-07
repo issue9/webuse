@@ -7,7 +7,7 @@ import "github.com/issue9/web"
 
 type keyType int
 
-const valueKey keyType = 0
+const valueKey keyType = 1
 
 func SetValue(ctx *web.Context, v any) { ctx.Vars[valueKey] = v }
 
