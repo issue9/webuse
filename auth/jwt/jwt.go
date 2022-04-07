@@ -47,11 +47,13 @@ func NewRSAPSS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, private, publ
 func newRSA(b ClaimsBuilderFunc, sign jwt.SigningMethod, private, public []byte) (*JWT, error) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
+		println("pvt:", err.Error())
 		return nil, err
 	}
 
 	pub, err := jwt.ParseRSAPublicKeyFromPEM(public)
 	if err != nil {
+		println("pub:", err.Error(), string(public))
 		return nil, err
 	}
 
@@ -78,7 +80,7 @@ func NewEd25519(b ClaimsBuilderFunc, sign *jwt.SigningMethodEd25519, private, pu
 		return nil, err
 	}
 
-	pub, err := jwt.ParseECPublicKeyFromPEM(public)
+	pub, err := jwt.ParseEdPublicKeyFromPEM(public)
 	if err != nil {
 		return nil, err
 	}

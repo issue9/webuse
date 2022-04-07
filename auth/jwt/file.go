@@ -46,7 +46,7 @@ func loadFS(fsys fs.FS, private, public string) (pvt []byte, pub []byte, err err
 		return nil, nil, err
 	}
 
-	pub, err = fs.ReadFile(fsys, private)
+	pub, err = fs.ReadFile(fsys, public)
 	if err != nil {
 		return nil, nil, err
 	}

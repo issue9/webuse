@@ -17,29 +17,33 @@ import (
 
 func claimsBuilder() jwt.Claims { return &jwt.RegisteredClaims{} }
 
-func TestHMAC_Sign(t *testing.T) {
-	a := assert.New(t, false)
-	j := NewHMAC(claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
-	a.NotNil(j)
-
-	token, err := j.Sign(jwt.RegisteredClaims{
-		Issuer:  "issuer",
-		Subject: "subject",
-		ID:      "id",
-	})
-	a.NotError(err).NotEmpty(token)
-}
-
-func TestHMAC_Middleware(t *testing.T) {
-	a := assert.New(t, false)
-	j := NewHMAC(claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
-	a.NotNil(j)
-
-	claims := jwt.RegisteredClaims{
+func getDefaultClaims() jwt.RegisteredClaims {
+	return jwt.RegisteredClaims{
 		Issuer:  "issuer",
 		Subject: "subject",
 		ID:      "id",
 	}
+}
+
+func TestHMAC(t *testing.T) {
+	a := assert.New(t, false)
+
+	j := NewHMAC(claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
+	a.NotNil(j)
+	testJWT_Sign(a, j)
+
+	j = NewHMAC(claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
+	a.NotNil(j)
+	testJWT_Middleware(a, j)
+}
+
+func testJWT_Sign(a *assert.Assertion, j *JWT) {
+	token, err := j.Sign(getDefaultClaims())
+	a.NotError(err).NotEmpty(token)
+}
+
+func testJWT_Middleware(a *assert.Assertion, j *JWT) {
+	claims := getDefaultClaims()
 
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
@@ -86,5 +90,4 @@ func TestHMAC_Middleware(t *testing.T) {
 
 	s.Close(0)
 	s.Wait()
-
 }
