@@ -5,7 +5,7 @@ require (
 	github.com/issue9/assert/v2 v2.2.1
 	github.com/issue9/cache v0.3.2
 	github.com/issue9/sliceutil v0.10.1
-	github.com/issue9/web v0.50.2
+	github.com/issue9/web v0.50.3
 )
 
 require (
