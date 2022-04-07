@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/middleware/v6/auth"
 )
 
-var _ web.Middleware = &hmac{}
+var _ web.Middleware = &hmacMiddleware{}
 
 func TestHMAC_Sign(t *testing.T) {
 	a := assert.New(t, false)

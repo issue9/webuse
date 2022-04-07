@@ -12,14 +12,14 @@ import (
 	"github.com/issue9/middleware/v6/auth"
 )
 
-type hmac struct {
+type hmacMiddleware struct {
 	jwt    *JWT
 	sign   *jwt.SigningMethodHMAC
 	secret []byte
 }
 
 func (j *JWT) NewHMAC(secret []byte, sign *jwt.SigningMethodHMAC) Middleware {
-	return &hmac{
+	return &hmacMiddleware{
 		jwt:    j,
 		sign:   sign,
 		secret: []byte(secret),
@@ -27,19 +27,17 @@ func (j *JWT) NewHMAC(secret []byte, sign *jwt.SigningMethodHMAC) Middleware {
 }
 
 // Sign 生成 token
-func (h *hmac) Sign(claims jwt.Claims) (string, error) {
-	token := jwt.NewWithClaims(h.sign, claims)
-	return token.SignedString(h.secret)
+func (m *hmacMiddleware) Sign(claims jwt.Claims) (string, error) {
+	token := jwt.NewWithClaims(m.sign, claims)
+	return token.SignedString(m.secret)
 }
 
 // Middleware 解码用户的 token
-//
-// 可通过 auth.GetValue 获取解码后的值。
-func (h *hmac) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (m *hmacMiddleware) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
 		token := ctx.Request().Header.Get("Authorization")
-		t, err := jwt.ParseWithClaims(token, h.jwt.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
-			return h.secret, nil
+		t, err := jwt.ParseWithClaims(token, m.jwt.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
+			return m.secret, nil
 		})
 
 		if err != nil {

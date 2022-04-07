@@ -18,7 +18,9 @@ type (
 		// Sign 返回对 claims 加密后的数据
 		Sign(jwt.Claims) (string, error)
 
-		// Middleware 实现 web.Middleware 接口方法
+		// Middleware 将解码后的 Claims 写入 *web.Context
+		//
+		// NOTE: 可通过 auth.GetValue 获取解码后的值。
 		Middleware(web.HandlerFunc) web.HandlerFunc
 	}
 
