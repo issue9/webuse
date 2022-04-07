@@ -4,35 +4,114 @@
 package jwt
 
 import (
-	"time"
+	"net/http"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
+
+	"github.com/issue9/middleware/v6/auth"
 )
 
 type (
 	ClaimsBuilderFunc func() jwt.Claims
 
-	// Middleware JWT 中间件需要实现的接口
-	Middleware interface {
-		// Sign 返回对 claims 加密后的数据
-		Sign(jwt.Claims) (string, error)
-
-		// Middleware 将解码后的 Claims 写入 *web.Context
-		//
-		// NOTE: 可通过 auth.GetValue 获取解码后的值。
-		Middleware(web.HandlerFunc) web.HandlerFunc
-	}
-
 	JWT struct {
-		claimsBuilder ClaimsBuilderFunc
-		maxAge        time.Duration
+		claimsBuilder   ClaimsBuilderFunc
+		signFunc        jwt.SigningMethod
+		private, public any
 	}
 )
 
-func New(b ClaimsBuilderFunc, maxAge time.Duration) *JWT {
+func New(b ClaimsBuilderFunc, signFunc jwt.SigningMethod, private, public any) *JWT {
 	return &JWT{
 		claimsBuilder: b,
-		maxAge:        maxAge,
+		signFunc:      signFunc,
+		private:       private,
+		public:        public,
+	}
+}
+
+func NewHMAC(b ClaimsBuilderFunc, signFunc *jwt.SigningMethodHMAC, secret []byte) *JWT {
+	return New(b, signFunc, secret, secret)
+}
+
+func NewRSA(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSA, private, public []byte) (*JWT, error) {
+	return newRSA(b, sign, private, public)
+}
+
+func NewRSAPSS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT, error) {
+	return newRSA(b, sign, private, public)
+}
+
+func newRSA(b ClaimsBuilderFunc, sign jwt.SigningMethod, private, public []byte) (*JWT, error) {
+	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
+	if err != nil {
+		return nil, err
+	}
+
+	pub, err := jwt.ParseRSAPublicKeyFromPEM(public)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(b, sign, pvt, pub), nil
+}
+
+func NewECDSA(b ClaimsBuilderFunc, sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT, error) {
+	pvt, err := jwt.ParseECPrivateKeyFromPEM(private)
+	if err != nil {
+		return nil, err
+	}
+
+	pub, err := jwt.ParseECPublicKeyFromPEM(public)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(b, sign, pvt, pub), nil
+}
+
+func NewEd25519(b ClaimsBuilderFunc, sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT, error) {
+	pvt, err := jwt.ParseEdPrivateKeyFromPEM(private)
+	if err != nil {
+		return nil, err
+	}
+
+	pub, err := jwt.ParseECPublicKeyFromPEM(public)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(b, sign, pvt, pub), nil
+}
+
+// Sign 生成 token
+func (j *JWT) Sign(claims jwt.Claims) (string, error) {
+	token := jwt.NewWithClaims(j.signFunc, claims)
+	return token.SignedString(j.private)
+}
+
+// Middleware 解码用户的 token 并写入 *web.Context
+//
+// 如果需要提交，可以采用 auth.GetValue 函数。
+func (j *JWT) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	return func(ctx *server.Context) web.Responser {
+		token := ctx.Request().Header.Get("Authorization")
+		t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
+			return j.public, nil
+		})
+
+		if err != nil {
+			return ctx.InternalServerError(err)
+		}
+
+		if !t.Valid {
+			return ctx.Status(http.StatusUnauthorized)
+		}
+
+		auth.SetValue(ctx, t.Claims)
+
+		return next(ctx)
 	}
 }
