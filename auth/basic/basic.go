@@ -16,6 +16,10 @@ import (
 	"github.com/issue9/middleware/v6/auth"
 )
 
+const prefix = "basic "
+
+const prefixLen = 6 // len(prefix)
+
 // AuthFunc 验证登录用户的函数签名
 //
 // username,password 表示用户登录信息。
@@ -68,14 +72,12 @@ func New(srv *web.Server, auth AuthFunc, realm string, proxy bool) *Basic {
 
 func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		header := ctx.Request().Header.Get(b.authorization)
-
-		p, s, ok := strings.Cut(header, " ")
-		if !ok || p != "Basic" {
-			return b.unauthorization(ctx)
+		h := ctx.Request().Header.Get(b.authorization)
+		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
+			h = h[prefixLen:]
 		}
 
-		secret, err := base64.StdEncoding.DecodeString(s)
+		secret, err := base64.StdEncoding.DecodeString(h)
 		if err != nil {
 			b.srv.Logs().ERROR().Error(err)
 			return b.unauthorization(ctx)

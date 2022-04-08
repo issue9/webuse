@@ -5,6 +5,7 @@ package jwt
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/web"
@@ -12,6 +13,10 @@ import (
 
 	"github.com/issue9/middleware/v6/auth"
 )
+
+const prefix = "bearer "
+
+const prefixLen = 7 // len(prefix)
 
 type (
 	ClaimsBuilderFunc func() jwt.Claims
@@ -99,8 +104,12 @@ func (j *JWT) Sign(claims jwt.Claims) (string, error) {
 // 如果需要提交，可以采用 auth.GetValue 函数。
 func (j *JWT) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
-		token := ctx.Request().Header.Get("Authorization")
-		t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
+		h := ctx.Request().Header.Get("Authorization")
+		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
+			h = h[prefixLen:]
+		}
+
+		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
 			return j.public, nil
 		})
 

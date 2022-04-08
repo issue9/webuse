@@ -8,7 +8,6 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
 	"github.com/issue9/middleware/v6/auth"
@@ -19,7 +18,7 @@ var (
 		return username, true
 	}
 
-	_ server.Middleware = &Basic{}
+	_ web.Middleware = &Basic{}
 )
 
 func TestNew(t *testing.T) {
@@ -58,7 +57,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := auth.GetValue(ctx)
 		a.True(found).Equal(string(username.([]byte)), "Aladdin")
-		return server.Status(http.StatusCreated)
+		return ctx.Status(http.StatusCreated)
 	})
 
 	srv.GoServe()

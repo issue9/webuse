@@ -15,6 +15,8 @@ import (
 	"github.com/issue9/middleware/v6/auth"
 )
 
+var _ web.Middleware = &JWT{}
+
 func claimsBuilder() jwt.Claims { return &jwt.RegisteredClaims{} }
 
 func getDefaultClaims() jwt.RegisteredClaims {
@@ -83,7 +85,7 @@ func testJWT_Middleware(a *assert.Assertion, j *JWT) {
 			NotEmpty(m["token"])
 
 		s.Delete("/login").
-			Header("Authorization", m["token"]).
+			Header("Authorization", "BEARER "+m["token"]).
 			Do(nil).
 			Status(http.StatusNoContent)
 	})
