@@ -28,6 +28,10 @@ type (
 	}
 )
 
+// New 声明 JWT 对象
+//
+// b 为 Claims 对象的生成方法；
+// private 和 public 为公私钥数据，如果是 hmac 算法，则两者是一样的值；
 func New(b ClaimsBuilderFunc, signFunc jwt.SigningMethod, private, public any) *JWT {
 	return &JWT{
 		claimsBuilder: b,
@@ -52,13 +56,11 @@ func NewRSAPSS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, private, publ
 func newRSA(b ClaimsBuilderFunc, sign jwt.SigningMethod, private, public []byte) (*JWT, error) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
-		println("pvt:", err.Error())
 		return nil, err
 	}
 
 	pub, err := jwt.ParseRSAPublicKeyFromPEM(public)
 	if err != nil {
-		println("pub:", err.Error(), string(public))
 		return nil, err
 	}
 

@@ -1,3 +1,5 @@
+github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
+github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b/go.mod h1:H0wQNHz2YrLsuXOZozoeDmnHXkNCRmMW0gwFWDfEZDA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/golang-jwt/jwt/v4 v4.4.1 h1:pC5DB52sCeK48Wlb9oPcdhnjkz1TKt1D/P7WKJ0kUcQ=
@@ -9,8 +11,9 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/issue9/assert/v2 v2.0.0/go.mod h1:rKr1eVGzXUhAo2af1thiKAhIA8uiSK9Wyn7mcZ4BzAg=
 github.com/issue9/assert/v2 v2.0.1/go.mod h1:rKr1eVGzXUhAo2af1thiKAhIA8uiSK9Wyn7mcZ4BzAg=
 github.com/issue9/assert/v2 v2.1.0/go.mod h1:rKr1eVGzXUhAo2af1thiKAhIA8uiSK9Wyn7mcZ4BzAg=
-github.com/issue9/assert/v2 v2.2.1 h1:XQEnAFrGiT1Z55Tav39muM/Jg9ECiSLm7ehHQWoCHmA=
 github.com/issue9/assert/v2 v2.2.1/go.mod h1:rKr1eVGzXUhAo2af1thiKAhIA8uiSK9Wyn7mcZ4BzAg=
+github.com/issue9/assert/v2 v2.3.1 h1:HHCaJfqZZxy4J5Zt00vTF3vw2lk2oDd41GYw+YHNYCk=
+github.com/issue9/assert/v2 v2.3.1/go.mod h1:rKr1eVGzXUhAo2af1thiKAhIA8uiSK9Wyn7mcZ4BzAg=
 github.com/issue9/cache v0.3.2 h1:dyGtvBLBkDVQjuNaMB/jtUzr6Y1rshM/M8Mu40OQz7o=
 github.com/issue9/cache v0.3.2/go.mod h1:Ck6XhjWhemaEFHUXxuoexw9HS2b5VUhHEN6p4X0RufY=
 github.com/issue9/conv v1.2.2 h1:DlvooVwcCgHxGxgVNSt4LFGxIVzWbMV8E2dmQlrGHNA=
@@ -36,8 +39,8 @@ github.com/issue9/term/v3 v3.0.0 h1:MJ0eavCCqZ9lv2souDyCkSDeVo3XM9auqFVE0s2Esos=
 github.com/issue9/term/v3 v3.0.0/go.mod h1:D/UzioFydVy7DKLRit8ttJdGDkAa1Ni5fA9ZDWVD3lw=
 github.com/issue9/validation v0.5.1 h1:olnraMrm4aKqkT60ILUVIJH3alZNLhEU/8NkCQJ7Ab4=
 github.com/issue9/validation v0.5.1/go.mod h1:xi4eqjEdtwTXi4wepoyi68tvdYpSYzuU4JyVN9piFXA=
-github.com/issue9/web v0.50.3 h1:3880KTpPPRIS+gM7sJXn5i2GHBQoQwNBzYL5IMcM2Fo=
-github.com/issue9/web v0.50.3/go.mod h1:kIbURaZKgVgwabpDu4VPC6oC3n3JYCQehgBsipRYT3U=
+github.com/issue9/web v0.51.0 h1:8db4rDwYHXpgrquyzmZoa7l4D4HSbZeI2mhT8OoL5yk=
+github.com/issue9/web v0.51.0/go.mod h1:NFsQ0PyFpLfkFKqzQRNHrSqHikDLDeLWYjPZ9gixNFs=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=

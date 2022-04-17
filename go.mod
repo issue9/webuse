@@ -2,13 +2,14 @@ module github.com/issue9/middleware/v6
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.4.1
-	github.com/issue9/assert/v2 v2.2.1
+	github.com/issue9/assert/v2 v2.3.1
 	github.com/issue9/cache v0.3.2
 	github.com/issue9/sliceutil v0.10.1
-	github.com/issue9/web v0.50.3
+	github.com/issue9/web v0.51.0
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/issue9/conv v1.2.2 // indirect
 	github.com/issue9/errwrap v0.2.1 // indirect
 	github.com/issue9/localeutil v0.11.0 // indirect
