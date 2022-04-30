@@ -42,6 +42,8 @@ type Health struct {
 	store   Store
 }
 
+func newState(method, path string) *State { return &State{Method: method, Path: path} }
+
 // New 声明 Health 实例
 func New(store Store) *Health {
 	return &Health{
@@ -63,7 +65,7 @@ func NewWithServer(srv *web.Server, prefix string) *Health {
 // 才会将该 api 的信息进行保存，此操作相当于提前进行一次访问。
 // 此操作对部分冷门的 api 可以保证其出现在 States() 中。
 func (h *Health) Register(method, path string) {
-	h.store.Save(&State{Method: method, Path: path})
+	h.store.Save(newState(method, path))
 }
 
 // States 返回所有的状态列表
@@ -93,16 +95,21 @@ func (h *Health) save(method, path string, dur time.Duration, status int) {
 	state.Last = time.Now()
 	state.Spend += dur
 
-	if state.Min > dur {
-		state.Min = dur
-	} else if state.Max < dur {
-		state.Max = dur
-	}
-
 	if status >= 400 && status < 500 {
 		state.UserErrors++
 	} else if status >= 500 {
 		state.ServerErrors++
+	}
+
+	if state.Count == 1 { // 第一次访问
+		state.Min = dur
+		state.Max = dur
+	} else {
+		if state.Min > dur {
+			state.Min = dur
+		} else if state.Max < dur {
+			state.Max = dur
+		}
 	}
 
 	h.store.Save(state)

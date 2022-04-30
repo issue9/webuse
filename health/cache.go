@@ -38,10 +38,7 @@ func (c *cacheStore) Get(method, path string) *State {
 
 	s, err := c.access.Get(key)
 	if errors.Is(err, cache.ErrCacheMiss) {
-		state := &State{
-			Method: method,
-			Path:   path,
-		}
+		state := newState(method, path)
 		c.Save(state)
 		return state
 	}

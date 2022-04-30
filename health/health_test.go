@@ -50,7 +50,7 @@ func TestHealth(t *testing.T) {
 	// 第一次访问 GET /
 	s.Get("/").Query("status", "200").Do(nil).Status(200)
 	state = mem.Get(http.MethodGet, "/")
-	a.Equal(1, state.Count)
+	a.Equal(1, state.Count).True(state.Min > 0)
 
 	// 第二次访问 GET /
 	s.Get("/").Query("status", "500").Do(nil)
