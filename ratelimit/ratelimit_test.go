@@ -3,7 +3,6 @@
 package ratelimit
 
 import (
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,7 +93,7 @@ func TestRatelimit_Transfer(t *testing.T) {
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
-	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, log.Default())
+	srv := New(memory.New(24*time.Hour), 1, 10*time.Second, GenIP, nil)
 	a.NotNil(srv)
 	s := servertest.NewServer(a, nil)
 

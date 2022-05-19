@@ -13,7 +13,6 @@ package ratelimit
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -32,7 +31,7 @@ type Ratelimit struct {
 	capacity int64
 	rate     time.Duration
 	genFunc  GenFunc
-	errlog   *log.Logger
+	errlog   web.Logger
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
@@ -58,7 +57,7 @@ func GenIP(r *http.Request) (string, error) {
 //
 // rate 拿令牌的频率
 // fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
-func New(store cache.Cache, capacity int64, rate time.Duration, fn GenFunc, errlog *log.Logger) *Ratelimit {
+func New(store cache.Cache, capacity int64, rate time.Duration, fn GenFunc, errlog web.Logger) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
@@ -111,7 +110,7 @@ func (rate *Ratelimit) Transfer(oldName, newName string) error {
 
 func (rate *Ratelimit) printError(err error) {
 	if rate.errlog != nil {
-		rate.errlog.Println(err)
+		rate.errlog.Error(err)
 	}
 }
 
