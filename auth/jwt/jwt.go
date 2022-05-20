@@ -4,6 +4,7 @@
 package jwt
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -103,7 +104,7 @@ func (j *JWT) Sign(claims jwt.Claims) (string, error) {
 
 // Middleware 解码用户的 token 并写入 *web.Context
 //
-// 如果需要提交，可以采用 auth.GetValue 函数。
+// 如果需要提取，可以采用 auth.GetValue 函数。
 func (j *JWT) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
 		h := ctx.Request().Header.Get("Authorization")
@@ -115,7 +116,10 @@ func (j *JWT) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return j.public, nil
 		})
 
-		if err != nil {
+		if errors.Is(err, &jwt.ValidationError{}) {
+			ctx.Logs().ERROR().Error(err)
+			return ctx.Status(http.StatusUnauthorized)
+		} else if err != nil {
 			return ctx.InternalServerError(err)
 		}
 
