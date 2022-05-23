@@ -8,7 +8,8 @@
 
 [web](https://pkg.go.dev/github.com/issue9/web) 适用的中间件；
 
-- auth 基本的验证处理；
+- auth/basic 基本的验证处理；
+- jwt JSON Web Tokens 中间件；
 - health 接口状态的监测；
 - ratelimit x-rate-limit 的相关实现；
 
