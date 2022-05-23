@@ -12,9 +12,11 @@ import (
 	"strings"
 
 	"github.com/issue9/web"
-
-	"github.com/issue9/middleware/v6/auth"
 )
+
+type keyType int
+
+const valueKey keyType = 1
 
 const prefix = "basic "
 
@@ -25,13 +27,13 @@ const prefixLen = 6 // len(prefix)
 // username,password 表示用户登录信息。
 // 返回值中，ok 表示是否成功验证。如果成功验证，
 // 则 v 为用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
-type AuthFunc func(username, password []byte) (v any, ok bool)
+type AuthFunc[T any] func(username, password []byte) (v T, ok bool)
 
 // Basic 验证中间件
-type Basic struct {
+type Basic[T any] struct {
 	srv *web.Server
 
-	auth  AuthFunc
+	auth  AuthFunc[T]
 	realm string
 
 	authorization         string
@@ -44,7 +46,7 @@ type Basic struct {
 // proxy 是否为代理，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
-func New(srv *web.Server, auth AuthFunc, realm string, proxy bool) *Basic {
+func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) *Basic[T] {
 	if auth == nil {
 		panic("auth 参数不能为空")
 	}
@@ -58,7 +60,7 @@ func New(srv *web.Server, auth AuthFunc, realm string, proxy bool) *Basic {
 		status = http.StatusProxyAuthRequired
 	}
 
-	return &Basic{
+	return &Basic[T]{
 		srv: srv,
 
 		auth:  auth,
@@ -70,7 +72,7 @@ func New(srv *web.Server, auth AuthFunc, realm string, proxy bool) *Basic {
 	}
 }
 
-func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := ctx.Request().Header.Get(b.authorization)
 		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
@@ -91,12 +93,21 @@ func (b *Basic) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !ok {
 			return b.unauthorization(ctx)
 		}
-		auth.SetValue(ctx, v)
+		ctx.Vars[valueKey] = v
 
 		return next(ctx)
 	}
 }
 
-func (b *Basic) unauthorization(ctx *web.Context) web.Responser {
+func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
 	return ctx.Status(b.unauthorizationStatus, b.authenticate, b.realm)
+}
+
+func (b *Basic[T]) GetValue(ctx *web.Context) (T, bool) {
+	v, found := ctx.Vars[valueKey]
+	if !found {
+		var vv T
+		return vv, false
+	}
+	return v.(T), true
 }

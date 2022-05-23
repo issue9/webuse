@@ -9,35 +9,33 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
-
-	"github.com/issue9/middleware/v6/auth"
 )
 
 var (
-	authFunc = func(username, password []byte) (any, bool) {
+	authFunc = func(username, password []byte) ([]byte, bool) {
 		return username, true
 	}
 
-	_ web.Middleware = &Basic{}
+	_ web.Middleware = &Basic[[]byte]{}
 )
 
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
-	var b *Basic
+	var b *Basic[[]byte]
 	srv := servertest.NewServer(a, nil)
 
 	a.Panic(func() {
-		b = New(srv, nil, "", false)
+		b = New[[]byte](srv, nil, "", false)
 	})
 
-	b = New(srv, authFunc, "", false)
+	b = New[[]byte](srv, authFunc, "", false)
 
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.unauthorizationStatus, http.StatusUnauthorized).
 		NotNil(b.auth)
 
-	b = New(srv, authFunc, "", true)
+	b = New[[]byte](srv, authFunc, "", true)
 
 	a.Equal(b.authorization, "Proxy-Authorization").
 		Equal(b.authenticate, "Proxy-Authenticate").
@@ -49,14 +47,14 @@ func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewServer(a, nil)
 
-	b := New(s, authFunc, "example.com", false)
+	b := New[[]byte](s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		username, found := auth.GetValue(ctx)
-		a.True(found).Equal(string(username.([]byte)), "Aladdin")
+		username, found := b.GetValue(ctx)
+		a.True(found).Equal(string(username), "Aladdin")
 		return ctx.Status(http.StatusCreated)
 	})
 
@@ -81,13 +79,13 @@ func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewServer(a, nil)
 
-	b := New(s, authFunc, "example.com", false)
+	b := New[[]byte](s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
 	r := srv.NewRouter(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		obj, found := auth.GetValue(ctx)
+		obj, found := b.GetValue(ctx)
 		a.True(found).Nil(obj)
 		return nil
 
