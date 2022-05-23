@@ -20,10 +20,10 @@ const prefix = "bearer "
 const prefixLen = 7 // len(prefix)
 
 type (
-	ClaimsBuilderFunc func() jwt.Claims
+	ClaimsBuilderFunc[T jwt.Claims] func() T
 
-	JWT struct {
-		claimsBuilder   ClaimsBuilderFunc
+	JWT[T jwt.Claims] struct {
+		claimsBuilder   ClaimsBuilderFunc[T]
 		signFunc        jwt.SigningMethod
 		private, public any
 	}
@@ -33,8 +33,8 @@ type (
 //
 // b 为 Claims 对象的生成方法；
 // private 和 public 为公私钥数据，如果是 hmac 算法，则两者是一样的值；
-func New(b ClaimsBuilderFunc, signFunc jwt.SigningMethod, private, public any) *JWT {
-	return &JWT{
+func New[T jwt.Claims](b ClaimsBuilderFunc[T], signFunc jwt.SigningMethod, private, public any) *JWT[T] {
+	return &JWT[T]{
 		claimsBuilder: b,
 		signFunc:      signFunc,
 		private:       private,
@@ -42,19 +42,19 @@ func New(b ClaimsBuilderFunc, signFunc jwt.SigningMethod, private, public any) *
 	}
 }
 
-func NewHMAC(b ClaimsBuilderFunc, signFunc *jwt.SigningMethodHMAC, secret []byte) *JWT {
+func NewHMAC[T jwt.Claims](b ClaimsBuilderFunc[T], signFunc *jwt.SigningMethodHMAC, secret []byte) *JWT[T] {
 	return New(b, signFunc, secret, secret)
 }
 
-func NewRSA(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSA, private, public []byte) (*JWT, error) {
+func NewRSA[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, private, public []byte) (*JWT[T], error) {
 	return newRSA(b, sign, private, public)
 }
 
-func NewRSAPSS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT, error) {
+func NewRSAPSS[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT[T], error) {
 	return newRSA(b, sign, private, public)
 }
 
-func newRSA(b ClaimsBuilderFunc, sign jwt.SigningMethod, private, public []byte) (*JWT, error) {
+func newRSA[T jwt.Claims](b ClaimsBuilderFunc[T], sign jwt.SigningMethod, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func newRSA(b ClaimsBuilderFunc, sign jwt.SigningMethod, private, public []byte)
 	return New(b, sign, pvt, pub), nil
 }
 
-func NewECDSA(b ClaimsBuilderFunc, sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT, error) {
+func NewECDSA[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseECPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func NewECDSA(b ClaimsBuilderFunc, sign *jwt.SigningMethodECDSA, private, public
 	return New(b, sign, pvt, pub), nil
 }
 
-func NewEd25519(b ClaimsBuilderFunc, sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT, error) {
+func NewEd25519[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseEdPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func NewEd25519(b ClaimsBuilderFunc, sign *jwt.SigningMethodEd25519, private, pu
 }
 
 // Sign 生成 token
-func (j *JWT) Sign(claims jwt.Claims) (string, error) {
+func (j *JWT[T]) Sign(claims jwt.Claims) (string, error) {
 	token := jwt.NewWithClaims(j.signFunc, claims)
 	return token.SignedString(j.private)
 }
@@ -105,7 +105,7 @@ func (j *JWT) Sign(claims jwt.Claims) (string, error) {
 // Middleware 解码用户的 token 并写入 *web.Context
 //
 // 如果需要提取，可以采用 auth.GetValue 函数。
-func (j *JWT) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
 		h := ctx.Request().Header.Get("Authorization")
 		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {

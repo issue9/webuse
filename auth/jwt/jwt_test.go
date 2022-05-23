@@ -15,9 +15,9 @@ import (
 	"github.com/issue9/middleware/v6/auth"
 )
 
-var _ web.Middleware = &JWT{}
+var _ web.Middleware = &JWT[*jwt.RegisteredClaims]{}
 
-func claimsBuilder() jwt.Claims { return &jwt.RegisteredClaims{} }
+func claimsBuilder() *jwt.RegisteredClaims { return &jwt.RegisteredClaims{} }
 
 func getDefaultClaims() jwt.RegisteredClaims {
 	return jwt.RegisteredClaims{
@@ -39,12 +39,12 @@ func TestHMAC(t *testing.T) {
 	testJWT_Middleware(a, j)
 }
 
-func testJWT_Sign(a *assert.Assertion, j *JWT) {
+func testJWT_Sign(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims]) {
 	token, err := j.Sign(getDefaultClaims())
 	a.NotError(err).NotEmpty(token)
 }
 
-func testJWT_Middleware(a *assert.Assertion, j *JWT) {
+func testJWT_Middleware(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims]) {
 	claims := getDefaultClaims()
 
 	s := servertest.NewTester(a, nil)

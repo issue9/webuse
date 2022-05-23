@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func NewRSAFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSA, fsys fs.FS, private, public string) (*JWT, error) {
+func NewRSAFromFS[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func NewRSAFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSA, fsys fs.FS, p
 	return NewRSA(b, sign, pvt, pub)
 }
 
-func NewRSAPSSFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private, public string) (*JWT, error) {
+func NewRSAPSSFromFS[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func NewRSAPSSFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodRSAPSS, fsys fs
 	return NewRSAPSS(b, sign, pvt, pub)
 }
 
-func NewECDSAFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodECDSA, fsys fs.FS, private, public string) (*JWT, error) {
+func NewECDSAFromFS[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func NewECDSAFromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodECDSA, fsys fs.F
 	return NewECDSA(b, sign, pvt, pub)
 }
 
-func NewEd25519FromFS(b ClaimsBuilderFunc, sign *jwt.SigningMethodEd25519, fsys fs.FS, private, public string) (*JWT, error) {
+func NewEd25519FromFS[T jwt.Claims](b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
