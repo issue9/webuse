@@ -14,7 +14,6 @@ package ratelimit
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/issue9/cache"
@@ -22,12 +21,14 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// GenFunc 用于生成用户唯一 ID 的函数，用于区分令牌桶所属的用户
-type GenFunc func(*http.Request) (string, error)
+// GenFunc 用于生成用户唯一 ID 的函数
+//
+// 用于区分令牌桶所属的用户
+type GenFunc func(*web.Context) (string, error)
 
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
-	store    cache.Cache
+	store    cache.Access
 	capacity int64
 	rate     time.Duration
 	genFunc  GenFunc
@@ -35,45 +36,34 @@ type Ratelimit struct {
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
-func GenIP(r *http.Request) (string, error) {
-	if len(r.RemoteAddr) == 0 {
-		return "", errors.New("无法获取请求端的 IP 地址")
+func GenIP(ctx *web.Context) (string, error) {
+	if ip := ctx.ClientIP(); ip != "" {
+		return ip, nil
 	}
-
-	if r.RemoteAddr[0] == '[' { // IPv6 带端口
-		if index := strings.Index(r.RemoteAddr, "]:"); index > 0 {
-			return r.RemoteAddr[:index+1], nil
-		}
-		return r.RemoteAddr, nil
-	}
-
-	if index := strings.IndexByte(r.RemoteAddr, ':'); index > 0 {
-		return r.RemoteAddr[:index], nil
-	}
-	return r.RemoteAddr, nil
+	return "", errors.New("ratelimit: 无法为请求生成唯一标记！")
 }
 
 // New 声明一个新的 Ratelimit
 //
-// rate 拿令牌的频率
-// fn 为令牌桶名称的产生方法，默认为用户的访问 IP。
-func New(store cache.Cache, capacity int64, rate time.Duration, fn GenFunc, errlog web.Logger) *Ratelimit {
+// rate 拿令牌的频率；
+// fn 为令牌桶名称的产生方法，默认为用户的 IP；
+func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn GenFunc) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
 
 	return &Ratelimit{
-		store:    store,
+		store:    cache.Prefix(prefix, s.Cache()),
 		capacity: capacity,
 		rate:     rate,
 		genFunc:  fn,
-		errlog:   errlog,
+		errlog:   s.Logs().ERROR(),
 	}
 }
 
 // 获取与当前请求相对应的令牌桶
-func (rate *Ratelimit) bucket(r *http.Request) (*Bucket, error) {
-	name, err := rate.genFunc(r)
+func (rate *Ratelimit) bucket(ctx *web.Context) (*Bucket, error) {
+	name, err := rate.genFunc(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,18 +98,12 @@ func (rate *Ratelimit) Transfer(oldName, newName string) error {
 	return nil
 }
 
-func (rate *Ratelimit) printError(err error) {
-	if rate.errlog != nil {
-		rate.errlog.Error(err)
-	}
-}
-
 // Middleware 将当前中间件应用于 next
 func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		b, err := rate.bucket(ctx.Request())
+		b, err := rate.bucket(ctx)
 		if err != nil {
-			rate.printError(err)
+			rate.errlog.Error(err)
 			return server.Status(http.StatusInternalServerError)
 		}
 
