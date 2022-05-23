@@ -11,8 +11,6 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
-
-	"github.com/issue9/middleware/v6/auth"
 )
 
 var _ web.Middleware = &JWT[*jwt.RegisteredClaims]{}
@@ -58,16 +56,12 @@ func testJWT_Middleware(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims]) {
 	})
 
 	r.Delete("/login", j.Middleware(func(ctx *web.Context) web.Responser {
-		val, found := auth.GetValue(ctx)
+		val, found := j.GetValue(ctx)
 		if !found {
 			return ctx.Status(http.StatusNotFound)
 		}
-		v, ok := val.(*jwt.RegisteredClaims)
-		if !ok {
-			return ctx.Status(http.StatusInternalServerError)
-		}
 
-		if v.Issuer != claims.Issuer || v.Subject != claims.Subject || v.ID != claims.ID {
+		if val.Issuer != claims.Issuer || val.Subject != claims.Subject || val.ID != claims.ID {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 

@@ -11,9 +11,11 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
-
-	"github.com/issue9/middleware/v6/auth"
 )
+
+type keyType int
+
+const valueKey keyType = 1
 
 const prefix = "bearer "
 
@@ -126,9 +128,17 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !t.Valid {
 			return ctx.Status(http.StatusUnauthorized)
 		}
-
-		auth.SetValue(ctx, t.Claims)
+		ctx.Vars[valueKey] = t.Claims
 
 		return next(ctx)
 	}
+}
+
+func (j *JWT[T]) GetValue(ctx *web.Context) (T, bool) {
+	v, found := ctx.Vars[valueKey]
+	if !found {
+		var vv T
+		return vv, false
+	}
+	return v.(T), true
 }
