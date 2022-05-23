@@ -18,7 +18,7 @@ type cacheStore struct {
 	errlog web.Logger
 }
 
-func newCache(srv *web.Server, prefix string) Store {
+func NewCacheStore(srv *web.Server, prefix string) Store {
 	access := cache.Prefix(prefix, srv.Cache())
 	errlog := srv.Logs().ERROR()
 	if err := access.Set(allKey, []string{}, cache.Forever); err != nil {

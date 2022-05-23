@@ -21,7 +21,7 @@ func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, &web.Options{Cache: memory.New(1 * time.Minute), Port: ":8080"})
 
-	h := NewWithServer(s.Server(), "health_")
+	h := New(NewCacheStore(s.Server(), "health_"))
 	r := s.NewRouter(h)
 	r.Get("/", func(ctx *web.Context) web.Responser {
 		status, err := strconv.Atoi(ctx.Request().FormValue("status"))
@@ -49,11 +49,13 @@ func TestHealth(t *testing.T) {
 
 	// 第一次访问 GET /
 	s.Get("/").Query("status", "200").Do(nil).Status(200)
+	time.Sleep(time.Microsecond * 500)
 	state = mem.Get(http.MethodGet, "/")
 	a.Equal(1, state.Count).True(state.Min > 0)
 
 	// 第二次访问 GET /
 	s.Get("/").Query("status", "500").Do(nil)
+	time.Sleep(time.Microsecond * 500)
 	state = mem.Get(http.MethodGet, "/")
 	a.Equal(2, state.Count).
 		Equal(1, state.ServerErrors).
@@ -61,11 +63,13 @@ func TestHealth(t *testing.T) {
 
 	// 第一次访问 POST /
 	s.NewRequest(http.MethodPost, "/", nil).Query("status", "201").Do(nil)
+	time.Sleep(time.Microsecond * 500)
 	state = mem.Get(http.MethodPost, "/")
 	a.Equal(1, state.Count)
 
 	// 第一次访问 DELETE /users
 	s.Delete("/users").Query("status", "401").Do(nil)
+	time.Sleep(time.Microsecond * 500)
 	state = mem.Get(http.MethodDelete, "/users")
 	a.Equal(1, state.Count).
 		Equal(0, state.ServerErrors).

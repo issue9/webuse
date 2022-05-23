@@ -52,13 +52,6 @@ func New(store Store) *Health {
 	}
 }
 
-// NewWithServer 根据 *web.Server 的缓存系统初始化 *Health 对象
-//
-// prefix 为保证所有项在缓存中的唯一性而设置的前缀；
-func NewWithServer(srv *web.Server, prefix string) *Health {
-	return New(newCache(srv, prefix))
-}
-
 // Register 注册 api
 //
 // 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
