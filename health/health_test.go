@@ -3,6 +3,7 @@
 package health
 
 import (
+	"math/rand"
 	"net/http"
 	"strconv"
 	"testing"
@@ -28,9 +29,11 @@ func TestHealth(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
 		return ctx.Status(status)
 	})
 	r.Post("/", func(ctx *web.Context) web.Responser {
+		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
 		return nil
 	})
 	r.Delete("/users", func(ctx *web.Context) web.Responser {
@@ -38,6 +41,7 @@ func TestHealth(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
 		return ctx.Status(status)
 	})
 
