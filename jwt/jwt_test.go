@@ -29,12 +29,12 @@ func getDefaultClaims() jwt.RegisteredClaims {
 func TestHMAC(t *testing.T) {
 	a := assert.New(t, false)
 
-	j := NewHMAC[*jwt.RegisteredClaims](&memoryDiscarder{}, claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
+	j := NewHMAC[*jwt.RegisteredClaims](&memoryDiscarder{}, nil, claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
 	a.NotNil(j)
 	testJWT_Sign(a, j)
 
 	m := &memoryDiscarder{}
-	j = NewHMAC[*jwt.RegisteredClaims](m, claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
+	j = NewHMAC[*jwt.RegisteredClaims](m, nil, claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
 	a.NotNil(j)
 	testJWT_Middleware(a, j, m)
 }

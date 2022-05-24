@@ -29,6 +29,7 @@ type (
 
 	JWT[T Claims] struct {
 		discarder       Discarder[T]
+		keyFunc         jwt.Keyfunc
 		claimsBuilder   ClaimsBuilderFunc[T]
 		signFunc        SigningMethod
 		private, public any
@@ -39,33 +40,42 @@ type (
 //
 // b 为 Claims 对象的生成方法；
 // private 和 public 为公私钥数据，如果是 hmac 算法，则两者是一样的值；
-func New[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], signFunc SigningMethod, private, public any) *JWT[T] {
+func New[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], signFunc SigningMethod, private, public any) *JWT[T] {
 	if d == nil {
 		d = defaultDiscarder[T]{}
 	}
 
-	return &JWT[T]{
+	j := &JWT[T]{
 		discarder:     d,
+		keyFunc:       kf,
 		claimsBuilder: b,
 		signFunc:      signFunc,
 		private:       private,
 		public:        public,
 	}
+
+	if j.keyFunc == nil {
+		j.keyFunc = func(_ *jwt.Token) (interface{}, error) {
+			return j.public, nil
+		}
+	}
+
+	return j
 }
 
-func NewHMAC[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodHMAC, secret []byte) *JWT[T] {
-	return New(d, b, sign, secret, secret)
+func NewHMAC[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodHMAC, secret []byte) *JWT[T] {
+	return New(d, kf, b, sign, secret, secret)
 }
 
-func NewRSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, private, public []byte) (*JWT[T], error) {
-	return newRSA(d, b, sign, private, public)
+func NewRSA[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, private, public []byte) (*JWT[T], error) {
+	return newRSA(d, kf, b, sign, private, public)
 }
 
-func NewRSAPSS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT[T], error) {
-	return newRSA(d, b, sign, private, public)
+func NewRSAPSS[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT[T], error) {
+	return newRSA(d, kf, b, sign, private, public)
 }
 
-func newRSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign jwt.SigningMethod, private, public []byte) (*JWT[T], error) {
+func newRSA[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign jwt.SigningMethod, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -76,10 +86,10 @@ func newRSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign jwt.SigningMe
 		return nil, err
 	}
 
-	return New(d, b, sign, pvt, pub), nil
+	return New(d, kf, b, sign, pvt, pub), nil
 }
 
-func NewECDSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT[T], error) {
+func NewECDSA[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseECPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -90,10 +100,10 @@ func NewECDSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.Signin
 		return nil, err
 	}
 
-	return New(d, b, sign, pvt, pub), nil
+	return New(d, kf, b, sign, pvt, pub), nil
 }
 
-func NewEd25519[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT[T], error) {
+func NewEd25519[T Claims](d Discarder[T], kf jwt.Keyfunc, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseEdPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -104,7 +114,7 @@ func NewEd25519[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.Sign
 		return nil, err
 	}
 
-	return New(d, b, sign, pvt, pub), nil
+	return New(d, kf, b, sign, pvt, pub), nil
 }
 
 // Sign 生成 token
@@ -122,9 +132,7 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 
-		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), func(token *jwt.Token) (interface{}, error) {
-			return j.public, nil
-		})
+		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
 
 		if errors.Is(err, &jwt.ValidationError{}) {
 			ctx.Logs().ERROR().Error(err)

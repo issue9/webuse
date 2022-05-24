@@ -13,12 +13,12 @@ import (
 func TestNewRSAFromFS(t *testing.T) {
 	a := assert.New(t, false)
 
-	j, err := NewRSAFromFS(nil, claimsBuilder, jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
+	j, err := NewRSAFromFS(nil, nil, claimsBuilder, jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Sign(a, j)
 
 	d := &memoryDiscarder{}
-	j, err = NewRSAFromFS[*jwt.RegisteredClaims](d, claimsBuilder, jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
+	j, err = NewRSAFromFS[*jwt.RegisteredClaims](d, nil, claimsBuilder, jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Middleware(a, j, d)
 }
@@ -26,12 +26,12 @@ func TestNewRSAFromFS(t *testing.T) {
 func TestNewRSAPSSFromFS(t *testing.T) {
 	a := assert.New(t, false)
 
-	j, err := NewRSAPSSFromFS(nil, claimsBuilder, jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
+	j, err := NewRSAPSSFromFS(nil, nil, claimsBuilder, jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Sign(a, j)
 
 	d := &memoryDiscarder{}
-	j, err = NewRSAPSSFromFS[*jwt.RegisteredClaims](d, claimsBuilder, jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
+	j, err = NewRSAPSSFromFS[*jwt.RegisteredClaims](d, nil, claimsBuilder, jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem", "rsa-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Middleware(a, j, d)
 }
@@ -39,12 +39,12 @@ func TestNewRSAPSSFromFS(t *testing.T) {
 func TestNewECDSAFromFS(t *testing.T) {
 	a := assert.New(t, false)
 
-	j, err := NewECDSAFromFS(nil, claimsBuilder, jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem", "ec256-public.pem")
+	j, err := NewECDSAFromFS(nil, nil, claimsBuilder, jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem", "ec256-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Sign(a, j)
 
 	d := &memoryDiscarder{}
-	j, err = NewECDSAFromFS[*jwt.RegisteredClaims](d, claimsBuilder, jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem", "ec256-public.pem")
+	j, err = NewECDSAFromFS[*jwt.RegisteredClaims](d, nil, claimsBuilder, jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem", "ec256-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Middleware(a, j, d)
 }
@@ -52,12 +52,12 @@ func TestNewECDSAFromFS(t *testing.T) {
 func TestNewEd25519FromFS(t *testing.T) {
 	a := assert.New(t, false)
 
-	j, err := NewEd25519FromFS(nil, claimsBuilder, jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem", "ed25519-public.pem")
+	j, err := NewEd25519FromFS(nil, nil, claimsBuilder, jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem", "ed25519-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Sign(a, j)
 
 	d := &memoryDiscarder{}
-	j, err = NewEd25519FromFS[*jwt.RegisteredClaims](d, claimsBuilder, jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem", "ed25519-public.pem")
+	j, err = NewEd25519FromFS[*jwt.RegisteredClaims](d, nil, claimsBuilder, jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem", "ed25519-public.pem")
 	a.NotError(err).NotNil(j)
 	testJWT_Middleware(a, j, d)
 }
