@@ -118,7 +118,7 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
 		h := j.GetToken(ctx)
 
-		if j.discarder.IsDiscarded(h) {
+		if j.discarder.TokenIsDiscarded(h) {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 
@@ -147,7 +147,7 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
-// GetValue 返回解码后的  Claims 对象
+// GetValue 返回解码后的 Claims 对象
 func (j *JWT[T]) GetValue(ctx *web.Context) (T, bool) {
 	v, found := ctx.Vars[valueKey]
 	if !found {

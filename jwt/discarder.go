@@ -8,8 +8,8 @@ type (
 	// 在某些情况下，需要强制用户的令牌不再可用，可以使用 Discarder 接口，
 	// 当 JWT 接受此对象时，将采用 IsDiscarded 来判断令牌是否是被丢弃的。
 	Discarder[T Claims] interface {
-		// IsDiscarded 令牌是否已被提早丢弃
-		IsDiscarded(string) bool
+		// TokenIsDiscarded 令牌是否已被提早丢弃
+		TokenIsDiscarded(string) bool
 
 		// ClaimsIsDiscarded 根据 Claims 判断是否已经丢弃
 		//
@@ -20,6 +20,6 @@ type (
 	defaultDiscarder[T Claims] struct{}
 )
 
-func (d defaultDiscarder[T]) IsDiscarded(string) bool { return false }
+func (d defaultDiscarder[T]) TokenIsDiscarded(_ string) bool { return false }
 
-func (d defaultDiscarder[T]) ClaimsIsDiscarded(T) bool { return false }
+func (d defaultDiscarder[T]) ClaimsIsDiscarded(_ T) bool { return false }

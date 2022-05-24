@@ -81,7 +81,7 @@ func testJWT_Middleware(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims], d *m
 		}
 
 		if d != nil {
-			d.Discard(j.GetToken(ctx))
+			d.DiscardToken(j.GetToken(ctx))
 		}
 
 		return ctx.NoContent()
