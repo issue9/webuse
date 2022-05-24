@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func NewRSAFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, fsys fs.FS, private, public string) (*JWT[T], error) {
+func NewRSAFromFS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func NewRSAFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.S
 	return NewRSA(d, b, sign, pvt, pub)
 }
 
-func NewRSAPSSFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private, public string) (*JWT[T], error) {
+func NewRSAPSSFromFS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func NewRSAPSSFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jw
 	return NewRSAPSS(d, b, sign, pvt, pub)
 }
 
-func NewECDSAFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, fsys fs.FS, private, public string) (*JWT[T], error) {
+func NewECDSAFromFS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func NewECDSAFromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt
 	return NewECDSA(d, b, sign, pvt, pub)
 }
 
-func NewEd25519FromFS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, fsys fs.FS, private, public string) (*JWT[T], error) {
+func NewEd25519FromFS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, fsys fs.FS, private, public string) (*JWT[T], error) {
 	pvt, pub, err := loadFS(fsys, private, public)
 	if err != nil {
 		return nil, err

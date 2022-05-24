@@ -22,36 +22,26 @@ const prefix = "bearer "
 const prefixLen = 7 // len(prefix)
 
 type (
-	ClaimsBuilderFunc[T jwt.Claims] func() T
+	Claims        = jwt.Claims
+	SigningMethod = jwt.SigningMethod
 
-	JWT[T jwt.Claims] struct {
-		discarder       Discarder
+	ClaimsBuilderFunc[T Claims] func() T
+
+	JWT[T Claims] struct {
+		discarder       Discarder[T]
 		claimsBuilder   ClaimsBuilderFunc[T]
-		signFunc        jwt.SigningMethod
+		signFunc        SigningMethod
 		private, public any
 	}
-
-	// Discarder 判断令牌是否被丢弃
-	//
-	// 在某些情况下，需要强制用户的令牌不再可用，可以使用 Discarder 接口，
-	// 当 JWT 接受此对象时，将采用 IsDiscarded 来判断令牌是否是被丢弃的。
-	Discarder interface {
-		// IsDiscarded 令牌是否已被提早丢弃
-		IsDiscarded(string) bool
-	}
-
-	defaultDiscarder struct{}
 )
-
-func (d defaultDiscarder) IsDiscarded(string) bool { return true }
 
 // New 声明 JWT 对象
 //
 // b 为 Claims 对象的生成方法；
 // private 和 public 为公私钥数据，如果是 hmac 算法，则两者是一样的值；
-func New[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], signFunc jwt.SigningMethod, private, public any) *JWT[T] {
+func New[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], signFunc SigningMethod, private, public any) *JWT[T] {
 	if d == nil {
-		d = defaultDiscarder{}
+		d = defaultDiscarder[T]{}
 	}
 
 	return &JWT[T]{
@@ -63,19 +53,19 @@ func New[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], signFunc jwt.Signing
 	}
 }
 
-func NewHMAC[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodHMAC, secret []byte) *JWT[T] {
+func NewHMAC[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodHMAC, secret []byte) *JWT[T] {
 	return New(d, b, sign, secret, secret)
 }
 
-func NewRSA[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, private, public []byte) (*JWT[T], error) {
+func NewRSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSA, private, public []byte) (*JWT[T], error) {
 	return newRSA(d, b, sign, private, public)
 }
 
-func NewRSAPSS[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT[T], error) {
+func NewRSAPSS[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodRSAPSS, private, public []byte) (*JWT[T], error) {
 	return newRSA(d, b, sign, private, public)
 }
 
-func newRSA[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign jwt.SigningMethod, private, public []byte) (*JWT[T], error) {
+func newRSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign jwt.SigningMethod, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -89,7 +79,7 @@ func newRSA[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign jwt.SigningM
 	return New(d, b, sign, pvt, pub), nil
 }
 
-func NewECDSA[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT[T], error) {
+func NewECDSA[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodECDSA, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseECPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -103,7 +93,7 @@ func NewECDSA[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.Signi
 	return New(d, b, sign, pvt, pub), nil
 }
 
-func NewEd25519[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT[T], error) {
+func NewEd25519[T Claims](d Discarder[T], b ClaimsBuilderFunc[T], sign *jwt.SigningMethodEd25519, private, public []byte) (*JWT[T], error) {
 	pvt, err := jwt.ParseEdPrivateKeyFromPEM(private)
 	if err != nil {
 		return nil, err
@@ -118,7 +108,7 @@ func NewEd25519[T jwt.Claims](d Discarder, b ClaimsBuilderFunc[T], sign *jwt.Sig
 }
 
 // Sign 生成 token
-func (j *JWT[T]) Sign(claims jwt.Claims) (string, error) {
+func (j *JWT[T]) Sign(claims Claims) (string, error) {
 	token := jwt.NewWithClaims(j.signFunc, claims)
 	return token.SignedString(j.private)
 }
@@ -146,6 +136,11 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !t.Valid {
 			return ctx.Status(http.StatusUnauthorized)
 		}
+
+		if j.discarder.ClaimsIsDiscarded(t.Claims.(T)) {
+			return ctx.Status(http.StatusUnauthorized)
+		}
+
 		ctx.Vars[valueKey] = t.Claims
 
 		return next(ctx)

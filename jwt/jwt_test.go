@@ -9,23 +9,12 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
 var _ web.Middleware = &JWT[*jwt.RegisteredClaims]{}
-
-type memoryDiscarder struct {
-	tokens []string
-}
-
-func (m *memoryDiscarder) IsDiscarded(t string) bool {
-	return sliceutil.Exists(m.tokens, func(e string) bool { return e == t })
-}
-
-func (m *memoryDiscarder) Discard(t string) { m.tokens = append(m.tokens, t) }
 
 func claimsBuilder() *jwt.RegisteredClaims { return &jwt.RegisteredClaims{} }
 
@@ -40,12 +29,12 @@ func getDefaultClaims() jwt.RegisteredClaims {
 func TestHMAC(t *testing.T) {
 	a := assert.New(t, false)
 
-	j := NewHMAC(&memoryDiscarder{}, claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
+	j := NewHMAC[*jwt.RegisteredClaims](&memoryDiscarder{}, claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
 	a.NotNil(j)
 	testJWT_Sign(a, j)
 
 	m := &memoryDiscarder{}
-	j = NewHMAC(m, claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
+	j = NewHMAC[*jwt.RegisteredClaims](m, claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
 	a.NotNil(j)
 	testJWT_Middleware(a, j, m)
 }
