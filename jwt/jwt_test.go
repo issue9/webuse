@@ -5,7 +5,6 @@ package jwt
 import (
 	"encoding/json"
 	"net/http"
-	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/assert/v2"
@@ -14,43 +13,31 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ web.Middleware = &JWT[*jwt.RegisteredClaims]{}
+var _ web.Middleware = &stdJWT{}
+
+type stdJWT = JWT[*jwt.RegisteredClaims]
 
 func claimsBuilder() *jwt.RegisteredClaims { return &jwt.RegisteredClaims{} }
 
-func getDefaultClaims() jwt.RegisteredClaims {
-	return jwt.RegisteredClaims{
+func newJWT(a *assert.Assertion) (*stdJWT, *memoryDiscarder) {
+	m := &memoryDiscarder{}
+	j := New[*jwt.RegisteredClaims](m, claimsBuilder)
+	a.NotNil(j)
+
+	return j, m
+}
+
+func testJWT_Middleware(a *assert.Assertion, j *stdJWT, d *memoryDiscarder, kid string) {
+	claims := jwt.RegisteredClaims{
 		Issuer:  "issuer",
 		Subject: "subject",
 		ID:      "id",
 	}
-}
-
-func TestHMAC(t *testing.T) {
-	a := assert.New(t, false)
-
-	j := NewHMAC[*jwt.RegisteredClaims](&memoryDiscarder{}, nil, claimsBuilder, jwt.SigningMethodHS256, []byte("abc"))
-	a.NotNil(j)
-	testJWT_Sign(a, j)
-
-	m := &memoryDiscarder{}
-	j = NewHMAC[*jwt.RegisteredClaims](m, nil, claimsBuilder, jwt.SigningMethodHS256, []byte("secret"))
-	a.NotNil(j)
-	testJWT_Middleware(a, j, m)
-}
-
-func testJWT_Sign(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims]) {
-	token, err := j.Sign(getDefaultClaims())
-	a.NotError(err).NotEmpty(token)
-}
-
-func testJWT_Middleware(a *assert.Assertion, j *JWT[*jwt.RegisteredClaims], d *memoryDiscarder) {
-	claims := getDefaultClaims()
 
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		token, err := j.Sign(claims)
+		token, err := j.Sign(claims, map[string]any{"kid": kid})
 		if err != nil {
 			return ctx.InternalServerError(err)
 		}
