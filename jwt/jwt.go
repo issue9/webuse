@@ -14,6 +14,7 @@ package jwt
 
 import (
 	"errors"
+	"math/rand"
 	"net/http"
 	"strings"
 
@@ -31,7 +32,7 @@ const (
 	prefixLen = 7 // len(prefix)
 )
 
-var ErrKidNotFound = errors.New("jwt: 指定的算法未找到")
+var ErrSigningMethodNotFound = errors.New("jwt: 算法未找到")
 
 type (
 	Claims        = jwt.Claims
@@ -48,6 +49,7 @@ type (
 		keyFunc       jwt.Keyfunc
 		claimsBuilder ClaimsBuilderFunc[T]
 		keys          []*key
+		keyIDs        []string
 	}
 
 	contextKeyType int
@@ -65,39 +67,73 @@ func New[T Claims](d Discarder[T], b ClaimsBuilderFunc[T]) *JWT[T] {
 	j := &JWT[T]{
 		discarder:     d,
 		claimsBuilder: b,
+		keys:          make([]*key, 0, 10),
+		keyIDs:        make([]string, 0, 10),
 	}
+
 	j.keyFunc = func(t *jwt.Token) (any, error) {
-		if k := j.findKey(t.Header); k != nil {
-			return k.public, nil
+		if len(j.keys) == 0 {
+			return nil, ErrSigningMethodNotFound
 		}
-		return nil, ErrKidNotFound
+
+		if len(t.Header) > 0 {
+			if kid, found := t.Header["kid"]; found {
+				k, found := sliceutil.At(j.keys, func(e *key) bool { return e.id == kid })
+				if !found {
+					return nil, ErrSigningMethodNotFound
+				}
+				return k.public, nil
+			}
+		}
+
+		if len(j.keys) == 1 {
+			return j.keys[0].public, nil
+		}
+		return nil, ErrSigningMethodNotFound
 	}
 
 	return j
 }
 
-func (j *JWT[T]) findKey(headers map[string]any) *key {
-	kid, found := headers["kid"]
-	if !found {
-		return j.keys[0]
-	}
-
-	k, _ := sliceutil.At(j.keys, func(e *key) bool { return e.id == kid })
-	return k
-}
-
 // Sign 生成 token
 //
-// headers 表示输出的 JWT.Header 中的字段，通过 headers["kid"] 可指定算法；
+// headers 表示输出的 JWT.Header 中的字段，如果用户在 headers 中指定了 kid，
+// 那么始终会以此查找算法，或是在找不到时返回错误，如果未指定 kid，
+// 则会随机选择一个算法。
 func (j *JWT[T]) Sign(claims Claims, headers map[string]any) (string, error) {
-	if k := j.findKey(headers); k != nil {
-		t := jwt.NewWithClaims(k.sign, claims)
-		for k, v := range headers {
-			t.Header[k] = v
+	var k *key
+	switch l := len(j.keys); l {
+	case 0:
+		return "", ErrSigningMethodNotFound
+	case 1:
+		if len(headers) == 0 {
+			k = j.keys[0]
+		} else if kid, found := headers["kid"]; found && kid != j.keys[0].id {
+			return "", ErrSigningMethodNotFound
+		} else {
+			k = j.keys[0]
 		}
-		return t.SignedString(k.private)
+	default:
+		if len(headers) == 0 {
+			index := rand.Intn(l)
+			k = j.keys[index]
+		} else if kid, found := headers["kid"]; found {
+			k, found = sliceutil.At(j.keys, func(e *key) bool { return e.id == kid })
+			if !found {
+				return "", ErrSigningMethodNotFound
+			}
+		} else {
+			index := rand.Intn(l)
+			k = j.keys[index]
+		}
 	}
-	return "", ErrKidNotFound
+
+	//headers["kid"] = k.id // 始终指定 kid
+	t := jwt.NewWithClaims(k.sign, claims)
+	for k, v := range headers {
+		t.Header[k] = v
+	}
+	return t.SignedString(k.private)
 }
 
 // Middleware 解码用户的 token 并写入 *web.Context
