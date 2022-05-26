@@ -5,6 +5,7 @@ package jwt
 import (
 	"encoding/json"
 	"net/http"
+	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/assert/v2"
@@ -19,11 +20,19 @@ type stdJWT = JWT[*jwt.RegisteredClaims]
 
 func claimsBuilder() *jwt.RegisteredClaims { return &jwt.RegisteredClaims{} }
 
+func TestNew(t *testing.T) {
+	a := assert.New(t, false)
+	j := New(nil, claimsBuilder)
+	a.NotNil(j).
+		NotNil(j.discarder).
+		Equal(j.claimsBuilder, claimsBuilder).
+		NotNil(j.keyFunc)
+}
+
 func newJWT(a *assert.Assertion) (*stdJWT, *memoryDiscarder) {
 	m := &memoryDiscarder{}
 	j := New[*jwt.RegisteredClaims](m, claimsBuilder)
 	a.NotNil(j)
-
 	return j, m
 }
 

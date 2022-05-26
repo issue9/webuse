@@ -24,7 +24,7 @@ func (j *JWT[T]) AddKey(id string, sign SigningMethod, pvt, pub any) {
 	})
 }
 
-func (j *JWT[T]) AddHMACKey(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
+func (j *JWT[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
 	j.AddKey(id, sign, secret, secret)
 }
 

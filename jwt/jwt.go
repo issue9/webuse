@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 // Package jwt JSON Web Tokens 验证
+//
+//  jwt := New[*jwt.RegisterClaims](nil, builder)
+//  // 添加多种编码方式
+//  jwt.Add("hmac", jwt.SigningMethodHS256, []byte("secret"))
+//  jwt.AddRSA("rsa", jwt.SigningMethodRS256, []byte("private"), []byte("public"))
+//
+//  jwt.Sign(&jwt.RegisterClaims{...}, map[string]any{"kid": "hmac"}) // 采用 hmac 签发令牌
+//  jwt.Sign(&jwt.RegisterClaims{...}, map[string]any{"kid": "rsa"}) // 采用 rsa 签发令牌
+//  jwt.Sign(&jwt.RegisterClaims{...}, nil) // 采用第一个添加的(hmac)签发令牌
 package jwt
 
 import (
@@ -30,7 +39,7 @@ type (
 
 	ClaimsBuilderFunc[T Claims] func() T
 
-	// JWT 生成 JWT 令牌管理
+	// JWT JSON Web Tokens 令牌管理
 	//
 	// 可以指定多个证书，如果存在多个证书，那么将通过 header["kid"] 查询每个令牌对应的证书，
 	// 如果未指定 kid，那么始终会拿第一个添加的证书作为令牌的证书。

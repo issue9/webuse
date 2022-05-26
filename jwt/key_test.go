@@ -14,7 +14,7 @@ func TestJWT_AddHMAC(t *testing.T) {
 	a := assert.New(t, false)
 	j, m := newJWT(a)
 
-	j.AddHMACKey("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
+	j.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	testJWT_Middleware(a, j, m, "hmac-secret")
 }
 
