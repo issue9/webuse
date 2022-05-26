@@ -72,23 +72,17 @@ func New[T Claims](d Discarder[T], b ClaimsBuilderFunc[T]) *JWT[T] {
 	}
 
 	j.keyFunc = func(t *jwt.Token) (any, error) {
-		if len(j.keys) == 0 {
+		if len(j.keys) == 0 || len(t.Header) == 0 {
 			return nil, ErrSigningMethodNotFound
 		}
 
-		if len(t.Header) > 0 {
-			if kid, found := t.Header["kid"]; found {
-				k, found := sliceutil.At(j.keys, func(e *key) bool { return e.id == kid })
-				if !found {
-					return nil, ErrSigningMethodNotFound
-				}
+		if kid, found := t.Header["kid"]; found {
+			if k, found := sliceutil.At(j.keys, func(e *key) bool { return e.id == kid }); found {
+				t.Method = k.sign // 忽略由用户指定的 header['alg']，而是有 kid 指定。
 				return k.public, nil
 			}
 		}
 
-		if len(j.keys) == 1 {
-			return j.keys[0].public, nil
-		}
 		return nil, ErrSigningMethodNotFound
 	}
 
@@ -96,43 +90,20 @@ func New[T Claims](d Discarder[T], b ClaimsBuilderFunc[T]) *JWT[T] {
 }
 
 // Sign 生成 token
-//
-// headers 表示输出的 JWT.Header 中的字段，如果用户在 headers 中指定了 kid，
-// 那么始终会以此查找算法，或是在找不到时返回错误，如果未指定 kid，
-// 则会随机选择一个算法。
-func (j *JWT[T]) Sign(claims Claims, headers map[string]any) (string, error) {
+func (j *JWT[T]) Sign(claims Claims) (string, error) {
 	var k *key
 	switch l := len(j.keys); l {
 	case 0:
 		return "", ErrSigningMethodNotFound
 	case 1:
-		if len(headers) == 0 {
-			k = j.keys[0]
-		} else if kid, found := headers["kid"]; found && kid != j.keys[0].id {
-			return "", ErrSigningMethodNotFound
-		} else {
-			k = j.keys[0]
-		}
+		k = j.keys[0]
 	default:
-		if len(headers) == 0 {
-			index := rand.Intn(l)
-			k = j.keys[index]
-		} else if kid, found := headers["kid"]; found {
-			k, found = sliceutil.At(j.keys, func(e *key) bool { return e.id == kid })
-			if !found {
-				return "", ErrSigningMethodNotFound
-			}
-		} else {
-			index := rand.Intn(l)
-			k = j.keys[index]
-		}
+		k = j.keys[rand.Intn(l)]
 	}
 
-	//headers["kid"] = k.id // 始终指定 kid
 	t := jwt.NewWithClaims(k.sign, claims)
-	for k, v := range headers {
-		t.Header[k] = v
-	}
+	t.Header["kid"] = k.id
+	t.Header["alg"] = jwt.SigningMethodNone.Alg() // 不应该让用户知道算法，防止攻击。
 	return t.SignedString(k.private)
 }
 
