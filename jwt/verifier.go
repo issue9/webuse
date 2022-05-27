@@ -30,7 +30,6 @@ type (
 		keyFunc       jwt.Keyfunc
 		claimsBuilder ClaimsBuilderFunc[T]
 		keys          []*key
-		keyIDs        []string
 	}
 
 	ClaimsBuilderFunc[T Claims] func() T
@@ -51,7 +50,6 @@ func NewVerifier[T Claims](d Blocker[T], b ClaimsBuilderFunc[T]) *Verifier[T] {
 		blocker:       d,
 		claimsBuilder: b,
 		keys:          make([]*key, 0, 10),
-		keyIDs:        make([]string, 0, 10),
 	}
 
 	j.keyFunc = func(t *jwt.Token) (any, error) {
@@ -122,9 +120,6 @@ func (j Verifier[T]) GetToken(ctx *web.Context) string {
 	return h
 }
 
-// KeyIDs 所有注册的编码名称
-func (j *Verifier[T]) KeyIDs() []string { return j.keyIDs }
-
 // AddKey 添加证书
 func (j *Verifier[T]) AddKey(id string, sign SigningMethod, keyData any) {
 	if sliceutil.Exists(j.keys, func(e *key) bool { return e.id == id }) {
@@ -136,7 +131,6 @@ func (j *Verifier[T]) AddKey(id string, sign SigningMethod, keyData any) {
 		sign: sign,
 		key:  keyData,
 	})
-	j.keyIDs = append(j.keyIDs, id)
 }
 
 func (j *Verifier[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {

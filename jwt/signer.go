@@ -29,8 +29,7 @@ type Responser interface {
 	SetExpires(int)
 }
 
-// Response Responser 的默认实现
-type Response struct {
+type response struct {
 	XMLName struct{} `json:"-" yaml:"-" xml:"token"`
 	Access  string   `json:"access_token" yaml:"access_token" xml:"access_token"`
 	Refresh string   `json:"refresh_token,omitempty" yaml:"refresh_token,omitempty" xml:"refresh_token,omitempty"`
@@ -43,6 +42,9 @@ type Signer[T Claims] struct {
 	expires int
 	expired time.Duration
 }
+
+// NewResponse 默认的 Responser 接口实现
+func NewResponse() Responser { return &response{} }
 
 func NewSigner[T Claims](expired time.Duration) *Signer[T] {
 	expires := int(expired.Seconds())
@@ -184,8 +186,8 @@ func (s *Signer[T]) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, 
 	s.AddEd25519(id, sign, pvt)
 }
 
-func (resp *Response) SetAccessToken(access string) { resp.Access = access }
+func (resp *response) SetAccessToken(access string) { resp.Access = access }
 
-func (resp *Response) SetRefreshToken(refresh string) { resp.Refresh = refresh }
+func (resp *response) SetRefreshToken(refresh string) { resp.Refresh = refresh }
 
-func (resp *Response) SetExpires(expires int) { resp.Expires = expires }
+func (resp *response) SetExpires(expires int) { resp.Expires = expires }
