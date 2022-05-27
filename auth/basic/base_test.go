@@ -103,4 +103,7 @@ func TestServeHTTP_failed(t *testing.T) {
 		Header("Authorization", "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
 		Do(nil).
 		Status(http.StatusUnauthorized)
+
+	srv.Close(0)
+	srv.Wait()
 }
