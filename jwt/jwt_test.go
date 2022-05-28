@@ -95,7 +95,7 @@ func verifierMiddleware(a *assert.Assertion, signer *stdSigner, verifier *stdVer
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.RenderAccess(ctx, http.StatusCreated, NewResponse(), claims)
+		return signer.RenderAccess(ctx, http.StatusCreated, &Response{}, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
@@ -133,7 +133,7 @@ func verifierMiddleware(a *assert.Assertion, signer *stdSigner, verifier *stdVer
 	s.NewRequest(http.MethodPost, "/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
-		resp := &response{}
+		resp := &Response{}
 		a.NotError(json.Unmarshal(body, resp))
 		a.NotEmpty(resp).
 			NotEmpty(resp.Access).
@@ -175,7 +175,7 @@ func TestVerifier_client(t *testing.T) {
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.RenderAccessRefresh(ctx, http.StatusCreated, NewResponse(), claims, claims)
+		return signer.RenderAccessRefresh(ctx, http.StatusCreated, &Response{}, claims, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
@@ -196,7 +196,7 @@ func TestVerifier_client(t *testing.T) {
 	s.NewRequest(http.MethodPost, "/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
-		m := &response{}
+		m := &Response{}
 		a.NotError(json.Unmarshal(body, &m))
 		a.NotEmpty(m).
 			NotEmpty(m.Access).
