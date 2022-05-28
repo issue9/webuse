@@ -28,27 +28,27 @@ type (
 	Verifier[T Claims] struct {
 		blocker       Blocker[T]
 		keyFunc       jwt.Keyfunc
-		claimsBuilder ClaimsBuilderFunc[T]
+		claimsBuilder BuildClaimsFunc[T]
 		keys          []*key
 	}
 
-	ClaimsBuilderFunc[T Claims] func() T
+	BuildClaimsFunc[T Claims] func() T
 
 	contextKeyType int
 )
 
 // NewVerifier 声明 Verifier 对象
 //
-// d 为处理丢弃令牌的对象，如果为空表示不会对任何令牌作特殊处理；
-// b 为 Claims 对象的生成方法；
-func NewVerifier[T Claims](d Blocker[T], b ClaimsBuilderFunc[T]) *Verifier[T] {
-	if d == nil {
-		d = defaultBlocker[T]{}
+// b 为处理丢弃令牌的对象，如果为空表示不会对任何令牌作特殊处理；
+// f 为 Claims 对象的生成方法；
+func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
+	if b == nil {
+		b = defaultBlocker[T]{}
 	}
 
 	j := &Verifier[T]{
-		blocker:       d,
-		claimsBuilder: b,
+		blocker:       b,
+		claimsBuilder: f,
 		keys:          make([]*key, 0, 10),
 	}
 

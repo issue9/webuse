@@ -18,8 +18,8 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-func newJWT(a *assert.Assertion, expired time.Duration) (*stdSigner, *stdVerifier, *memoryBlocker) {
-	s := NewSigner[*jwt.RegisteredClaims](expired)
+func newJWT(a *assert.Assertion, expired time.Duration) (*Signer, *stdVerifier, *memoryBlocker) {
+	s := NewSigner(expired)
 	a.NotNil(s)
 
 	m := &memoryBlocker{}
@@ -82,7 +82,7 @@ func TestVerifier_Middleware(t *testing.T) {
 	verifierMiddleware(a, signer, verifier, m)
 }
 
-func verifierMiddleware(a *assert.Assertion, signer *stdSigner, verifier *stdVerifier, d *memoryBlocker) {
+func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifier, d *memoryBlocker) {
 	a.TB().Helper()
 	d.clear()
 

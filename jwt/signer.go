@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web"
 )
 
-// Responser 向客户端输出的对象接口
+// Responser 向客户端输出令牌的数据结构
 type Responser interface {
 	// SetAccessToken 设置令牌
 	SetAccessToken(string)
@@ -38,15 +38,15 @@ type Response struct {
 }
 
 // Signer 证书的签发管理
-type Signer[T Claims] struct {
+type Signer struct {
 	keys    []*key
 	expires int
 	expired time.Duration
 }
 
-func NewSigner[T Claims](expired time.Duration) *Signer[T] {
+func NewSigner(expired time.Duration) *Signer {
 	expires := int(expired.Seconds())
-	return &Signer[T]{
+	return &Signer{
 		keys:    make([]*key, 0, 10),
 		expires: expires,
 		expired: expired,
@@ -54,7 +54,7 @@ func NewSigner[T Claims](expired time.Duration) *Signer[T] {
 }
 
 // RenderAccess 输出带令牌的对象
-func (s *Signer[T]) RenderAccess(ctx *web.Context, status int, t Responser, accessClaims T) web.Responser {
+func (s *Signer) RenderAccess(ctx *web.Context, status int, t Responser, accessClaims Claims) web.Responser {
 	ac, err := s.Sign(accessClaims)
 	if err != nil {
 		return ctx.InternalServerError(err)
@@ -66,7 +66,7 @@ func (s *Signer[T]) RenderAccess(ctx *web.Context, status int, t Responser, acce
 }
 
 // RenderAccessRefresh 输出带令牌和刷新令牌的对象
-func (s *Signer[T]) RenderAccessRefresh(ctx *web.Context, status int, t Responser, accessClaims, refreshClaims T) web.Responser {
+func (s *Signer) RenderAccessRefresh(ctx *web.Context, status int, t Responser, accessClaims, refreshClaims Claims) web.Responser {
 	ac, err := s.Sign(accessClaims)
 	if err != nil {
 		return ctx.InternalServerError(err)
@@ -86,7 +86,7 @@ func (s *Signer[T]) RenderAccessRefresh(ctx *web.Context, status int, t Response
 // Sign 对 claims 进行签名
 //
 // 算法随机从 s.AddKey 添加的库里随机选取。
-func (s *Signer[T]) Sign(claims T) (string, error) {
+func (s *Signer) Sign(claims Claims) (string, error) {
 	var k *key
 	switch l := len(s.keys); l {
 	case 0:
@@ -103,7 +103,7 @@ func (s *Signer[T]) Sign(claims T) (string, error) {
 	return t.SignedString(k.key)
 }
 
-func (s *Signer[T]) AddKey(id string, sign SigningMethod, private any) {
+func (s *Signer) AddKey(id string, sign SigningMethod, private any) {
 	if sliceutil.Exists(s.keys, func(e *key) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
@@ -115,11 +115,11 @@ func (s *Signer[T]) AddKey(id string, sign SigningMethod, private any) {
 	})
 }
 
-func (s *Signer[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
+func (s *Signer) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
 	s.AddKey(id, sign, secret)
 }
 
-func (s *Signer[T]) addRSA(id string, sign jwt.SigningMethod, private []byte) {
+func (s *Signer) addRSA(id string, sign jwt.SigningMethod, private []byte) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
 		panic(err)
@@ -127,15 +127,15 @@ func (s *Signer[T]) addRSA(id string, sign jwt.SigningMethod, private []byte) {
 	s.AddKey(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddRSA(id string, sign *jwt.SigningMethodRSA, private []byte) {
+func (s *Signer) AddRSA(id string, sign *jwt.SigningMethodRSA, private []byte) {
 	s.addRSA(id, sign, private)
 }
 
-func (s *Signer[T]) AddRSAPSS(id string, sign *jwt.SigningMethodRSAPSS, private []byte) {
+func (s *Signer) AddRSAPSS(id string, sign *jwt.SigningMethodRSAPSS, private []byte) {
 	s.addRSA(id, sign, private)
 }
 
-func (s *Signer[T]) AddECDSA(id string, sign *jwt.SigningMethodECDSA, private []byte) {
+func (s *Signer) AddECDSA(id string, sign *jwt.SigningMethodECDSA, private []byte) {
 	pvt, err := jwt.ParseECPrivateKeyFromPEM(private)
 	if err != nil {
 		panic(err)
@@ -143,7 +143,7 @@ func (s *Signer[T]) AddECDSA(id string, sign *jwt.SigningMethodECDSA, private []
 	s.AddKey(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddEd25519(id string, sign *jwt.SigningMethodEd25519, private []byte) {
+func (s *Signer) AddEd25519(id string, sign *jwt.SigningMethodEd25519, private []byte) {
 	pvt, err := jwt.ParseEdPrivateKeyFromPEM(private)
 	if err != nil {
 		panic(err)
@@ -152,7 +152,7 @@ func (s *Signer[T]) AddEd25519(id string, sign *jwt.SigningMethodEd25519, privat
 	s.AddKey(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddRSAFromFS(id string, sign *jwt.SigningMethodRSA, fsys fs.FS, private string) {
+func (s *Signer) AddRSAFromFS(id string, sign *jwt.SigningMethodRSA, fsys fs.FS, private string) {
 	pvt, err := fs.ReadFile(fsys, private)
 	if err != nil {
 		panic(err)
@@ -160,7 +160,7 @@ func (s *Signer[T]) AddRSAFromFS(id string, sign *jwt.SigningMethodRSA, fsys fs.
 	s.AddRSA(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddRSAPSSFromFS(id string, sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private string) {
+func (s *Signer) AddRSAPSSFromFS(id string, sign *jwt.SigningMethodRSAPSS, fsys fs.FS, private string) {
 	pvt, err := fs.ReadFile(fsys, private)
 	if err != nil {
 		panic(err)
@@ -168,7 +168,7 @@ func (s *Signer[T]) AddRSAPSSFromFS(id string, sign *jwt.SigningMethodRSAPSS, fs
 	s.AddRSAPSS(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddECDSAFromFS(id string, sign *jwt.SigningMethodECDSA, fsys fs.FS, private string) {
+func (s *Signer) AddECDSAFromFS(id string, sign *jwt.SigningMethodECDSA, fsys fs.FS, private string) {
 	pvt, err := fs.ReadFile(fsys, private)
 	if err != nil {
 		panic(err)
@@ -176,7 +176,7 @@ func (s *Signer[T]) AddECDSAFromFS(id string, sign *jwt.SigningMethodECDSA, fsys
 	s.AddECDSA(id, sign, pvt)
 }
 
-func (s *Signer[T]) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsys fs.FS, private string) {
+func (s *Signer) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsys fs.FS, private string) {
 	pvt, err := fs.ReadFile(fsys, private)
 	if err != nil {
 		panic(err)
