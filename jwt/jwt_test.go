@@ -18,13 +18,29 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-func newJWT(a *assert.Assertion, expired time.Duration) (*Signer, *stdVerifier, *memoryBlocker) {
-	s := NewSigner(expired)
+type testClaims struct {
+	ID        int64 `json:"id"`
+	isRefresh bool
+	expires   int64
+}
+
+func (c *testClaims) IsRefresh() bool { return c.isRefresh }
+
+func (c *testClaims) SetExpired(t time.Duration) {
+	c.expires = time.Now().Add(t).Unix()
+}
+
+func (c *testClaims) BuildRefresh() Claims { return &testClaims{} }
+
+func (c *testClaims) Valid() error { return nil }
+
+func newJWT(a *assert.Assertion, refresh bool, expired time.Duration) (*Signer, *stdVerifier, *memoryBlocker) {
+	s := NewSigner(refresh, expired)
 	a.NotNil(s)
 
 	m := &memoryBlocker{}
-	j := NewVerifier[*jwt.RegisteredClaims](m, func() *jwt.RegisteredClaims {
-		return &jwt.RegisteredClaims{}
+	j := NewVerifier[*testClaims](m, func() *testClaims {
+		return &testClaims{}
 	})
 	a.NotNil(j)
 
@@ -34,7 +50,7 @@ func newJWT(a *assert.Assertion, expired time.Duration) (*Signer, *stdVerifier, 
 func TestVerifier_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 
-	signer, verifier, m := newJWT(a, time.Hour)
+	signer, verifier, m := newJWT(a, false, time.Hour)
 	signer.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	verifier.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	verifierMiddleware(a, signer, verifier, m)
@@ -47,27 +63,27 @@ func TestVerifier_Middleware(t *testing.T) {
 		signer.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	}, "存在同名的签名方法 hmac-secret")
 
-	signer, verifier, m = newJWT(a, time.Hour)
+	signer, verifier, m = newJWT(a, false, time.Hour)
 	signer.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem")
 	verifier.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem")
 	verifierMiddleware(a, signer, verifier, m)
 
-	signer, verifier, m = newJWT(a, time.Hour)
+	signer, verifier, m = newJWT(a, false, time.Hour)
 	signer.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem")
 	verifier.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem")
 	verifierMiddleware(a, signer, verifier, m)
 
-	signer, verifier, m = newJWT(a, time.Hour)
+	signer, verifier, m = newJWT(a, false, time.Hour)
 	signer.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem")
 	verifier.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem")
 	verifierMiddleware(a, signer, verifier, m)
 
-	signer, verifier, m = newJWT(a, time.Hour)
+	signer, verifier, m = newJWT(a, false, time.Hour)
 	signer.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem")
 	verifier.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem")
 	verifierMiddleware(a, signer, verifier, m)
 
-	signer, verifier, m = newJWT(a, time.Hour)
+	signer, verifier, m = newJWT(a, false, time.Hour)
 	signer.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem")
 	verifier.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem")
 	signer.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem")
@@ -86,16 +102,14 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	a.TB().Helper()
 	d.clear()
 
-	claims := &jwt.RegisteredClaims{
-		Issuer:  "issuer",
-		Subject: "subject",
-		ID:      "id",
+	claims := &testClaims{
+		ID: 1,
 	}
 
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.RenderAccess(ctx, http.StatusCreated, &Response{}, claims)
+		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
@@ -104,7 +118,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 			return ctx.Status(http.StatusNotFound)
 		}
 
-		if val.Issuer != claims.Issuer || val.Subject != claims.Subject || val.ID != claims.ID {
+		if val.ID != claims.ID {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 
@@ -117,7 +131,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 			return ctx.Status(http.StatusNotFound)
 		}
 
-		if val.Issuer != claims.Issuer || val.Subject != claims.Subject || val.ID != claims.ID {
+		if val.ID != claims.ID {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 
@@ -162,20 +176,18 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 
 func TestVerifier_client(t *testing.T) {
 	a := assert.New(t, false)
-	signer, verifier, _ := newJWT(a, time.Hour)
+	signer, verifier, _ := newJWT(a, true, time.Hour)
 	signer.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem")
 	verifier.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem")
 
-	claims := &jwt.RegisteredClaims{
-		Issuer:  "issuer",
-		Subject: "subject",
-		ID:      "id",
+	claims := &testClaims{
+		ID: 1,
 	}
 
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.RenderAccessRefresh(ctx, http.StatusCreated, &Response{}, claims, claims)
+		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
@@ -184,7 +196,7 @@ func TestVerifier_client(t *testing.T) {
 			return ctx.Status(http.StatusNotFound)
 		}
 
-		if val.Issuer != claims.Issuer || val.Subject != claims.Subject || val.ID != claims.ID {
+		if val.ID != claims.ID {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 

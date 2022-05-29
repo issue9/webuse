@@ -42,43 +42,47 @@ type Signer struct {
 	keys    []*key
 	expires int
 	expired time.Duration
+
+	refresh        bool
+	refreshExpired time.Duration
 }
 
-func NewSigner(expired time.Duration) *Signer {
+// NewSigner 声明签名对象
+//
+// refresh 是否同时输出一个刷新令牌；
+// expired 普通令牌的过期时间；
+func NewSigner(refresh bool, expired time.Duration) *Signer {
 	expires := int(expired.Seconds())
 	return &Signer{
-		keys:    make([]*key, 0, 10),
+		keys: make([]*key, 0, 10),
+
 		expires: expires,
 		expired: expired,
+
+		refresh:        refresh,
+		refreshExpired: 2 * expired,
 	}
 }
 
-// RenderAccess 输出带令牌的对象
-func (s *Signer) RenderAccess(ctx *web.Context, status int, t Responser, accessClaims Claims) web.Responser {
+// Render 输出带令牌的对象
+func (s *Signer) Render(ctx *web.Context, status int, t Responser, accessClaims Claims) web.Responser {
+	accessClaims.SetExpired(s.expired)
 	ac, err := s.Sign(accessClaims)
 	if err != nil {
 		return ctx.InternalServerError(err)
 	}
-
 	t.SetAccessToken(ac)
-	t.SetExpires(s.expires)
-	return ctx.Object(status, t)
-}
 
-// RenderAccessRefresh 输出带令牌和刷新令牌的对象
-func (s *Signer) RenderAccessRefresh(ctx *web.Context, status int, t Responser, accessClaims, refreshClaims Claims) web.Responser {
-	ac, err := s.Sign(accessClaims)
-	if err != nil {
-		return ctx.InternalServerError(err)
+	if s.refresh {
+		r := accessClaims.BuildRefresh()
+		r.SetExpired(s.refreshExpired)
+		rc, err := s.Sign(r)
+		if err != nil {
+			return ctx.InternalServerError(err)
+		}
+		t.SetRefreshToken(rc)
 	}
 
-	rc, err := s.Sign(refreshClaims)
-	if err != nil {
-		return ctx.InternalServerError(err)
-	}
-
-	t.SetAccessToken(ac)
-	t.SetRefreshToken(rc)
 	t.SetExpires(s.expires)
 	return ctx.Object(status, t)
 }

@@ -17,6 +17,7 @@ package jwt
 
 import (
 	"errors"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -24,7 +25,19 @@ import (
 var ErrSigningMethodNotFound = errors.New("jwt: 算法未找到")
 
 type (
-	Claims = jwt.Claims
+	// Claims JWT Claims 对象需要实现的接口
+	Claims interface {
+		jwt.Claims
+
+		// IsRefresh 是否为刷新令牌
+		IsRefresh() bool
+
+		// BuildRefresh 根据当前令牌生成刷新令牌
+		BuildRefresh() Claims
+
+		// SetExpired 设置过期时间
+		SetExpired(time.Duration)
+	}
 
 	SigningMethod = jwt.SigningMethod
 

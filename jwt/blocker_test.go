@@ -3,11 +3,13 @@
 package jwt
 
 import (
+	"strconv"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/sliceutil"
 )
 
-var _ Blocker[*jwt.RegisteredClaims] = &memoryBlocker{}
+var _ Blocker[*testClaims] = &memoryBlocker{}
 
 type memoryBlocker struct {
 	tokens []string
@@ -18,8 +20,8 @@ func (m *memoryBlocker) TokenIsBlocked(t string) bool {
 	return sliceutil.Exists(m.tokens, func(e string) bool { return e == t })
 }
 
-func (m *memoryBlocker) ClaimsIsBlocked(t *jwt.RegisteredClaims) bool {
-	return sliceutil.Exists(m.claims, func(e string) bool { return e == t.ID })
+func (m *memoryBlocker) ClaimsIsBlocked(t *testClaims) bool {
+	return sliceutil.Exists(m.claims, func(e string) bool { return e == strconv.FormatInt(t.ID, 10) })
 }
 
 func (m *memoryBlocker) BlockToken(t string) { m.tokens = append(m.tokens, t) }
