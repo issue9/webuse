@@ -74,13 +74,11 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *server.Context) web.Responser {
 		h := j.GetToken(ctx)
-
-		if j.blocker.TokenIsBlocked(h) {
+		if h == "" || j.blocker.TokenIsBlocked(h) {
 			return ctx.Status(http.StatusUnauthorized)
 		}
 
 		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
-
 		if errors.Is(err, &jwt.ValidationError{}) {
 			ctx.Logs().ERROR().Error(err)
 			return ctx.Status(http.StatusUnauthorized)
@@ -104,6 +102,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 // GetValue 返回解码后的 Claims 对象
 func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
+	// TODO: 如果支持泛型方法，那么泛化 GetValue 即可。
 	v, found := ctx.Vars[contextKey]
 	if !found {
 		var vv T
