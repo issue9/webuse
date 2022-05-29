@@ -29,9 +29,6 @@ type (
 	Claims interface {
 		jwt.Claims
 
-		// IsRefresh 是否为刷新令牌
-		IsRefresh() bool
-
 		// BuildRefresh 根据当前令牌生成刷新令牌
 		BuildRefresh() Claims
 

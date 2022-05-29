@@ -19,12 +19,9 @@ import (
 )
 
 type testClaims struct {
-	ID        int64 `json:"id"`
-	isRefresh bool
-	expires   int64
+	ID      int64 `json:"id"`
+	expires int64
 }
-
-func (c *testClaims) IsRefresh() bool { return c.isRefresh }
 
 func (c *testClaims) SetExpired(t time.Duration) {
 	c.expires = time.Now().Add(t).Unix()
