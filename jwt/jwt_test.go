@@ -21,13 +21,14 @@ import (
 type testClaims struct {
 	ID      int64 `json:"id"`
 	expires int64
+	token   string
 }
 
 func (c *testClaims) SetExpired(t time.Duration) {
 	c.expires = time.Now().Add(t).Unix()
 }
 
-func (c *testClaims) BuildRefresh() Claims { return &testClaims{} }
+func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{token: token} }
 
 func (c *testClaims) Valid() error { return nil }
 

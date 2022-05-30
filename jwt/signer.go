@@ -74,7 +74,7 @@ func (s *Signer) Render(ctx *web.Context, status int, t Responser, accessClaims 
 	t.SetAccessToken(ac)
 
 	if s.refresh {
-		r := accessClaims.BuildRefresh()
+		r := accessClaims.BuildRefresh(ac)
 		r.SetExpired(s.refreshExpired)
 		rc, err := s.Sign(r)
 		if err != nil {

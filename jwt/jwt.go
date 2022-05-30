@@ -30,7 +30,9 @@ type (
 		jwt.Claims
 
 		// BuildRefresh 根据当前令牌生成刷新令牌
-		BuildRefresh() Claims
+		//
+		// token 为当前令牌；
+		BuildRefresh(token string) Claims
 
 		// SetExpired 设置过期时间
 		SetExpired(time.Duration)
