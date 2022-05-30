@@ -49,9 +49,17 @@ type Signer struct {
 
 // NewSigner 声明签名对象
 //
-// refresh 是否同时输出一个刷新令牌；
 // expired 普通令牌的过期时间；
-func NewSigner(refresh bool, expired time.Duration) *Signer {
+// refresh 刷新令牌的时间，非零表示有刷新令牌，如果为非零值，则必须大于 expired；
+func NewSigner(expired, refresh time.Duration) *Signer {
+	if expired == 0 {
+		panic("expired 必须大于 0")
+	}
+
+	if refresh != 0 && refresh <= expired {
+		panic("refresh 必须大于 expired")
+	}
+
 	expires := int(expired.Seconds())
 	return &Signer{
 		keys: make([]*key, 0, 10),
@@ -59,8 +67,8 @@ func NewSigner(refresh bool, expired time.Duration) *Signer {
 		expires: expires,
 		expired: expired,
 
-		refresh:        refresh,
-		refreshExpired: 2 * expired,
+		refresh:        refresh > 0,
+		refreshExpired: refresh,
 	}
 }
 
