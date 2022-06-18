@@ -14,7 +14,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -110,7 +109,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})
 
-	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
+	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
 		val, found := verifier.GetValue(ctx)
 		if !found {
 			return ctx.Status(http.StatusNotFound)
@@ -188,7 +187,7 @@ func TestVerifier_client(t *testing.T) {
 		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})
 
-	r.Get("/info", verifier.Middleware(func(ctx *server.Context) server.Responser {
+	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
 		val, found := verifier.GetValue(ctx)
 		if !found {
 			return ctx.Status(http.StatusNotFound)

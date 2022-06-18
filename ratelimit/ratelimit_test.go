@@ -10,13 +10,13 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
 )
 
 var (
-	_ server.Middleware = &Ratelimit{}
-	_ GenFunc           = GenIP
+	_ web.Middleware = &Ratelimit{}
+	_ GenFunc        = GenIP
 )
 
 func TestGenIP(t *testing.T) {

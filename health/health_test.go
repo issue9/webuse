@@ -12,11 +12,10 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ server.Middleware = &Health{}
+var _ web.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)

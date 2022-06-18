@@ -12,7 +12,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 )
 
 const (
@@ -72,7 +71,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 
 // Middleware 解码用户的 token 并写入 *web.Context
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *server.Context) web.Responser {
+	return func(ctx *web.Context) web.Responser {
 		h := j.GetToken(ctx)
 		if h == "" || j.blocker.TokenIsBlocked(h) {
 			return ctx.Status(http.StatusUnauthorized)
