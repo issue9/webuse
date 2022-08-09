@@ -4,11 +4,9 @@
 //
 //	X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
 //	X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-//	X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
+//	X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
 //
-//	store := NewMemory(...)
-//	srv := New(store)
-//	h = srv.Middleware(h)
+// 所有数据保存在 [server.Server.Cache] 之中，重启服务该数据也将重置。
 package ratelimit
 
 import (
