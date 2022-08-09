@@ -100,7 +100,7 @@ func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
-	return ctx.Status(b.unauthorizationStatus, b.authenticate, b.realm)
+	return web.Status(b.unauthorizationStatus, b.authenticate, b.realm)
 }
 
 func (b *Basic[T]) GetValue(ctx *web.Context) (T, bool) {

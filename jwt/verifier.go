@@ -74,23 +74,23 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := j.GetToken(ctx)
 		if h == "" || j.blocker.TokenIsBlocked(h) {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
 		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
 		if errors.Is(err, &jwt.ValidationError{}) {
 			ctx.Logs().ERROR().Error(err)
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		} else if err != nil {
 			return ctx.InternalServerError(err)
 		}
 
 		if !t.Valid {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
 		if j.blocker.ClaimsIsBlocked(t.Claims.(T)) {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
 		ctx.Vars[contextKey] = t.Claims

@@ -55,7 +55,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := b.GetValue(ctx)
 		a.True(found).Equal(string(username), "Aladdin")
-		return ctx.Status(http.StatusCreated)
+		return web.Status(http.StatusCreated)
 	})
 
 	srv.GoServe()
@@ -72,7 +72,6 @@ func TestServeHTTP_ok(t *testing.T) {
 		Status(http.StatusCreated)
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func TestServeHTTP_failed(t *testing.T) {
@@ -105,5 +104,4 @@ func TestServeHTTP_failed(t *testing.T) {
 		Status(http.StatusUnauthorized)
 
 	srv.Close(0)
-	srv.Wait()
 }

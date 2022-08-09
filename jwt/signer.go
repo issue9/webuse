@@ -92,7 +92,7 @@ func (s *Signer) Render(ctx *web.Context, status int, t Responser, accessClaims 
 	}
 
 	t.SetExpires(s.expires)
-	return ctx.Object(status, t)
+	return web.Object(status, t)
 }
 
 // Sign 对 claims 进行签名

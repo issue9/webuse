@@ -19,7 +19,7 @@ func TestAccess(t *testing.T) {
 	w := bytes.Buffer{}
 	srv.Server().Logs().SetOutput(logs.NewTextWriter(logs.MilliLayout, &w))
 
-	r := srv.Server().Routers().New("def", nil, nil)
+	r := srv.Server().Routers().New("def", nil)
 	m := New(srv.Server().Logs().ERROR(), "")
 	a.NotNil(m)
 	r.Use(m)
@@ -27,7 +27,7 @@ func TestAccess(t *testing.T) {
 	wait := make(chan bool, 1)
 	r.Get("/test", func(ctx *web.Context) web.Responser {
 		wait <- true
-		return ctx.Created(nil, "")
+		return web.Created(nil, "")
 	})
 
 	srv.GoServe()
@@ -39,5 +39,4 @@ func TestAccess(t *testing.T) {
 	a.True(w.Len() > 0)
 
 	srv.Close(0)
-	srv.Wait()
 }

@@ -2,13 +2,13 @@
 
 // Package ratelimit 提供了 X-Rate-Limit 功能的中间件
 //
-//  X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-//  X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-//  X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
+//	X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
+//	X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
+//	X-Rate-Limit-Reset: 为了得到最大请求数所等待的秒数。
 //
-//  store := NewMemory(...)
-//  srv := New(store)
-//  h = srv.Middleware(h)
+//	store := NewMemory(...)
+//	srv := New(store)
+//	h = srv.Middleware(h)
 package ratelimit
 
 import (
@@ -108,7 +108,8 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		}
 
 		if b.allow(1) {
-			return next(b.setHeader(ctx))
+			b.setHeader(ctx)
+			return next(ctx)
 		}
 		b.setHeader(ctx)
 		return server.Status(http.StatusTooManyRequests)

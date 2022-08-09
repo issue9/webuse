@@ -19,7 +19,7 @@ var _ web.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, &web.Options{Cache: memory.New(1 * time.Minute), Port: ":8080"})
+	s := servertest.NewTester(a, &web.Options{Cache: memory.New(1 * time.Minute), HTTPServer: &http.Server{Addr: ":8080"}})
 
 	h := New(NewCacheStore(s.Server(), "health_"))
 	r := s.NewRouter(h)
@@ -29,7 +29,7 @@ func TestHealth(t *testing.T) {
 			panic(err)
 		}
 		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
-		return ctx.Status(status)
+		return web.Status(status)
 	})
 	r.Post("/", func(ctx *web.Context) web.Responser {
 		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
@@ -41,7 +41,7 @@ func TestHealth(t *testing.T) {
 			panic(err)
 		}
 		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
-		return ctx.Status(status)
+		return web.Status(status)
 	})
 
 	s.GoServe()
@@ -82,5 +82,4 @@ func TestHealth(t *testing.T) {
 	a.Equal(3, len(all))
 
 	s.Close(0)
-	s.Wait()
 }

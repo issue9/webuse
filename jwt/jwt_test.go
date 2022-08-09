@@ -112,31 +112,31 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
 		val, found := verifier.GetValue(ctx)
 		if !found {
-			return ctx.Status(http.StatusNotFound)
+			return web.Status(http.StatusNotFound)
 		}
 
 		if val.ID != claims.ID {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
-		return ctx.OK(nil)
+		return web.OK(nil)
 	}))
 
 	r.Delete("/login", verifier.Middleware(func(ctx *web.Context) web.Responser {
 		val, found := verifier.GetValue(ctx)
 		if !found {
-			return ctx.Status(http.StatusNotFound)
+			return web.Status(http.StatusNotFound)
 		}
 
 		if val.ID != claims.ID {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
 		if d != nil {
 			d.BlockToken(verifier.GetToken(ctx))
 		}
 
-		return ctx.NoContent()
+		return web.NoContent()
 	}))
 
 	s.GoServe()
@@ -168,7 +168,6 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	})
 
 	s.Close(0)
-	s.Wait()
 }
 
 func TestVerifier_client(t *testing.T) {
@@ -190,14 +189,14 @@ func TestVerifier_client(t *testing.T) {
 	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
 		val, found := verifier.GetValue(ctx)
 		if !found {
-			return ctx.Status(http.StatusNotFound)
+			return web.Status(http.StatusNotFound)
 		}
 
 		if val.ID != claims.ID {
-			return ctx.Status(http.StatusUnauthorized)
+			return web.Status(http.StatusUnauthorized)
 		}
 
-		return ctx.OK(nil)
+		return web.OK(nil)
 	}))
 
 	s.GoServe()
@@ -246,7 +245,6 @@ func TestVerifier_client(t *testing.T) {
 	})
 
 	s.Close(0)
-	s.Wait()
 }
 
 func encodeHeader(a *assert.Assertion, header map[string]any) string {
