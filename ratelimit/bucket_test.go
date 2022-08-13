@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v3"
 )
 
 func TestBucket_allow(t *testing.T) {

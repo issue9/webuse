@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
 )
