@@ -24,8 +24,8 @@ github.com/issue9/sliceutil v0.11.0 h1:gAXOzApULwTV8MTHhu7oZm1QCClnmEIYvF3iZ6Sot
 github.com/issue9/sliceutil v0.11.0/go.mod h1:o6Th8chH+PTCVfqHksJvWZnmZhDa5bnufgQbtO1x7zI=
 github.com/issue9/term/v3 v3.0.1 h1:hHI443oqpuYrM+57pmvtc4Om6/+A5GN5UqjVbyOVXm4=
 github.com/issue9/term/v3 v3.0.1/go.mod h1:MlRXsODuHriTqguWAIZBCEogX2H2w9eZrz/NVzCXZO8=
-github.com/issue9/web v0.55.1 h1:eTQ6aP+RQX9QG/ZHJVB6m5xplNd/yP8ncsYRuM0KpdE=
-github.com/issue9/web v0.55.1/go.mod h1:F30eWt5okIHWezYaaHJ2F1yZ9F8KfgOKBL72kpVn+Nk=
+github.com/issue9/web v0.55.3 h1:Xz0/OzWHg2eJn4jMTxENM0bUMJY8gAxXgFf5/sdk5TE=
+github.com/issue9/web v0.55.3/go.mod h1:F30eWt5okIHWezYaaHJ2F1yZ9F8KfgOKBL72kpVn+Nk=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e h1:+WEEuIdZHnUeJJmEUjyYC2gfUMj69yZXw17EnHg/otA=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e/go.mod h1:Kr81I6Kryrl9sr8s2FK3vxD90NdsKWRuOIl2O4CvYbA=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab h1:2QkjZIsXupsJbJIdSjjUOgWK3aEtzyuh2mPt3l/CkeU=

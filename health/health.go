@@ -57,8 +57,8 @@ func New(store Store) *Health {
 // 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
 // 才会将该 api 的信息进行保存，此操作相当于提前进行一次访问。
 // 此操作对部分冷门的 api 可以保证其出现在 States() 中。
-func (h *Health) Register(method, path string) {
-	h.store.Save(newState(method, path))
+func (h *Health) Register(method, pattern string) {
+	h.store.Save(newState(method, pattern))
 }
 
 // States 返回所有的状态列表
@@ -74,7 +74,7 @@ func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		start := time.Now()
 		ctx.OnExit(func(status int) {
 			req := ctx.Request()
-			go h.save(req.Method, req.URL.Path, time.Since(start), status)
+			go h.save(req.Method, ctx.Route().Node().Pattern(), time.Since(start), status)
 		})
 
 		return next(ctx)

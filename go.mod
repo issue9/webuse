@@ -6,7 +6,7 @@ require (
 	github.com/issue9/cache v0.4.0
 	github.com/issue9/logs/v4 v4.0.0-beta.5
 	github.com/issue9/sliceutil v0.11.0
-	github.com/issue9/web v0.55.1
+	github.com/issue9/web v0.55.3
 )
 
 require (

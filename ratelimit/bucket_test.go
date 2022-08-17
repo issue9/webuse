@@ -22,7 +22,7 @@ func TestBucket_allow(t *testing.T) {
 	a.True(b.allow(3))  // 刚好拿完
 	a.False(b.allow(1))
 
-	time.Sleep(15 * time.Microsecond)
+	time.Sleep(25 * time.Microsecond)
 	a.True(b.allow(1))
 	a.False(b.allow(5), "tokens=%v", b.Tokens)
 }
