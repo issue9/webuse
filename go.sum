@@ -24,12 +24,12 @@ github.com/issue9/sliceutil v0.11.0 h1:gAXOzApULwTV8MTHhu7oZm1QCClnmEIYvF3iZ6Sot
 github.com/issue9/sliceutil v0.11.0/go.mod h1:o6Th8chH+PTCVfqHksJvWZnmZhDa5bnufgQbtO1x7zI=
 github.com/issue9/term/v3 v3.0.1 h1:hHI443oqpuYrM+57pmvtc4Om6/+A5GN5UqjVbyOVXm4=
 github.com/issue9/term/v3 v3.0.1/go.mod h1:MlRXsODuHriTqguWAIZBCEogX2H2w9eZrz/NVzCXZO8=
-github.com/issue9/web v0.55.3 h1:Xz0/OzWHg2eJn4jMTxENM0bUMJY8gAxXgFf5/sdk5TE=
-github.com/issue9/web v0.55.3/go.mod h1:F30eWt5okIHWezYaaHJ2F1yZ9F8KfgOKBL72kpVn+Nk=
+github.com/issue9/web v0.57.0 h1:L0XOu2vPMGHqsN4yzkQJqmJ7WsnGq6hkn8Ban04g9/U=
+github.com/issue9/web v0.57.0/go.mod h1:B/3nYKaUbeehToQraJeASte2x23pNNJPb+cA/+qyT4o=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e h1:+WEEuIdZHnUeJJmEUjyYC2gfUMj69yZXw17EnHg/otA=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e/go.mod h1:Kr81I6Kryrl9sr8s2FK3vxD90NdsKWRuOIl2O4CvYbA=
-golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab h1:2QkjZIsXupsJbJIdSjjUOgWK3aEtzyuh2mPt3l/CkeU=
-golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 h1:Sx/u41w+OwrInGdEckYmEuU5gHoGSL4QbDz3S9s6j4U=
+golang.org/x/sys v0.0.0-20220818161305-2296e01440c6/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
 golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f h1:uF6paiQQebLeSXkrTqHqz0MXhXXS1KgF41eUdBNvxK0=
