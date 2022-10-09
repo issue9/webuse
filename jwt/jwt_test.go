@@ -104,7 +104,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	}
 
 	s := servertest.NewTester(a, nil)
-	r := s.NewRouter()
+	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})
@@ -181,7 +181,7 @@ func TestVerifier_client(t *testing.T) {
 	}
 
 	s := servertest.NewTester(a, nil)
-	r := s.NewRouter()
+	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
 	})

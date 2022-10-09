@@ -51,7 +51,8 @@ func TestServeHTTP_ok(t *testing.T) {
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
-	r := srv.NewRouter(b)
+	r := srv.Router()
+	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := b.GetValue(ctx)
 		a.True(found).Equal(string(username), "Aladdin")
@@ -82,7 +83,8 @@ func TestServeHTTP_failed(t *testing.T) {
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
-	r := srv.NewRouter(b)
+	r := srv.Router()
+	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		obj, found := b.GetValue(ctx)
 		a.True(found).Nil(obj)

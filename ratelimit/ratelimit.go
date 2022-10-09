@@ -16,7 +16,6 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数
@@ -102,7 +101,7 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		b, err := rate.bucket(ctx)
 		if err != nil {
 			rate.errlog.Error(err)
-			return server.Status(http.StatusInternalServerError)
+			return web.Status(http.StatusInternalServerError)
 		}
 
 		if b.allow(1) {
@@ -110,6 +109,6 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return next(ctx)
 		}
 		b.setHeader(ctx)
-		return server.Status(http.StatusTooManyRequests)
+		return web.Status(http.StatusTooManyRequests)
 	}
 }

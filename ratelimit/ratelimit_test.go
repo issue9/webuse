@@ -25,7 +25,9 @@ func TestRatelimit_Middleware(t *testing.T) {
 	srv := New(s.Server(), "rl", 3, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
 	a.NotNil(srv)
 
-	s.NewRouter(srv).Get("/test", func(*server.Context) server.Responser {
+	r := s.Router()
+	r.Use(srv)
+	r.Get("/test", func(*server.Context) server.Responser {
 		return web.Created(nil, "")
 	})
 

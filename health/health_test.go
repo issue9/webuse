@@ -22,7 +22,8 @@ func TestHealth(t *testing.T) {
 	s := servertest.NewTester(a, &web.Options{Cache: memory.New(1 * time.Minute), HTTPServer: &http.Server{Addr: ":8080"}})
 
 	h := New(NewCacheStore(s.Server(), "health_"))
-	r := s.NewRouter(h)
+	r := s.Router()
+	r.Use(h)
 	r.Get("/", func(ctx *web.Context) web.Responser {
 		status, err := strconv.Atoi(ctx.Request().FormValue("status"))
 		if err != nil {
