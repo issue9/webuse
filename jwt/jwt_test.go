@@ -31,71 +31,59 @@ func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{toke
 
 func (c *testClaims) Valid() error { return nil }
 
-func newJWT(a *assert.Assertion, expired, refresh time.Duration) (*Signer, *stdVerifier, *memoryBlocker) {
-	s := NewSigner(expired, refresh, nil)
-	a.NotNil(s)
-
+func newJWT(a *assert.Assertion, expired, refresh time.Duration) (*JWT[*testClaims], *memoryBlocker) {
 	m := &memoryBlocker{}
-	j := NewVerifier[*testClaims](m, func() *testClaims {
+	b := func() *testClaims {
 		return &testClaims{}
-	})
+	}
+	j := New[*testClaims](m, b, expired, refresh, nil)
 	a.NotNil(j)
-
-	return s, j, m
+	return j, m
 }
 
 func TestVerifier_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 
-	signer, verifier, m := newJWT(a, time.Hour, 0)
-	signer.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
-	verifier.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
-	verifierMiddleware(a, signer, verifier, m)
+	j, m := newJWT(a, time.Hour, 0)
+	j.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
+	verifierMiddleware(a, j, m)
 
 	a.PanicString(func() {
-		verifier.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
+		j.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	}, "存在同名的签名方法 hmac-secret")
 
 	a.PanicString(func() {
-		signer.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
+		j.s.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
 	}, "存在同名的签名方法 hmac-secret")
 
-	signer, verifier, m = newJWT(a, time.Hour, 0)
-	signer.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem")
-	verifier.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem")
-	verifierMiddleware(a, signer, verifier, m)
+	j, m = newJWT(a, time.Hour, 0)
+	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	verifierMiddleware(a, j, m)
 
-	signer, verifier, m = newJWT(a, time.Hour, 0)
-	signer.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem")
-	verifier.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem")
-	verifierMiddleware(a, signer, verifier, m)
+	j, m = newJWT(a, time.Hour, 0)
+	j.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	verifierMiddleware(a, j, m)
 
-	signer, verifier, m = newJWT(a, time.Hour, 0)
-	signer.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem")
-	verifier.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem")
-	verifierMiddleware(a, signer, verifier, m)
+	j, m = newJWT(a, time.Hour, 0)
+	j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
+	verifierMiddleware(a, j, m)
 
-	signer, verifier, m = newJWT(a, time.Hour, 0)
-	signer.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem")
-	verifier.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem")
-	verifierMiddleware(a, signer, verifier, m)
+	j, m = newJWT(a, time.Hour, 0)
+	j.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem", "ed25519-private.pem")
+	verifierMiddleware(a, j, m)
 
-	signer, verifier, m = newJWT(a, time.Hour, 0)
-	signer.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-private.pem")
-	verifier.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem")
-	signer.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem")
-	verifier.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem")
-	signer.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-private.pem")
-	verifier.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem")
-	signer.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem")
-	verifier.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem")
-	verifierMiddleware(a, signer, verifier, m)
-	verifierMiddleware(a, signer, verifier, m)
-	verifierMiddleware(a, signer, verifier, m)
-	verifierMiddleware(a, signer, verifier, m)
+	j, m = newJWT(a, time.Hour, 0)
+	j.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem", "ed25519-private.pem")
+	j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
+	j.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	verifierMiddleware(a, j, m)
+	verifierMiddleware(a, j, m)
+	verifierMiddleware(a, j, m)
+	verifierMiddleware(a, j, m)
 }
 
-func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifier, d *memoryBlocker) {
+func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlocker) {
 	a.TB().Helper()
 	d.clear()
 
@@ -106,11 +94,11 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	s := servertest.NewTester(a, nil)
 	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.Render(ctx, http.StatusCreated, claims)
+		return j.Render(ctx, http.StatusCreated, claims)
 	})
 
-	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
-		val, found := verifier.GetValue(ctx)
+	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
+		val, found := j.GetValue(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
 		}
@@ -122,8 +110,8 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 		return web.OK(nil)
 	}))
 
-	r.Delete("/login", verifier.Middleware(func(ctx *web.Context) web.Responser {
-		val, found := verifier.GetValue(ctx)
+	r.Delete("/login", j.Middleware(func(ctx *web.Context) web.Responser {
+		val, found := j.GetValue(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
 		}
@@ -133,7 +121,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 		}
 
 		if d != nil {
-			d.BlockToken(verifier.GetToken(ctx))
+			d.BlockToken(j.GetToken(ctx))
 		}
 
 		return web.NoContent()
@@ -172,9 +160,8 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 
 func TestVerifier_client(t *testing.T) {
 	a := assert.New(t, false)
-	signer, verifier, _ := newJWT(a, time.Hour, 2*time.Hour)
-	signer.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-private.pem")
-	verifier.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem")
+	j, _ := newJWT(a, time.Hour, 2*time.Hour)
+	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
 
 	claims := &testClaims{
 		ID: 1,
@@ -183,11 +170,11 @@ func TestVerifier_client(t *testing.T) {
 	s := servertest.NewTester(a, nil)
 	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.Render(ctx, http.StatusCreated, claims)
+		return j.Render(ctx, http.StatusCreated, claims)
 	})
 
-	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
-		val, found := verifier.GetValue(ctx)
+	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
+		val, found := j.GetValue(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
 		}
@@ -224,8 +211,7 @@ func TestVerifier_client(t *testing.T) {
 			Status(http.StatusInternalServerError)
 
 		// 改变 kid(kid 存在)，影响
-		signer.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-private.pem")
-		verifier.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem")
+		j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
 		header["kid"] = "ecdsa"
 		header["alg"] = "none"
 		parts[0] = encodeHeader(a, header)
