@@ -24,6 +24,9 @@ const (
 
 type (
 	// Verifier JWT 验证器
+	//
+	// 仅负责对令牌的验证，如果需要签发令牌，则需要 [Signer] 对象，
+	// 同时需要保证 [Signer] 添加的证书数量和 ID 与当前对象是相同的。
 	Verifier[T Claims] struct {
 		blocker       Blocker[T]
 		keyFunc       jwt.Keyfunc
@@ -101,7 +104,6 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 // GetValue 返回解码后的 Claims 对象
 func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
-	// TODO: 如果支持泛型方法，那么泛化 GetValue 即可。
 	v, found := ctx.Vars[contextKey]
 	if !found {
 		var vv T
@@ -110,6 +112,7 @@ func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
 	return v.(T), true
 }
 
+// GetToken 获取客户端提交的 token
 func (j Verifier[T]) GetToken(ctx *web.Context) string {
 	h := ctx.Request().Header.Get("Authorization")
 	if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {

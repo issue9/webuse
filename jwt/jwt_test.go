@@ -32,7 +32,7 @@ func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{toke
 func (c *testClaims) Valid() error { return nil }
 
 func newJWT(a *assert.Assertion, expired, refresh time.Duration) (*Signer, *stdVerifier, *memoryBlocker) {
-	s := NewSigner(expired, refresh)
+	s := NewSigner(expired, refresh, nil)
 	a.NotNil(s)
 
 	m := &memoryBlocker{}
@@ -106,7 +106,7 @@ func verifierMiddleware(a *assert.Assertion, signer *Signer, verifier *stdVerifi
 	s := servertest.NewTester(a, nil)
 	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
+		return signer.Render(ctx, http.StatusCreated, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {
@@ -183,7 +183,7 @@ func TestVerifier_client(t *testing.T) {
 	s := servertest.NewTester(a, nil)
 	r := s.Router()
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		return signer.Render(ctx, http.StatusCreated, &Response{}, claims)
+		return signer.Render(ctx, http.StatusCreated, claims)
 	})
 
 	r.Get("/info", verifier.Middleware(func(ctx *web.Context) web.Responser {

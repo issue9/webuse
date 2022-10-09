@@ -13,31 +13,24 @@ import (
 	"github.com/issue9/web"
 )
 
-// Responser 向客户端输出令牌的数据结构
-type Responser interface {
-	// SetAccessToken 设置令牌
-	SetAccessToken(string)
+// BuildResponseFunc 根据给定的参数返回给定客户端的对象
+//
+// access 是必须的，表示请求数据的 token；
+// refresh 表示刷新的 token，如果为空，不会输出；
+// expires 表示 access 的过期时间；
+type BuildResponseFunc func(access, refresh string, expires int) any
 
-	// SetRefreshToken 设置刷新令牌
-	//
-	// 未调用或是传递零值，输出时不应该带刷新令牌。
-	SetRefreshToken(string)
-
-	// SetExpires 设置过期时间
-	//
-	// 未调用或是传递零值，表示不需要输出时间信息。
-	SetExpires(int)
-}
-
-// Response 对 Responser 的默认实现
 type Response struct {
-	XMLName struct{} `json:"-" yaml:"-" xml:"token"`
-	Access  string   `json:"access_token" yaml:"access_token" xml:"access_token"`
-	Refresh string   `json:"refresh_token,omitempty" yaml:"refresh_token,omitempty" xml:"refresh_token,omitempty"`
-	Expires int      `json:"expires,omitempty" yaml:"expires,omitempty" xml:"expires,attr,omitempty"`
+	XMLName struct{} `json:"-" xml:"token"`
+	Access  string   `json:"access_token" xml:"access_token"`
+	Refresh string   `json:"refresh_token,omitempty" xml:"refresh_token,omitempty"`
+	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty"`
 }
 
 // Signer 证书的签发管理
+//
+// 仅负责对令牌的签发，如果需要验主令牌，则需要 [Verifier] 对象，
+// 同时需要保证 [Verifier] 添加的证书数量和 ID 与当前对象是相同的。
 type Signer struct {
 	keys    []*key
 	expires int
@@ -45,13 +38,16 @@ type Signer struct {
 
 	refresh        bool
 	refreshExpired time.Duration
+
+	br BuildResponseFunc
 }
 
 // NewSigner 声明签名对象
 //
 // expired 普通令牌的过期时间；
 // refresh 刷新令牌的时间，非零表示有刷新令牌，如果为非零值，则必须大于 expired；
-func NewSigner(expired, refresh time.Duration) *Signer {
+// br 表示将令牌组合成一个对象用以返回给客户端，可以为空，采用返回 [Response] 作为其默认实现；
+func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
 	if expired == 0 {
 		panic("expired 必须大于 0")
 	}
@@ -60,44 +56,51 @@ func NewSigner(expired, refresh time.Duration) *Signer {
 		panic("refresh 必须大于 expired")
 	}
 
-	expires := int(expired.Seconds())
+	if br == nil {
+		br = func(access, refresh string, expires int) any {
+			return &Response{Access: access, Refresh: refresh, Expires: expires}
+		}
+	}
+
 	return &Signer{
 		keys: make([]*key, 0, 10),
 
-		expires: expires,
+		expires: int(expired.Seconds()),
 		expired: expired,
 
 		refresh:        refresh > 0,
 		refreshExpired: refresh,
+
+		br: br,
 	}
 }
 
-// Render 输出带令牌的对象
-func (s *Signer) Render(ctx *web.Context, status int, t Responser, accessClaims Claims) web.Responser {
+// Render 向客户端输出令牌
+//
+// 当前方法会将 accessClaims 进行签名，并返回 [web.Responser] 对象。
+func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.Responser {
 	accessClaims.SetExpired(s.expired)
 	ac, err := s.Sign(accessClaims)
 	if err != nil {
 		return ctx.InternalServerError(err)
 	}
-	t.SetAccessToken(ac)
 
+	var rc string
 	if s.refresh {
 		r := accessClaims.BuildRefresh(ac)
 		r.SetExpired(s.refreshExpired)
-		rc, err := s.Sign(r)
+		rc, err = s.Sign(r)
 		if err != nil {
 			return ctx.InternalServerError(err)
 		}
-		t.SetRefreshToken(rc)
 	}
 
-	t.SetExpires(s.expires)
-	return web.Object(status, t)
+	return web.Object(status, s.br(ac, rc, s.expires))
 }
 
 // Sign 对 claims 进行签名
 //
-// 算法随机从 s.AddKey 添加的库里随机选取。
+// 算法随机从 [Signer.AddKey] 添加的库里选取。
 func (s *Signer) Sign(claims Claims) (string, error) {
 	var k *key
 	switch l := len(s.keys); l {
@@ -115,6 +118,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 	return t.SignedString(k.key)
 }
 
+// AddKey 添加一种加密算法
 func (s *Signer) AddKey(id string, sign SigningMethod, private any) {
 	if sliceutil.Exists(s.keys, func(e *key) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
@@ -195,9 +199,3 @@ func (s *Signer) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsy
 	}
 	s.AddEd25519(id, sign, pvt)
 }
-
-func (resp *Response) SetAccessToken(access string) { resp.Access = access }
-
-func (resp *Response) SetRefreshToken(refresh string) { resp.Refresh = refresh }
-
-func (resp *Response) SetExpires(expires int) { resp.Expires = expires }

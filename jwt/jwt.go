@@ -2,7 +2,7 @@
 
 // Package jwt JSON Web Tokens 验证
 //
-//	sign := NewSigner[*jwt.RegisterClaims](...)
+//	sign := NewSigner(...)
 //	v := NewVerifier[*jwt.RegisterClaims](nil, builder)
 //
 //	// 添加多种编码方式
@@ -30,9 +30,7 @@ type (
 		jwt.Claims
 
 		// BuildRefresh 根据当前令牌生成刷新令牌
-		//
-		// token 为当前令牌；
-		BuildRefresh(token string) Claims
+		BuildRefresh(string) Claims
 
 		// SetExpired 设置过期时间
 		SetExpired(time.Duration)
