@@ -31,7 +31,7 @@ type (
 	Claims interface {
 		jwt.Claims
 
-		// BuildRefresh 根据当前令牌生成刷新令牌
+		// BuildRefresh 根据令牌生成刷新令牌用的 Claims
 		BuildRefresh(string) Claims
 
 		// SetExpired 设置过期时间
@@ -56,7 +56,7 @@ type (
 )
 
 func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Duration, br BuildResponseFunc) *JWT[T] {
-	v := NewVerifier[T](b, f)
+	v := NewVerifier(b, f)
 	s := NewSigner(expired, refresh, br)
 	return &JWT[T]{v: v, s: s}
 }

@@ -11,7 +11,6 @@ package ratelimit
 
 import (
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/issue9/cache"
@@ -29,7 +28,6 @@ type Ratelimit struct {
 	capacity int64
 	rate     time.Duration
 	genFunc  GenFunc
-	errlog   web.Logger
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
@@ -54,7 +52,6 @@ func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn Ge
 		capacity: capacity,
 		rate:     rate,
 		genFunc:  fn,
-		errlog:   s.Logs().ERROR(),
 	}
 }
 
@@ -100,8 +97,7 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		b, err := rate.bucket(ctx)
 		if err != nil {
-			rate.errlog.Error(err)
-			return web.Status(http.StatusInternalServerError)
+			return ctx.InternalServerError(err)
 		}
 
 		if b.allow(1) {
@@ -109,6 +105,6 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return next(ctx)
 		}
 		b.setHeader(ctx)
-		return web.Status(http.StatusTooManyRequests)
+		return ctx.Problem(web.ProblemTooManyRequests)
 	}
 }

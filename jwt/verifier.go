@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -77,23 +76,23 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := j.GetToken(ctx)
 		if h == "" || j.blocker.TokenIsBlocked(h) {
-			return web.Status(http.StatusUnauthorized)
+			return ctx.Problem("401")
 		}
 
 		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
 		if errors.Is(err, &jwt.ValidationError{}) {
 			ctx.Logs().ERROR().Error(err)
-			return web.Status(http.StatusUnauthorized)
+			return ctx.Problem(web.ProblemUnauthorized)
 		} else if err != nil {
 			return ctx.InternalServerError(err)
 		}
 
 		if !t.Valid {
-			return web.Status(http.StatusUnauthorized)
+			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
 		if j.blocker.ClaimsIsBlocked(t.Claims.(T)) {
-			return web.Status(http.StatusUnauthorized)
+			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
 		ctx.Vars[contextKey] = t.Claims

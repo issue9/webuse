@@ -8,7 +8,6 @@ package basic
 import (
 	"bytes"
 	"encoding/base64"
-	"net/http"
 	"strings"
 
 	"github.com/issue9/web"
@@ -36,9 +35,9 @@ type Basic[T any] struct {
 	auth  AuthFunc[T]
 	realm string
 
-	authorization         string
-	authenticate          string
-	unauthorizationStatus int
+	authorization string
+	authenticate  string
+	problemID     string
 }
 
 // New 声明一个 Basic 验证的中间件
@@ -53,11 +52,11 @@ func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) *Ba
 
 	authorization := "Authorization"
 	authenticate := "WWW-Authenticate"
-	status := http.StatusUnauthorized
+	problemID := web.ProblemUnauthorized
 	if proxy {
 		authorization = "Proxy-Authorization"
 		authenticate = "Proxy-Authenticate"
-		status = http.StatusProxyAuthRequired
+		problemID = web.ProblemProxyAuthRequired
 	}
 
 	return &Basic[T]{
@@ -66,9 +65,9 @@ func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) *Ba
 		auth:  auth,
 		realm: `Basic realm="` + realm + `"`,
 
-		authorization:         authorization,
-		authenticate:          authenticate,
-		unauthorizationStatus: status,
+		authorization: authorization,
+		authenticate:  authenticate,
+		problemID:     problemID,
 	}
 }
 
@@ -100,7 +99,8 @@ func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
-	return web.Status(b.unauthorizationStatus, b.authenticate, b.realm)
+	ctx.Header().Set(b.authenticate, b.realm)
+	return ctx.Problem(b.problemID)
 }
 
 func (b *Basic[T]) GetValue(ctx *web.Context) (T, bool) {

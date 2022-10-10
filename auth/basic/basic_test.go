@@ -28,18 +28,18 @@ func TestNew(t *testing.T) {
 		b = New[[]byte](srv, nil, "", false)
 	})
 
-	b = New[[]byte](srv, authFunc, "", false)
+	b = New(srv, authFunc, "", false)
 
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
-		Equal(b.unauthorizationStatus, http.StatusUnauthorized).
+		Equal(b.problemID, web.ProblemUnauthorized).
 		NotNil(b.auth)
 
-	b = New[[]byte](srv, authFunc, "", true)
+	b = New(srv, authFunc, "", true)
 
 	a.Equal(b.authorization, "Proxy-Authorization").
 		Equal(b.authenticate, "Proxy-Authenticate").
-		Equal(b.unauthorizationStatus, http.StatusProxyAuthRequired).
+		Equal(b.problemID, web.ProblemProxyAuthRequired).
 		NotNil(b.auth)
 }
 
@@ -47,7 +47,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewServer(a, nil)
 
-	b := New[[]byte](s, authFunc, "example.com", false)
+	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)
@@ -79,7 +79,7 @@ func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewServer(a, nil)
 
-	b := New[[]byte](s, authFunc, "example.com", false)
+	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
 	srv := servertest.NewTester(a, nil)

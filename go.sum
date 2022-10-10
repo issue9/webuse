@@ -24,8 +24,8 @@ github.com/issue9/sliceutil v0.11.0 h1:gAXOzApULwTV8MTHhu7oZm1QCClnmEIYvF3iZ6Sot
 github.com/issue9/sliceutil v0.11.0/go.mod h1:o6Th8chH+PTCVfqHksJvWZnmZhDa5bnufgQbtO1x7zI=
 github.com/issue9/term/v3 v3.0.1 h1:hHI443oqpuYrM+57pmvtc4Om6/+A5GN5UqjVbyOVXm4=
 github.com/issue9/term/v3 v3.0.1/go.mod h1:MlRXsODuHriTqguWAIZBCEogX2H2w9eZrz/NVzCXZO8=
-github.com/issue9/web v0.59.5 h1:j/X1t0jv3MlCtCxPfWAvKExxCIBXGlvwEAC7NO6dpKA=
-github.com/issue9/web v0.59.5/go.mod h1:zBZqloB1gHyUP9jw2c8C6U4M3KOSofwpdGlSO8EyUyM=
+github.com/issue9/web v0.59.6 h1:rpLaXk29KZK5moLdmnvndK3sdMyYgeNUE/v3QFL+UV4=
+github.com/issue9/web v0.59.6/go.mod h1:zBZqloB1gHyUP9jw2c8C6U4M3KOSofwpdGlSO8EyUyM=
 github.com/klauspost/compress v1.15.11 h1:Lcadnb3RKGin4FYM/orgq0qde+nc15E5Cbqg4B9Sx9c=
 github.com/klauspost/compress v1.15.11/go.mod h1:QPwzmACJjUTFsnSHH934V6woptycfrDDJnH7hvFVbGM=
 golang.org/x/exp v0.0.0-20221006183845-316c7553db56 h1:BrYbdKcCNjLyrN6aKqXy4hPw9qGI8IATkj4EWv9Q+kQ=
