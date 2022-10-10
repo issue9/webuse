@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package requestid
+// Package requestid x-request-id 的中间件
 package requestid
 
 import (
