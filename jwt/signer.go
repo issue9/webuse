@@ -198,3 +198,37 @@ func (s *Signer) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsy
 	}
 	s.AddEd25519(id, sign, pvt)
 }
+
+// Add 添加签名方法
+func (s *Signer) Add(id string, sign jwt.SigningMethod, private []byte) {
+	switch m := sign.(type) {
+	case *jwt.SigningMethodHMAC:
+		s.AddHMAC(id, m, private)
+	case *jwt.SigningMethodRSA:
+		s.AddRSA(id, m, private)
+	case *jwt.SigningMethodRSAPSS:
+		s.AddRSAPSS(id, m, private)
+	case *jwt.SigningMethodECDSA:
+		s.AddECDSA(id, m, private)
+	case *jwt.SigningMethodEd25519:
+		s.AddEd25519(id, m, private)
+	default:
+		panic("无效的签名方法")
+	}
+}
+
+// AddFromFS 添加签名方法密钥从文件中加载
+func (s *Signer) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, private string) {
+	switch m := sign.(type) {
+	case *jwt.SigningMethodRSA:
+		s.AddRSAFromFS(id, m, fsys, private)
+	case *jwt.SigningMethodRSAPSS:
+		s.AddRSAPSSFromFS(id, m, fsys, private)
+	case *jwt.SigningMethodECDSA:
+		s.AddECDSAFromFS(id, m, fsys, private)
+	case *jwt.SigningMethodEd25519:
+		s.AddEd25519FromFS(id, m, fsys, private)
+	default:
+		panic("无效的签名方法")
+	}
+}

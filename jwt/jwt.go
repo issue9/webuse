@@ -82,6 +82,9 @@ func (j *JWT[T]) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 // 算法随机从 [Signer.AddKey] 添加的库里选取。
 func (j *JWT[T]) Sign(claims Claims) (string, error) { return j.s.Sign(claims) }
 
+// AddHMAC 添加 HMAC 算法
+//
+// NOTE: 调用者需要保证每次重启之后，id 值不能改变，否则所有的登录信息 token 将失效。
 func (j *JWT[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
 	j.v.addKey(id, sign, secret)
 	j.s.addKey(id, sign, secret)
@@ -126,4 +129,20 @@ func (j *JWT[T]) AddECDSAFromFS(id string, sign *jwt.SigningMethodECDSA, fsys fs
 func (j *JWT[T]) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsys fs.FS, pub, pvt string) {
 	j.v.AddEd25519FromFS(id, sign, fsys, pub)
 	j.s.AddEd25519FromFS(id, sign, fsys, pvt)
+}
+
+// Add 添加签名方法
+//
+// NOTE: 如果添加的是 HMAC 类型的函数，那么 pvt 和 pub 两者需要相同。
+func (j *JWT[T]) Add(id string, sign jwt.SigningMethod, pub, pvt []byte) {
+	j.v.Add(id, sign, pub)
+	j.s.Add(id, sign, pvt)
+}
+
+// AddFromFS 添加签名方法密钥从文件中加载
+//
+// NOTE: 此方法不支持 HMAC 类型。
+func (j *JWT[T]) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, pub, pvt string) {
+	j.v.AddFromFS(id, sign, fsys, pub)
+	j.s.AddFromFS(id, sign, fsys, pvt)
 }
