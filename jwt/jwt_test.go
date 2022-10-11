@@ -5,6 +5,7 @@ package jwt
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io/fs"
 	"net/http"
 	"os"
 	"strings"
@@ -43,6 +44,7 @@ func newJWT(a *assert.Assertion, expired, refresh time.Duration) (*JWT[*testClai
 
 func TestVerifier_Middleware(t *testing.T) {
 	a := assert.New(t, false)
+	fsys := os.DirFS("./testdata")
 
 	j, m := newJWT(a, time.Hour, 0)
 	j.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
@@ -57,30 +59,45 @@ func TestVerifier_Middleware(t *testing.T) {
 	}, "存在同名的签名方法 hmac-secret")
 
 	j, m = newJWT(a, time.Hour, 0)
-	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	pub, pvt := readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
+	j.AddRSA("rsa", jwt.SigningMethodRS256, pub, pvt)
 	verifierMiddleware(a, j, m)
 
 	j, m = newJWT(a, time.Hour, 0)
-	j.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	pub, pvt = readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
+	j.AddRSAPSS("rsa-pss", jwt.SigningMethodPS256, pub, pvt)
 	verifierMiddleware(a, j, m)
 
 	j, m = newJWT(a, time.Hour, 0)
-	j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
+	pub, pvt = readFile(a, fsys, "ec256-public.pem", "ec256-private.pem")
+	j.AddECDSA("ecdsa", jwt.SigningMethodES256, pub, pvt)
 	verifierMiddleware(a, j, m)
 
 	j, m = newJWT(a, time.Hour, 0)
-	j.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem", "ed25519-private.pem")
+	pub, pvt = readFile(a, fsys, "ed25519-public.pem", "ed25519-private.pem")
+	j.AddEd25519("ed25519", jwt.SigningMethodEdDSA, pub, pvt)
 	verifierMiddleware(a, j, m)
 
+	// 一次性加载多个
 	j, m = newJWT(a, time.Hour, 0)
-	j.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, os.DirFS("./testdata"), "ed25519-public.pem", "ed25519-private.pem")
-	j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
-	j.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
-	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
+	j.AddEd25519FromFS("ed25519", jwt.SigningMethodEdDSA, fsys, "ed25519-public.pem", "ed25519-private.pem")
+	j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, fsys, "ec256-public.pem", "ec256-private.pem")
+	j.AddRSAPSSFromFS("rsa-pss", jwt.SigningMethodPS256, fsys, "rsa-public.pem", "rsa-private.pem")
+	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, fsys, "rsa-public.pem", "rsa-private.pem")
 	verifierMiddleware(a, j, m)
 	verifierMiddleware(a, j, m)
 	verifierMiddleware(a, j, m)
 	verifierMiddleware(a, j, m)
+}
+
+func readFile(a *assert.Assertion, fsys fs.FS, public, private string) ([]byte, []byte) {
+	pub, err := fs.ReadFile(fsys, public)
+	a.NotError(err).NotEmpty(pub)
+
+	pvt, err := fs.ReadFile(fsys, private)
+	a.NotError(err).NotEmpty(pvt)
+
+	return pub, pvt
 }
 
 func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlocker) {

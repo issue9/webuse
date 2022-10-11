@@ -120,8 +120,7 @@ func (j Verifier[T]) GetToken(ctx *web.Context) string {
 	return h
 }
 
-// AddKey 添加证书
-func (j *Verifier[T]) AddKey(id string, sign SigningMethod, keyData any) {
+func (j *Verifier[T]) addKey(id string, sign SigningMethod, keyData any) {
 	if sliceutil.Exists(j.keys, func(e *key) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
@@ -134,7 +133,7 @@ func (j *Verifier[T]) AddKey(id string, sign SigningMethod, keyData any) {
 }
 
 func (j *Verifier[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
-	j.AddKey(id, sign, secret)
+	j.addKey(id, sign, secret)
 }
 
 func (j *Verifier[T]) addRSA(id string, sign jwt.SigningMethod, public []byte) {
@@ -142,7 +141,7 @@ func (j *Verifier[T]) addRSA(id string, sign jwt.SigningMethod, public []byte) {
 	if err != nil {
 		panic(err)
 	}
-	j.AddKey(id, sign, pub)
+	j.addKey(id, sign, pub)
 }
 
 func (j *Verifier[T]) AddRSA(id string, sign *jwt.SigningMethodRSA, public []byte) {
@@ -158,7 +157,7 @@ func (j *Verifier[T]) AddECDSA(id string, sign *jwt.SigningMethodECDSA, public [
 	if err != nil {
 		panic(err)
 	}
-	j.AddKey(id, sign, pub)
+	j.addKey(id, sign, pub)
 }
 
 func (j *Verifier[T]) AddEd25519(id string, sign *jwt.SigningMethodEd25519, public []byte) {
@@ -167,7 +166,7 @@ func (j *Verifier[T]) AddEd25519(id string, sign *jwt.SigningMethodEd25519, publ
 		panic(err)
 	}
 
-	j.AddKey(id, sign, pub)
+	j.addKey(id, sign, pub)
 }
 
 func (j *Verifier[T]) AddRSAFromFS(id string, sign *jwt.SigningMethodRSA, fsys fs.FS, public string) {

@@ -82,14 +82,9 @@ func (j *JWT[T]) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 // 算法随机从 [Signer.AddKey] 添加的库里选取。
 func (j *JWT[T]) Sign(claims Claims) (string, error) { return j.s.Sign(claims) }
 
-// AddKey 添加证书
-func (j *JWT[T]) AddKey(id string, sign SigningMethod, pub, pvt any) {
-	j.v.AddKey(id, sign, pub)
-	j.s.AddKey(id, sign, pvt)
-}
-
 func (j *JWT[T]) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
-	j.AddKey(id, sign, secret, secret)
+	j.v.addKey(id, sign, secret)
+	j.s.addKey(id, sign, secret)
 }
 
 func (j *JWT[T]) AddRSA(id string, sign *jwt.SigningMethodRSA, pub, pvt []byte) {

@@ -118,8 +118,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 	return t.SignedString(k.key)
 }
 
-// AddKey 添加一种加密算法
-func (s *Signer) AddKey(id string, sign SigningMethod, private any) {
+func (s *Signer) addKey(id string, sign SigningMethod, private any) {
 	if sliceutil.Exists(s.keys, func(e *key) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
@@ -132,7 +131,7 @@ func (s *Signer) AddKey(id string, sign SigningMethod, private any) {
 }
 
 func (s *Signer) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) {
-	s.AddKey(id, sign, secret)
+	s.addKey(id, sign, secret)
 }
 
 func (s *Signer) addRSA(id string, sign jwt.SigningMethod, private []byte) {
@@ -140,7 +139,7 @@ func (s *Signer) addRSA(id string, sign jwt.SigningMethod, private []byte) {
 	if err != nil {
 		panic(err)
 	}
-	s.AddKey(id, sign, pvt)
+	s.addKey(id, sign, pvt)
 }
 
 func (s *Signer) AddRSA(id string, sign *jwt.SigningMethodRSA, private []byte) {
@@ -156,7 +155,7 @@ func (s *Signer) AddECDSA(id string, sign *jwt.SigningMethodECDSA, private []byt
 	if err != nil {
 		panic(err)
 	}
-	s.AddKey(id, sign, pvt)
+	s.addKey(id, sign, pvt)
 }
 
 func (s *Signer) AddEd25519(id string, sign *jwt.SigningMethodEd25519, private []byte) {
@@ -165,7 +164,7 @@ func (s *Signer) AddEd25519(id string, sign *jwt.SigningMethodEd25519, private [
 		panic(err)
 	}
 
-	s.AddKey(id, sign, pvt)
+	s.addKey(id, sign, pvt)
 }
 
 func (s *Signer) AddRSAFromFS(id string, sign *jwt.SigningMethodRSA, fsys fs.FS, private string) {
