@@ -215,7 +215,7 @@ func (j *Verifier[T]) Add(id string, sign jwt.SigningMethod, public []byte) {
 	case *jwt.SigningMethodEd25519:
 		j.AddEd25519(id, m, public)
 	default:
-		panic("无效的签名方法")
+		panic(invalidSignForID(id))
 	}
 }
 
@@ -231,6 +231,8 @@ func (j *Verifier[T]) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, p
 	case *jwt.SigningMethodEd25519:
 		j.AddEd25519FromFS(id, m, fsys, public)
 	default:
-		panic("无效的签名方法")
+		panic(invalidSignForID(id))
 	}
 }
+
+func invalidSignForID(id string) string { return fmt.Sprintf("%s 对应的签名方法无效", id) }

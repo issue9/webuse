@@ -213,7 +213,7 @@ func (s *Signer) Add(id string, sign jwt.SigningMethod, private []byte) {
 	case *jwt.SigningMethodEd25519:
 		s.AddEd25519(id, m, private)
 	default:
-		panic("无效的签名方法")
+		panic(invalidSignForID(id))
 	}
 }
 
@@ -229,6 +229,6 @@ func (s *Signer) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, privat
 	case *jwt.SigningMethodEd25519:
 		s.AddEd25519FromFS(id, m, fsys, private)
 	default:
-		panic("无效的签名方法")
+		panic(invalidSignForID(id))
 	}
 }
