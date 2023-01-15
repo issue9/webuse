@@ -28,7 +28,7 @@ type GenFunc func(*web.Context) (string, error)
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
 	store    web.Cache
-	capacity int64
+	capacity int
 	rate     time.Duration
 	genFunc  GenFunc
 }
@@ -45,7 +45,7 @@ func GenIP(ctx *web.Context) (string, error) {
 //
 // rate 拿令牌的频率；
 // fn 为令牌桶名称的产生方法，默认为用户的 IP；
-func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn GenFunc) *Ratelimit {
+func New(s *web.Server, prefix string, capacity int, rate time.Duration, fn GenFunc) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
@@ -62,7 +62,7 @@ func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn Ge
 func (rate *Ratelimit) bucket(name string) (*Bucket, error) {
 	b := &Bucket{}
 	if err := rate.store.Get(name, b); errors.Is(err, cache.ErrCacheMiss()) {
-		b = newBucket(rate.capacity, rate.rate)
+		b = rate.newBucket()
 		if err := rate.store.Set(name, b, cache.Forever); err != nil {
 			return nil, err
 		}
@@ -103,12 +103,12 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return ctx.InternalServerError(err)
 		}
 
-		if b.allow(1) {
+		if b.allow(rate, 1) {
 			rate.store.Set(name, b, cache.Forever)
-			b.setHeader(ctx)
+			b.setHeader(rate, ctx)
 			return next(ctx)
 		}
-		b.setHeader(ctx)
+		b.setHeader(rate, ctx)
 		return ctx.Problem(web.ProblemTooManyRequests)
 	}
 }

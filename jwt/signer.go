@@ -29,7 +29,7 @@ type Response struct {
 
 // Signer 证书的签发管理
 //
-// 仅负责对令牌的签发，如果需要验主令牌，则需要 [Verifier] 对象，
+// 仅负责对令牌的签发，如果需要验证令牌，则需要 [Verifier] 对象，
 // 同时需要保证 [Verifier] 添加的证书数量和 ID 与当前对象是相同的。
 type Signer struct {
 	keys    []*key
@@ -105,7 +105,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 	var k *key
 	switch l := len(s.keys); l {
 	case 0:
-		return "", ErrSigningMethodNotFound
+		return "", ErrSigningMethodNotFound()
 	case 1:
 		k = s.keys[0]
 	default:

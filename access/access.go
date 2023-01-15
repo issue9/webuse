@@ -5,8 +5,8 @@ package access
 
 import "github.com/issue9/web"
 
-// Access 生成用于打印访问记录的中间件
-type Access struct {
+// access 生成用于打印访问记录的中间件
+type access struct {
 	logger web.Logger
 	format string
 }
@@ -16,16 +16,16 @@ type Access struct {
 // l 表示记录输出的通道；
 // format 表示记录的格式，接受三个参数，分别为状态码、请求方法和请求地址，
 // 默认使用 "[%d] %s\t%s\n"，可以使用 fmt.Sprintf 的顺序标记作调整；
-func New(l web.Logger, format string) *Access {
+func New(l web.Logger, format string) web.Middleware {
 	const defaultFormat = "[%d] %s\t%s\n"
 	if format == "" {
 		format = defaultFormat
 	}
 
-	return &Access{logger: l, format: format}
+	return &access{logger: l, format: format}
 }
 
-func (a *Access) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (a *access) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		ctx.OnExit(func(status int) {
 			r := ctx.Request()

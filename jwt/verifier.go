@@ -55,7 +55,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 
 	j.keyFunc = func(t *jwt.Token) (any, error) {
 		if len(j.keys) == 0 || len(t.Header) == 0 {
-			return nil, ErrSigningMethodNotFound
+			return nil, ErrSigningMethodNotFound()
 		}
 
 		if kid, found := t.Header["kid"]; found {
@@ -65,7 +65,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 			}
 		}
 
-		return nil, ErrSigningMethodNotFound
+		return nil, ErrSigningMethodNotFound()
 	}
 
 	return j

@@ -14,7 +14,7 @@ type Store interface {
 	// Get 获取指定 API 的数据
 	//
 	// 如果还不存在，则返回空对象。
-	Get(method, path string) *State
+	Get(method, pattern string) *State
 
 	// Save 保存数据内容
 	//
@@ -27,13 +27,13 @@ type Store interface {
 
 // State 实际存在的数据类型
 type State struct {
-	Method, Path string
-	Min, Max     time.Duration
-	Count        int           // 总的请求次数
-	UserErrors   int           // 用户端出错次数，400-499
-	ServerErrors int           // 服务端出错次数，>500
-	Last         time.Time     // 最后的访问时间
-	Spend        time.Duration // 总花费的时间
+	Method, Pattern string
+	Min, Max        time.Duration
+	Count           int           // 总的请求次数
+	UserErrors      int           // 用户端出错次数，400-499
+	ServerErrors    int           // 服务端出错次数，>500
+	Last            time.Time     // 最后的访问时间
+	Spend           time.Duration // 总花费的时间
 }
 
 // Health API 状态检测
@@ -42,7 +42,7 @@ type Health struct {
 	store   Store
 }
 
-func newState(method, path string) *State { return &State{Method: method, Path: path} }
+func newState(method, path string) *State { return &State{Method: method, Pattern: path} }
 
 // New 声明 Health 实例
 func New(store Store) *Health {
@@ -81,8 +81,8 @@ func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
-func (h *Health) save(method, path string, dur time.Duration, status int) {
-	state := h.store.Get(method, path)
+func (h *Health) save(method, pattern string, dur time.Duration, status int) {
+	state := h.store.Get(method, pattern)
 
 	state.Count++
 	state.Last = time.Now()

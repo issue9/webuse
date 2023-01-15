@@ -18,6 +18,9 @@ type cacheStore struct {
 	errlog web.Logger
 }
 
+// NewCacheStore 基于缓存的存取接口实现
+//
+// NOTE: 缓存是易失性的，不能永久性保存数据。
 func NewCacheStore(srv *web.Server, prefix string) Store {
 	access := cache.Prefix(srv.Cache(), prefix+"_")
 	errlog := srv.Logs().ERROR()
@@ -33,13 +36,13 @@ func NewCacheStore(srv *web.Server, prefix string) Store {
 
 func (c *cacheStore) getID(method, path string) string { return method + "_" + path }
 
-func (c *cacheStore) Get(method, path string) *State {
-	key := c.getID(method, path)
+func (c *cacheStore) Get(method, pattern string) *State {
+	key := c.getID(method, pattern)
 
 	s := &State{}
 	err := c.cache.Get(key, s)
 	if errors.Is(err, cache.ErrCacheMiss()) {
-		state := newState(method, path)
+		state := newState(method, pattern)
 		c.Save(state)
 		return state
 	}
@@ -48,7 +51,7 @@ func (c *cacheStore) Get(method, path string) *State {
 }
 
 func (c *cacheStore) Save(state *State) {
-	key := c.getID(state.Method, state.Path)
+	key := c.getID(state.Method, state.Pattern)
 	if err := c.cache.Set(key, state, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}

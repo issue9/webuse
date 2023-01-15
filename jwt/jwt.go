@@ -24,7 +24,7 @@ import (
 	"github.com/issue9/web"
 )
 
-var ErrSigningMethodNotFound = errors.New("jwt: 算法未找到")
+var errSigningMethodNotFound = errors.New("jwt: 算法未找到")
 
 type (
 	// Claims JWT Claims 对象需要实现的接口
@@ -54,6 +54,8 @@ type (
 		s *Signer
 	}
 )
+
+func ErrSigningMethodNotFound() error { return errSigningMethodNotFound }
 
 func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Duration, br BuildResponseFunc) *JWT[T] {
 	v := NewVerifier(b, f)
