@@ -1,20 +1,23 @@
 // SPDX-License-Identifier: MIT
 
-// Package ratelimit 提供了 X-Rate-Limit 功能的中间件
+// Package ratelimit API 限流中间件
 //
-//	X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-//	X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-//	X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
+// 这是以用户或是客户端为单位的限流中间件，并不能按 API 进行细化的限流。
 //
-// 所有数据保存在 [server.Server.Cache] 之中，重启服务该数据也将重置。
+// 提供了对以下报头的支持：
+// - X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
+// - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
+// - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
+//
+// 所有数据保存在 [web.Cache] 之中，缓存服务重启后数据也将重置。
 package ratelimit
 
 import (
 	"errors"
 	"time"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/web"
+	"github.com/issue9/web/cache"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数
@@ -24,7 +27,7 @@ type GenFunc func(*web.Context) (string, error)
 
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
-	store    cache.Access
+	store    web.Cache
 	capacity int64
 	rate     time.Duration
 	genFunc  GenFunc
@@ -48,7 +51,7 @@ func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn Ge
 	}
 
 	return &Ratelimit{
-		store:    cache.Prefix(prefix, s.Cache()),
+		store:    cache.Prefix(s.Cache(), prefix+"_"),
 		capacity: capacity,
 		rate:     rate,
 		genFunc:  fn,
@@ -56,14 +59,9 @@ func New(s *web.Server, prefix string, capacity int64, rate time.Duration, fn Ge
 }
 
 // 获取与当前请求相对应的令牌桶
-func (rate *Ratelimit) bucket(ctx *web.Context) (*Bucket, error) {
-	name, err := rate.genFunc(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := rate.store.Get(name)
-	if err == cache.ErrCacheMiss {
+func (rate *Ratelimit) bucket(name string) (*Bucket, error) {
+	b := &Bucket{}
+	if err := rate.store.Get(name, b); errors.Is(err, cache.ErrCacheMiss()) {
 		b = newBucket(rate.capacity, rate.rate)
 		if err := rate.store.Set(name, b, cache.Forever); err != nil {
 			return nil, err
@@ -72,35 +70,41 @@ func (rate *Ratelimit) bucket(ctx *web.Context) (*Bucket, error) {
 		return nil, err
 	}
 
-	return b.(*Bucket), nil
+	return b, nil
 }
 
 // Transfer 将 oldName 的数据传送给 newName
 func (rate *Ratelimit) Transfer(oldName, newName string) error {
-	b, err := rate.store.Get(oldName)
-	if err != nil && err != cache.ErrCacheMiss {
+	b := &Bucket{}
+	err := rate.store.Get(oldName, b)
+	switch {
+	case errors.Is(err, cache.ErrCacheMiss()): // 不需要特殊处理
+	case err != nil:
 		return err
-	}
-
-	if b != nil {
+	default:
 		if err := rate.store.Delete(oldName); err != nil {
 			return err
 		}
 		return rate.store.Set(newName, b, cache.Forever)
 	}
-
 	return nil
 }
 
 // Middleware 将当前中间件应用于 next
 func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		b, err := rate.bucket(ctx)
+		name, err := rate.genFunc(ctx)
+		if err != nil {
+			return ctx.InternalServerError(err)
+		}
+
+		b, err := rate.bucket(name)
 		if err != nil {
 			return ctx.InternalServerError(err)
 		}
 
 		if b.allow(1) {
+			rate.store.Set(name, b, cache.Forever)
 			b.setHeader(ctx)
 			return next(ctx)
 		}

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/cache/memory"
 	"github.com/issue9/web"
+	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -19,7 +19,7 @@ var _ web.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, &web.Options{Cache: memory.New(1 * time.Minute), HTTPServer: &http.Server{Addr: ":8080"}})
+	s := servertest.NewTester(a, &web.Options{Cache: caches.NewMemory(1 * time.Minute), HTTPServer: &http.Server{Addr: ":8080"}})
 
 	h := New(NewCacheStore(s.Server(), "health_"))
 	r := s.Router()

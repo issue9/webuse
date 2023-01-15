@@ -6,27 +6,27 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
+	"github.com/issue9/web/cache"
 )
 
 const allKey = "all_key"
 
 type cacheStore struct {
-	access cache.Access
+	cache  web.Cache
 	errlog web.Logger
 }
 
 func NewCacheStore(srv *web.Server, prefix string) Store {
-	access := cache.Prefix(prefix, srv.Cache())
+	access := cache.Prefix(srv.Cache(), prefix+"_")
 	errlog := srv.Logs().ERROR()
 	if err := access.Set(allKey, []string{}, cache.Forever); err != nil {
 		errlog.Error(err)
 	}
 
 	return &cacheStore{
-		access: access,
+		cache:  access,
 		errlog: errlog,
 	}
 }
@@ -36,19 +36,20 @@ func (c *cacheStore) getID(method, path string) string { return method + "_" + p
 func (c *cacheStore) Get(method, path string) *State {
 	key := c.getID(method, path)
 
-	s, err := c.access.Get(key)
-	if errors.Is(err, cache.ErrCacheMiss) {
+	s := &State{}
+	err := c.cache.Get(key, s)
+	if errors.Is(err, cache.ErrCacheMiss()) {
 		state := newState(method, path)
 		c.Save(state)
 		return state
 	}
 
-	return s.(*State)
+	return s
 }
 
 func (c *cacheStore) Save(state *State) {
 	key := c.getID(state.Method, state.Path)
-	if err := c.access.Set(key, state, cache.Forever); err != nil {
+	if err := c.cache.Set(key, state, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}
 
@@ -58,30 +59,31 @@ func (c *cacheStore) Save(state *State) {
 	}
 	all = append(all, key)
 	sort.Strings(all)
-	if err := c.access.Set(allKey, all, cache.Forever); err != nil {
+	if err := c.cache.Set(allKey, all, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}
 }
 
 func (c *cacheStore) keys() []string {
-	allInterface, err := c.access.Get(allKey)
-	if err != nil {
+	allInterface := []string{}
+	if err := c.cache.Get(allKey, &allInterface); err != nil {
 		c.errlog.Error(err)
 		return nil
 	}
-	return allInterface.([]string)
+	return allInterface
 }
 
 func (c *cacheStore) All() []*State {
 	all := c.keys()
 	states := make([]*State, 0, len(all))
 	for _, key := range all {
-		s, err := c.access.Get(key)
-		if err != nil {
+		s := &State{}
+
+		if err := c.cache.Get(key, s); err != nil {
 			c.errlog.Error(err)
 			continue
 		}
-		states = append(states, s.(*State))
+		states = append(states, s)
 	}
 	return states
 }
