@@ -50,15 +50,12 @@ func (b *Bucket) allow(rate *Ratelimit, n int) bool {
 	return true
 }
 
-// 获取 X-Rate-Limit-Reset 的值
-func (b *Bucket) resetTime(rate *Ratelimit) int64 { // 时间戳必须是 int64
-	t := (rate.capacity - b.Tokens) * int(rate.rate.Seconds())
-	return time.Now().Unix() + int64(t)
-}
-
 func (b *Bucket) setHeader(rate *Ratelimit, ctx *web.Context) {
+	t := (rate.capacity - b.Tokens) * rate.rateSeconds
+	rest := time.Now().Unix() + int64(t)
+
 	h := ctx.Header()
 	h.Set("X-Rate-Limit-Limit", strconv.Itoa(rate.capacity))
 	h.Set("X-Rate-Limit-Remaining", strconv.Itoa(b.Tokens))
-	h.Set("X-Rate-Limit-Reset", strconv.FormatInt(b.resetTime(rate), 10))
+	h.Set("X-Rate-Limit-Reset", strconv.FormatInt(rest, 10))
 }

@@ -27,10 +27,11 @@ type GenFunc func(*web.Context) (string, error)
 
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
-	store    web.Cache
-	capacity int
-	rate     time.Duration
-	genFunc  GenFunc
+	store       web.Cache
+	capacity    int
+	rate        time.Duration
+	rateSeconds int
+	genFunc     GenFunc
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
@@ -51,10 +52,11 @@ func New(s *web.Server, prefix string, capacity int, rate time.Duration, fn GenF
 	}
 
 	return &Ratelimit{
-		store:    cache.Prefix(s.Cache(), prefix+"_"),
-		capacity: capacity,
-		rate:     rate,
-		genFunc:  fn,
+		store:       cache.Prefix(s.Cache(), prefix+"_"),
+		capacity:    capacity,
+		rate:        rate,
+		rateSeconds: int(rate.Seconds()),
+		genFunc:     fn,
 	}
 }
 
