@@ -46,10 +46,7 @@ func newState(method, path string) *State { return &State{Method: method, Patter
 
 // New 声明 Health 实例
 func New(store Store) *Health {
-	return &Health{
-		Enabled: true,
-		store:   store,
-	}
+	return &Health{Enabled: true, store: store}
 }
 
 // Register 注册 api

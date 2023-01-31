@@ -14,6 +14,7 @@ package ratelimit
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/issue9/web"
@@ -28,7 +29,7 @@ type GenFunc func(*web.Context) (string, error)
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
 	store       web.Cache
-	capacity    int
+	capacity    uint64
 	rate        time.Duration
 	rateSeconds int
 	genFunc     GenFunc
@@ -46,7 +47,7 @@ func GenIP(ctx *web.Context) (string, error) {
 //
 // rate 拿令牌的频率；
 // fn 为令牌桶名称的产生方法，默认为用户的 IP；
-func New(s *web.Server, prefix string, capacity int, rate time.Duration, fn GenFunc) *Ratelimit {
+func New(s *web.Server, prefix string, capacity uint64, rate time.Duration, fn GenFunc) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
@@ -60,57 +61,106 @@ func New(s *web.Server, prefix string, capacity int, rate time.Duration, fn GenF
 	}
 }
 
-// 获取与当前请求相对应的令牌桶
-func (rate *Ratelimit) bucket(name string) (*Bucket, error) {
-	b := &Bucket{}
-	if err := rate.store.Get(name, b); errors.Is(err, cache.ErrCacheMiss()) {
-		b = rate.newBucket()
-		if err := rate.store.Set(name, b, cache.Forever); err != nil {
-			return nil, err
-		}
-	} else if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-
 // Transfer 将 oldName 的数据传送给 newName
 func (rate *Ratelimit) Transfer(oldName, newName string) error {
-	b := &Bucket{}
-	err := rate.store.Get(oldName, b)
-	switch {
-	case errors.Is(err, cache.ErrCacheMiss()): // 不需要特殊处理
-	case err != nil:
+	cntName := oldName + "_cnt"
+	lastName := oldName + "_time"
+
+	cnt, err := rate.store.Counter(cntName, rate.capacity, rate.rateSeconds).Value()
+	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 		return err
-	default:
-		if err := rate.store.Delete(oldName); err != nil {
-			return err
-		}
-		return rate.store.Set(newName, b, cache.Forever)
 	}
+	var last time.Time
+	if err := rate.store.Get(lastName, &last); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+		return err
+	}
+
+	if _, err = rate.store.Counter(newName+"_cnt", cnt-1, cache.Forever).Incr(1); err != nil {
+		return err
+	}
+	if err = rate.store.Set(newName+"_time", last, cache.Forever); err != nil {
+		return err
+	}
+
+	// TODO error
+	rate.store.Delete(cntName)
+	rate.store.Delete(lastName)
+
 	return nil
 }
 
 // Middleware 将当前中间件应用于 next
 func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		name, err := rate.genFunc(ctx)
+		size, err := rate.allow(ctx)
 		if err != nil {
-			return ctx.InternalServerError(err)
+			return ctx.Problem(web.ProblemInternalServerError)
 		}
 
-		b, err := rate.bucket(name)
-		if err != nil {
-			return ctx.InternalServerError(err)
-		}
-
-		if b.allow(rate, 1) {
-			rate.store.Set(name, b, cache.Forever)
-			b.setHeader(rate, ctx)
+		if size > 0 {
+			setHeader(rate, ctx, size)
 			return next(ctx)
 		}
-		b.setHeader(rate, ctx)
+		setHeader(rate, ctx, size)
 		return ctx.Problem(web.ProblemTooManyRequests)
 	}
+}
+
+// 是否允许当前请求
+//
+// 如果允许，则返回当前可用的数量。
+func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
+	name, err := rate.genFunc(ctx)
+	if err != nil {
+		return 0, err
+	}
+	cntName := name + "_cnt"
+	lastName := name + "_time"
+	counter := rate.store.Counter(cntName, rate.capacity, rate.rateSeconds)
+
+	size, err := counter.Decr(1) // 先扣点，保证多并发情况下不会有问题。
+	if err != nil {
+		return 0, err
+	}
+
+	now := time.Now()
+	var last time.Time
+	err = rate.store.Get(lastName, &last)
+	switch {
+	case errors.Is(err, cache.ErrCacheMiss()):
+		last = now
+	case err != nil:
+		ctx.Logs().ERROR().Error(err)
+		return size, nil // 无法确定最后日期，就以当前的数量为准
+	}
+
+	dur := now.Sub(last)           // 从上次拿令牌到现在的时间段
+	cnt := uint64(dur / rate.rate) // 计算这段时间内需要增加的令牌
+	if max := rate.capacity - size; cnt > max {
+		cnt = max
+	}
+	if cnt > 0 {
+		if _, err = counter.Incr(cnt); err != nil {
+			ctx.Logs().ERROR().Error(err)
+			return size + cnt, nil
+		}
+	}
+
+	err = rate.store.Set(lastName, now, cache.Forever)
+	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+		ctx.Logs().ERROR().Error(err)
+		return size + cnt, nil
+	}
+
+	return size + cnt, nil
+}
+
+func setHeader(rate *Ratelimit, ctx *web.Context, size uint64) {
+	t := (rate.capacity - size) * uint64(rate.rateSeconds)
+	rest := time.Now().Unix() + int64(t)
+
+	h := ctx.Header()
+	h.Set("X-Rate-Limit-Limit", strconv.FormatUint(rate.capacity, 10))
+	h.Set("X-Rate-Limit-Remaining", strconv.FormatUint(size, 10))
+	h.Set("X-Rate-Limit-Reset", strconv.FormatInt(rest, 10))
 }

@@ -22,7 +22,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
 	// 由 gen 方法限定在同一个请求
-	srv := New(s.Server(), "rl", 3, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
+	srv := New(s.Server(), "rl", 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
 	a.NotNil(srv)
 
 	r := s.Router()
@@ -35,22 +35,27 @@ func TestRatelimit_Middleware(t *testing.T) {
 
 	s.Get("/test").Do(nil).
 		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "3").
+		Header("X-Rate-Limit-Limit", "4").
+		Header("X-Rate-Limit-Remaining", "3")
+
+	s.Get("/test").Do(nil).
+		Status(http.StatusCreated).
+		Header("X-Rate-Limit-Limit", "4").
 		Header("X-Rate-Limit-Remaining", "2")
 
 	s.Get("/test").Do(nil).
 		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "3").
+		Header("X-Rate-Limit-Limit", "4").
 		Header("X-Rate-Limit-Remaining", "1")
 
 	s.Get("/test").Do(nil).
-		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "3").
+		Status(http.StatusTooManyRequests).
+		Header("X-Rate-Limit-Limit", "4").
 		Header("X-Rate-Limit-Remaining", "0")
 
 	s.Get("/test").Do(nil).
 		Status(http.StatusTooManyRequests).
-		Header("X-Rate-Limit-Limit", "3").
+		Header("X-Rate-Limit-Limit", "4").
 		Header("X-Rate-Limit-Remaining", "0")
 
 	s.Close(0)

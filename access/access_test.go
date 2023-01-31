@@ -8,16 +8,17 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/web"
+	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server/servertest"
 )
 
 func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewTester(a, nil)
 	w := bytes.Buffer{}
-	srv.Server().Logs().SetOutput(logs.NewTextWriter(logs.MilliLayout, &w))
+	srv := servertest.NewTester(a, &web.Options{
+		Logs: &logs.Options{Writer: logs.NewTextWriter(logs.MilliLayout, &w)},
+	})
 
 	r := srv.Server().Routers().New("def", nil)
 	m := New(srv.Server().Logs().ERROR(), "")
