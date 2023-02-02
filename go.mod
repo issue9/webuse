@@ -3,7 +3,6 @@ module github.com/issue9/middleware/v6
 require (
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/issue9/assert/v3 v3.0.4
-	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/sliceutil v0.12.0
 	github.com/issue9/web v0.66.2
 )
@@ -16,6 +15,7 @@ require (
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/localeutil v0.12.6 // indirect
 	github.com/issue9/logs/v4 v4.3.0 // indirect
+	github.com/issue9/mux/v7 v7.1.0 // indirect
 	github.com/issue9/query/v3 v3.1.1 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/scheduled v0.10.0 // indirect
