@@ -17,7 +17,8 @@ func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
 	w := bytes.Buffer{}
 	srv := servertest.NewTester(a, &web.Options{
-		Logs: &logs.Options{Writer: logs.NewTextWriter(logs.MilliLayout, &w)},
+		Logs:       &logs.Options{Writer: logs.NewTextWriter(logs.MilliLayout, &w), Levels: logs.AllLevels()},
+		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 
 	r := srv.Server().Routers().New("def", nil)

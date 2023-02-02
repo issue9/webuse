@@ -6,6 +6,7 @@ package health
 import (
 	"time"
 
+	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/web"
 )
 
@@ -14,7 +15,7 @@ type Store interface {
 	// Get 获取指定 API 的数据
 	//
 	// 如果还不存在，则返回空对象。
-	Get(method, pattern string) *State
+	Get(route, method, pattern string) *State
 
 	// Save 保存数据内容
 	//
@@ -27,13 +28,15 @@ type Store interface {
 
 // State 实际存在的数据类型
 type State struct {
-	Method, Pattern string
-	Min, Max        time.Duration
-	Count           int           // 总的请求次数
-	UserErrors      int           // 用户端出错次数，400-499
-	ServerErrors    int           // 服务端出错次数，>500
-	Last            time.Time     // 最后的访问时间
-	Spend           time.Duration // 总花费的时间
+	Route        string // 多个路由时，表示的路由名称
+	Method       string // 请求方法
+	Pattern      string // 路由
+	Min, Max     time.Duration
+	Count        int           // 总的请求次数
+	UserErrors   int           // 用户端出错次数，400-499
+	ServerErrors int           // 服务端出错次数，>500
+	Last         time.Time     // 最后的访问时间
+	Spend        time.Duration // 总花费的时间
 }
 
 // Health API 状态检测
@@ -42,7 +45,9 @@ type Health struct {
 	store   Store
 }
 
-func newState(method, path string) *State { return &State{Method: method, Pattern: path} }
+func newState(route, method, path string) *State {
+	return &State{Route: route, Method: method, Pattern: path}
+}
 
 // New 声明 Health 实例
 func New(store Store) *Health {
@@ -54,8 +59,8 @@ func New(store Store) *Health {
 // 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
 // 才会将该 api 的信息进行保存，此操作相当于提前进行一次访问。
 // 此操作对部分冷门的 api 可以保证其出现在 States() 中。
-func (h *Health) Register(method, pattern string) {
-	h.store.Save(newState(method, pattern))
+func (h *Health) Register(route, method, pattern string) {
+	h.store.Save(newState(route, method, pattern))
 }
 
 // States 返回所有的状态列表
@@ -71,15 +76,15 @@ func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		start := time.Now()
 		ctx.OnExit(func(status int) {
 			req := ctx.Request()
-			go h.save(req.Method, ctx.Route().Node().Pattern(), time.Since(start), status)
+			go h.save(req.Method, ctx.Route(), time.Since(start), status)
 		})
 
 		return next(ctx)
 	}
 }
 
-func (h *Health) save(method, pattern string, dur time.Duration, status int) {
-	state := h.store.Get(method, pattern)
+func (h *Health) save(method string, route types.Route, dur time.Duration, status int) {
+	state := h.store.Get(route.RouterName(), method, route.Node().Pattern())
 
 	state.Count++
 	state.Last = time.Now()

@@ -46,21 +46,22 @@ func TestHealth(t *testing.T) {
 	})
 
 	s.GoServe()
+	defer s.Close(0)
 
 	mem := h.store
-	state := mem.Get(http.MethodGet, "/")
+	state := mem.Get(r.Name(), http.MethodGet, "/")
 	a.Equal(0, state.Count)
 
 	// 第一次访问 GET /
 	s.Get("/").Query("status", "200").Do(nil).Status(200)
 	time.Sleep(time.Microsecond * 500)
-	state = mem.Get(http.MethodGet, "/")
+	state = mem.Get(r.Name(), http.MethodGet, "/")
 	a.Equal(1, state.Count).True(state.Min > 0)
 
 	// 第二次访问 GET /
 	s.Get("/").Query("status", "500").Do(nil)
 	time.Sleep(time.Microsecond * 500)
-	state = mem.Get(http.MethodGet, "/")
+	state = mem.Get(r.Name(), http.MethodGet, "/")
 	a.Equal(2, state.Count).
 		Equal(1, state.ServerErrors).
 		Equal(0, state.UserErrors)
@@ -68,19 +69,17 @@ func TestHealth(t *testing.T) {
 	// 第一次访问 POST /
 	s.NewRequest(http.MethodPost, "/", nil).Query("status", "201").Do(nil)
 	time.Sleep(time.Microsecond * 500)
-	state = mem.Get(http.MethodPost, "/")
+	state = mem.Get(r.Name(), http.MethodPost, "/")
 	a.Equal(1, state.Count)
 
 	// 第一次访问 DELETE /users
 	s.Delete("/users").Query("status", "401").Do(nil)
 	time.Sleep(time.Microsecond * 500)
-	state = mem.Get(http.MethodDelete, "/users")
+	state = mem.Get(r.Name(), http.MethodDelete, "/users")
 	a.Equal(1, state.Count).
 		Equal(0, state.ServerErrors).
 		Equal(1, state.UserErrors)
 
 	all := h.States()
 	a.Equal(3, len(all))
-
-	s.Close(0)
 }

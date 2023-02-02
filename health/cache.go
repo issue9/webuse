@@ -34,15 +34,17 @@ func NewCacheStore(srv *web.Server, prefix string) Store {
 	}
 }
 
-func (c *cacheStore) getID(method, path string) string { return method + "_" + path }
+func (c *cacheStore) getID(route, method, path string) string {
+	return route + "_" + method + "_" + path
+}
 
-func (c *cacheStore) Get(method, pattern string) *State {
-	key := c.getID(method, pattern)
+func (c *cacheStore) Get(route, method, pattern string) *State {
+	key := c.getID(route, method, pattern)
 
 	s := &State{}
 	err := c.cache.Get(key, s)
 	if errors.Is(err, cache.ErrCacheMiss()) {
-		state := newState(method, pattern)
+		state := newState(route, method, pattern)
 		c.Save(state)
 		return state
 	}
@@ -51,7 +53,7 @@ func (c *cacheStore) Get(method, pattern string) *State {
 }
 
 func (c *cacheStore) Save(state *State) {
-	key := c.getID(state.Method, state.Pattern)
+	key := c.getID(state.Route, state.Method, state.Pattern)
 	if err := c.cache.Set(key, state, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}
