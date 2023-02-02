@@ -25,15 +25,17 @@ type Store interface {
 
 // State 实际存在的数据类型
 type State struct {
-	Route        string // 多个路由时，表示的路由名称
-	Method       string // 请求方法
-	Pattern      string // 路由
-	Min, Max     time.Duration
-	Count        int           // 总的请求次数
-	UserErrors   int           // 用户端出错次数，400-499
-	ServerErrors int           // 服务端出错次数，>500
-	Last         time.Time     // 最后的访问时间
-	Spend        time.Duration // 总花费的时间
+	XMLName      struct{}      `xml:"state" yaml:"-" json:"-"`
+	Route        string        `xml:"route" yaml:"route" json:"route"`         // 多个路由时，表示的路由名称
+	Method       string        `xml:"method,attr" yaml:"method" json:"method"` // 请求方法
+	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern"`   // 路由
+	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min"`
+	Max          time.Duration `xml:"max,attr" yaml:"max" json:"max"`
+	Count        int           `xml:"count,attr" yaml:"count" json:"count"`                      // 总的请求次数
+	UserErrors   int           `xml:"userErrors,attr" yaml:"userErrors" json:"userErrors"`       // 用户端出错次数，400-499
+	ServerErrors int           `xml:"serverErrors,attr" yaml:"serverErrors" json:"serverErrors"` // 服务端出错次数，>500
+	Last         time.Time     `xml:"last" yaml:"last" json:"last"`                              // 最后的访问时间
+	Spend        time.Duration `xml:"spend,attr" yaml:"spend" json:"spend"`                      // 总花费的时间
 }
 
 // Health API 状态检测
