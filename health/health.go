@@ -6,7 +6,6 @@ package health
 import (
 	"time"
 
-	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/web"
 )
 
@@ -18,8 +17,6 @@ type Store interface {
 	Get(route, method, pattern string) *State
 
 	// Save 保存数据内容
-	//
-	// 每生成一条数据，均会以异步的方式调用 Save，由处理具体的操作方式。
 	Save(*State)
 
 	// All 返回所有接口的状态信息
@@ -73,21 +70,21 @@ func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return next(ctx)
 		}
 
-		start := time.Now()
 		ctx.OnExit(func(status int) {
-			req := ctx.Request()
-			go h.save(req.Method, ctx.Route(), time.Since(start), status)
+			h.save(ctx, status)
 		})
 
 		return next(ctx)
 	}
 }
 
-func (h *Health) save(method string, route types.Route, dur time.Duration, status int) {
-	state := h.store.Get(route.RouterName(), method, route.Node().Pattern())
+func (h *Health) save(ctx *web.Context, status int) {
+	route := ctx.Route()
+	state := h.store.Get(route.RouterName(), ctx.Request().Method, route.Node().Pattern())
 
+	dur := time.Since(ctx.Begin())
 	state.Count++
-	state.Last = time.Now()
+	state.Last = ctx.Begin()
 	state.Spend += dur
 
 	if status >= 400 && status < 500 {

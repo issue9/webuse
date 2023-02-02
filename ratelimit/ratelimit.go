@@ -123,7 +123,7 @@ func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
 		return 0, err
 	}
 
-	now := time.Now()
+	now := ctx.Begin()
 	var last time.Time
 	err = rate.store.Get(lastName, &last)
 	switch {
@@ -157,7 +157,7 @@ func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
 
 func setHeader(rate *Ratelimit, ctx *web.Context, size uint64) {
 	t := (rate.capacity - size) * uint64(rate.rateSeconds)
-	rest := time.Now().Unix() + int64(t)
+	rest := ctx.Begin().Unix() + int64(t)
 
 	h := ctx.Header()
 	h.Set("X-Rate-Limit-Limit", strconv.FormatUint(rate.capacity, 10))

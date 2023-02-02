@@ -5,7 +5,7 @@ require (
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/sliceutil v0.12.0
-	github.com/issue9/web v0.66.1
+	github.com/issue9/web v0.66.2
 )
 
 require (
