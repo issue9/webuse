@@ -66,7 +66,7 @@ func (rate *Ratelimit) Transfer(oldName, newName string) error {
 	cntName := oldName + "_cnt"
 	lastName := oldName + "_time"
 
-	cnt, err := rate.store.Counter(cntName, rate.capacity, rate.rateSeconds).Value()
+	cnt, err := rate.store.Counter(cntName, rate.capacity, rate.rate).Value()
 	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 		return err
 	}
@@ -116,7 +116,7 @@ func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
 	}
 	cntName := name + "_cnt"
 	lastName := name + "_time"
-	counter := rate.store.Counter(cntName, rate.capacity, rate.rateSeconds)
+	counter := rate.store.Counter(cntName, rate.capacity, rate.rate)
 
 	size, err := counter.Decr(1) // 先扣点，保证多并发情况下不会有问题。
 	if err != nil {
