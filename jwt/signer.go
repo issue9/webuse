@@ -134,7 +134,7 @@ func (s *Signer) AddHMAC(id string, sign *jwt.SigningMethodHMAC, secret []byte) 
 	s.addKey(id, sign, secret)
 }
 
-func (s *Signer) addRSA(id string, sign jwt.SigningMethod, private []byte) {
+func (s *Signer) addRSA(id string, sign SigningMethod, private []byte) {
 	pvt, err := jwt.ParseRSAPrivateKeyFromPEM(private)
 	if err != nil {
 		panic(err)
@@ -200,7 +200,7 @@ func (s *Signer) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsy
 }
 
 // Add 添加签名方法
-func (s *Signer) Add(id string, sign jwt.SigningMethod, private []byte) {
+func (s *Signer) Add(id string, sign SigningMethod, private []byte) {
 	switch m := sign.(type) {
 	case *jwt.SigningMethodHMAC:
 		s.AddHMAC(id, m, private)
@@ -218,7 +218,7 @@ func (s *Signer) Add(id string, sign jwt.SigningMethod, private []byte) {
 }
 
 // AddFromFS 添加签名方法密钥从文件中加载
-func (s *Signer) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, private string) {
+func (s *Signer) AddFromFS(id string, sign SigningMethod, fsys fs.FS, private string) {
 	switch m := sign.(type) {
 	case *jwt.SigningMethodRSA:
 		s.AddRSAFromFS(id, m, fsys, private)

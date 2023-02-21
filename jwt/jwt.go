@@ -136,7 +136,7 @@ func (j *JWT[T]) AddEd25519FromFS(id string, sign *jwt.SigningMethodEd25519, fsy
 // Add 添加签名方法
 //
 // NOTE: 如果添加的是 HMAC 类型的函数，那么 pvt 和 pub 两者需要相同。
-func (j *JWT[T]) Add(id string, sign jwt.SigningMethod, pub, pvt []byte) {
+func (j *JWT[T]) Add(id string, sign SigningMethod, pub, pvt []byte) {
 	j.v.Add(id, sign, pub)
 	j.s.Add(id, sign, pvt)
 }
@@ -144,7 +144,7 @@ func (j *JWT[T]) Add(id string, sign jwt.SigningMethod, pub, pvt []byte) {
 // AddFromFS 添加签名方法密钥从文件中加载
 //
 // NOTE: 此方法不支持 HMAC 类型。
-func (j *JWT[T]) AddFromFS(id string, sign jwt.SigningMethod, fsys fs.FS, pub, pvt string) {
+func (j *JWT[T]) AddFromFS(id string, sign SigningMethod, fsys fs.FS, pub, pvt string) {
 	j.v.AddFromFS(id, sign, fsys, pub)
 	j.s.AddFromFS(id, sign, fsys, pvt)
 }

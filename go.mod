@@ -1,11 +1,11 @@
 module github.com/issue9/middleware/v6
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/sliceutil v0.12.0
-	github.com/issue9/web v0.69.0
+	github.com/issue9/web v0.70.0
 )
 
 require (
@@ -27,7 +27,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.2 // indirect
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15 // indirect
 	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

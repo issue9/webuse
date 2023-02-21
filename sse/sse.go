@@ -5,6 +5,8 @@ package sse
 
 import "context"
 
+const Mimetype = "text/event-stream"
+
 // Server 事件管理
 //
 // T 表示用于区分不同事件源的 ID，比如按用户区分，那么该类型可能是 int64 类型的用户 ID 值。

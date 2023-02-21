@@ -3,12 +3,14 @@
 package sse
 
 import (
+	"net/http"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -16,8 +18,10 @@ func TestEvents(t *testing.T) {
 	a := assert.New(t, false)
 	e := NewServer[int64](201)
 	a.NotNil(e)
-	s := servertest.NewTester(a, nil)
-	s.Server().Mimetypes().Add("text/event-stream", nil, nil, "")
+	s := servertest.NewTester(a, &server.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes:  []*server.Mimetype{{Type: Mimetype}},
+	})
 	s.Server().Services().Add(web.Phrase("sse"), e)
 
 	s.Router().Get("/events/{id}", func(ctx *web.Context) web.Responser {
