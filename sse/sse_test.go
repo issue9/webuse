@@ -14,17 +14,20 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
+var _ server.Service = &Server[struct{}]{}
+
 func TestEvents(t *testing.T) {
 	a := assert.New(t, false)
 	e := NewServer[int64](201)
 	a.NotNil(e)
-	s := servertest.NewTester(a, &server.Options{
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes:  []*server.Mimetype{{Type: Mimetype}},
 	})
-	s.Server().Services().Add(web.Phrase("sse"), e)
+	a.NotError(err).NotNil(s)
+	s.Services().Add(web.Phrase("sse"), e)
 
-	s.Router().Get("/events/{id}", func(ctx *web.Context) web.Responser {
+	s.NewRouter("def", nil).Get("/events/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.ParamInt64("id", web.ProblemBadRequest)
 		if resp != nil {
 			return resp
@@ -40,13 +43,14 @@ func TestEvents(t *testing.T) {
 		return nil
 	})
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
 	time.AfterFunc(5000*time.Microsecond, func() {
 		e.Get(5).Close()
 	})
 
-	s.Get("/events/5").
+	servertest.Get(a, "http://localhost:8080/events/5").
 		Header("accept", "text/event-stream").
 		Header("accept-encoding", "").
 		Do(nil).

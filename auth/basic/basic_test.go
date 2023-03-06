@@ -8,6 +8,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
+	"github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -22,7 +24,13 @@ var (
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 	var b *Basic[[]byte]
-	srv := servertest.NewServer(a, nil)
+	srv, err := web.NewServer("test", "1.0.0", &web.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+		},
+	})
+	a.NotError(err).NotNil(srv)
 
 	a.Panic(func() {
 		b = New[[]byte](srv, nil, "", false)
@@ -45,13 +53,18 @@ func TestNew(t *testing.T) {
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+		},
+	})
+	a.NotError(err).NotNil(s)
 
 	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
-	srv := servertest.NewTester(a, nil)
-	r := srv.Router()
+	r := s.NewRouter("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := b.GetValue(ctx)
@@ -59,31 +72,35 @@ func TestServeHTTP_ok(t *testing.T) {
 		return web.Status(http.StatusCreated)
 	})
 
-	srv.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
-	srv.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Do(nil).
 		Header("WWW-Authenticate", `Basic realm="example.com"`).
 		Status(http.StatusUnauthorized)
 
 	// 正确的访问
-	srv.Get("http://localhost:8080/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
 		Do(nil).
 		Status(http.StatusCreated)
-
-	srv.Close(0)
 }
 
 func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+		},
+	})
+	a.NotError(err).NotNil(s)
 
 	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
-	srv := servertest.NewTester(a, nil)
-	r := srv.Router()
+	r := s.NewRouter("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		obj, found := b.GetValue(ctx)
@@ -92,18 +109,17 @@ func TestServeHTTP_failed(t *testing.T) {
 
 	})
 
-	srv.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
-	srv.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Do(nil).
 		Header("WWW-Authenticate", `Basic realm="example.com"`).
 		Status(http.StatusUnauthorized)
 
 	// 错误的编码
-	srv.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("Authorization", "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
 		Do(nil).
 		Status(http.StatusUnauthorized)
-
-	srv.Close(0)
 }

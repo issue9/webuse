@@ -92,7 +92,7 @@ func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !ok {
 			return b.unauthorization(ctx)
 		}
-		ctx.Vars[valueKey] = v
+		ctx.SetVar(valueKey, v)
 
 		return next(ctx)
 	}
@@ -104,7 +104,7 @@ func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
 }
 
 func (b *Basic[T]) GetValue(ctx *web.Context) (T, bool) {
-	v, found := ctx.Vars[valueKey]
+	v, found := ctx.GetVar(valueKey)
 	if !found {
 		var vv T
 		return vv, false

@@ -95,7 +95,7 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 		}
 	}
 
-	return web.Object(status, s.br(ac, rc, s.expires))
+	return web.Response(status, s.br(ac, rc, s.expires))
 }
 
 // Sign 对 claims 进行签名

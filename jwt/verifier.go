@@ -95,7 +95,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
-		ctx.Vars[contextKey] = t.Claims
+		ctx.SetVar(contextKey, t.Claims)
 
 		return next(ctx)
 	}
@@ -103,7 +103,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 // GetValue 返回解码后的 Claims 对象
 func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
-	v, found := ctx.Vars[contextKey]
+	v, found := ctx.GetVar(contextKey)
 	if !found {
 		var vv T
 		return vv, false

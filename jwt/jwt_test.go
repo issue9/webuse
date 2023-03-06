@@ -15,6 +15,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
+	xjson "github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -120,8 +122,14 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 		ID: 1,
 	}
 
-	s := servertest.NewTester(a, nil)
-	r := s.Router()
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
+		},
+	})
+	a.NotError(err).NotNil(s)
+	r := s.NewRouter("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return j.Render(ctx, http.StatusCreated, claims)
 	})
@@ -160,31 +168,32 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 		return web.NoContent()
 	}))
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
-	s.NewRequest(http.MethodPost, "/login", nil).
+	servertest.Post(a, "http://localhost:8080/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
 		a.TB().Helper()
 
 		resp := &Response{}
-		a.NotError(json.Unmarshal(body, resp))
+		a.NotError(xjson.Unmarshal(body, resp))
 		a.NotEmpty(resp).
 			NotEmpty(resp.Access).
 			Zero(resp.Refresh)
 
-		s.Get("/info").
+		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+resp.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
-		s.Delete("/login").
+		servertest.Delete(a, "http://localhost:8080/login").
 			Header("Authorization", resp.Access).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
-		s.Get("/info").
+		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", resp.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
@@ -202,8 +211,14 @@ func TestVerifier_client(t *testing.T) {
 		ID: 1,
 	}
 
-	s := servertest.NewTester(a, nil)
-	r := s.Router()
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
+		},
+	})
+	a.NotError(err).NotNil(s)
+	r := s.NewRouter("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return j.Render(ctx, http.StatusCreated, claims)
 	})
@@ -221,9 +236,10 @@ func TestVerifier_client(t *testing.T) {
 		return web.OK(nil)
 	}))
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
-	s.NewRequest(http.MethodPost, "/login", nil).
+	servertest.Post(a, "http://localhost:8080/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
 		m := &Response{}
@@ -240,7 +256,7 @@ func TestVerifier_client(t *testing.T) {
 		// 改变 alg，影响
 		header["alg"] = "ES256"
 		parts[0] = encodeHeader(a, header)
-		s.Get("/info").
+		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusInternalServerError)
@@ -250,7 +266,7 @@ func TestVerifier_client(t *testing.T) {
 		header["kid"] = "ecdsa"
 		header["alg"] = "none"
 		parts[0] = encodeHeader(a, header)
-		s.Get("/info").
+		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusInternalServerError)
@@ -259,7 +275,7 @@ func TestVerifier_client(t *testing.T) {
 		header["kid"] = "not-exists"
 		header["alg"] = "none"
 		parts[0] = encodeHeader(a, header)
-		s.Get("/info").
+		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusInternalServerError)

@@ -72,8 +72,8 @@ func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return next(ctx)
 		}
 
-		ctx.OnExit(func(status int) {
-			h.save(ctx, status)
+		ctx.OnExit(func(c *web.Context, status int) {
+			h.save(c, status)
 		})
 
 		return next(ctx)

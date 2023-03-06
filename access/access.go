@@ -27,7 +27,7 @@ func New(l web.Logger, format string) web.Middleware {
 
 func (a *access) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		ctx.OnExit(func(status int) {
+		ctx.OnExit(func(ctx *web.Context, status int) {
 			r := ctx.Request()
 			a.logger.Printf(a.format, status, r.Method, r.URL.String())
 		})

@@ -10,19 +10,27 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
+	"github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
 func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
 	w := bytes.Buffer{}
-	srv := servertest.NewTester(a, &web.Options{
+	srv, err := web.NewServer("test", "1.0.0", &web.Options{
 		Logs:       &logs.Options{Writer: logs.NewTextWriter(logs.MilliLayout, &w), Levels: logs.AllLevels()},
 		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+		},
 	})
+	a.NotError(err).NotNil(srv)
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
 
-	r := srv.Server().Routers().New("def", nil)
-	m := New(srv.Server().Logs().ERROR(), "")
+	r := srv.NewRouter("def", nil)
+	m := New(srv.Logs().ERROR(), "")
 	a.NotNil(m)
 	r.Use(m)
 
@@ -32,13 +40,8 @@ func TestAccess(t *testing.T) {
 		return web.Created(nil, "")
 	})
 
-	srv.GoServe()
-
 	a.Zero(w.Len())
-
-	srv.Get("/test").Do(nil).Status(http.StatusCreated)
-	<-wait
+	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusCreated)
 	a.True(w.Len() > 0)
-
-	srv.Close(0)
+	<-wait
 }
