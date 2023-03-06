@@ -10,43 +10,26 @@ import (
 	"github.com/issue9/web"
 )
 
-// WaitFunc 等待 [Source] 完成的阻塞函数
-//
-// 当 [Source] 因为某种原因退出时，WaitFunc 才会返回，
-// 用于在 [web.Handler] 的处理函数阻止服务的退出。
-type WaitFunc func()
-
-type Source interface {
-	// 关闭当前事件源
-	//
-	// 这将导致关联的 [WaitFunc] 返回。
-	Close()
-
-	// Sent 发送消息
-	//
-	// id、event 和  retry 都可以为空，表示不需要这些值；
-	Sent(data []string, event, id string, retry uint)
-}
-
-type source struct {
+type Source struct {
 	data chan []byte
 	exit chan struct{}
 	done chan struct{}
 }
 
 // Get 返回指定 ID 的事件源
-func (srv *Server[T]) Get(id T) Source { return srv.sources[id] }
+func (srv *Server[T]) Get(id T) *Source { return srv.sources[id] }
 
 // NewSource 声明新的事件源
 //
-// NOTE: 只有采用此方法声明之后，才有可能通过 [Events.Get] 获取实例。
-// id 表示是事件源的唯一 ID，如果事件是根据用户进行区分的，那么该值应该是表示用户的 ID 值。
-func (srv *Server[T]) NewSource(id T, ctx *web.Context) (Source, WaitFunc) {
+// NOTE: 只有采用此方法声明之后，才有可能通过 [Server.Get] 获取实例。
+// id 表示是事件源的唯一 ID，如果事件是根据用户进行区分的，那么该值应该是表示用户的 ID 值；
+// wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出。
+func (srv *Server[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
 	if srv.sources[id] != nil {
 		srv.sources[id].Close()
 	}
 
-	s := &source{
+	s = &Source{
 		data: make(chan []byte, 1),
 		exit: make(chan struct{}, 1),
 		done: make(chan struct{}, 1),
@@ -62,7 +45,7 @@ func (srv *Server[T]) NewSource(id T, ctx *web.Context) (Source, WaitFunc) {
 }
 
 // 和客户端进行连接，如果返回，则表示连接被关闭。
-func (s *source) connect(ctx *web.Context, status int) {
+func (s *Source) connect(ctx *web.Context, status int) {
 	ctx.Header().Set("content-type", "text/event-stream; charset=utf-8")
 	ctx.Header().Set("Content-Length", "0")
 	ctx.Header().Set("Cache-Control", "no-cache")
@@ -72,14 +55,16 @@ func (s *source) connect(ctx *web.Context, status int) {
 
 	var rw http.ResponseWriter = ctx
 	f, ok := rw.(http.Flusher)
-	for !ok {
-		if rr, ok := rw.(interface{ Unwrap() http.ResponseWriter }); ok {
+	for !ok { // TODO: go1.20 之后，可以采用 http.ResponseController 方法。
+		if rr, rok := rw.(interface{ Unwrap() http.ResponseWriter }); rok {
 			rw = rr.Unwrap()
 			f, ok = rw.(http.Flusher)
 			continue
 		}
 		break
 	}
+
+	// TODO: 如果无法转换成 http.Flusher，还可尝试采用 http.Hijacker，不过 http2 不支持 http.Hijacker
 	if f == nil {
 		ctx.WriteHeader(http.StatusInternalServerError)
 		ctx.Logs().ERROR().String("ctx 无法转换成 http.Flusher")
@@ -103,7 +88,10 @@ func (s *source) connect(ctx *web.Context, status int) {
 	}
 }
 
-func (s *source) Sent(d []string, event, id string, retry uint) {
+// Sent 发送消息
+//
+// id、event 和  retry 都可以为空，表示不需要这些值；
+func (s *Source) Sent(d []string, event, id string, retry uint) {
 	w := errwrap.Buffer{}
 	for _, line := range d {
 		w.WString("data: ").WString(line).WByte('\n')
@@ -122,6 +110,9 @@ func (s *source) Sent(d []string, event, id string, retry uint) {
 	s.data <- w.Bytes()
 }
 
-func (s *source) Close() { s.exit <- struct{}{} }
+// 关闭当前事件源
+//
+// 这将导致关联的 [WaitFunc] 返回。
+func (s *Source) Close() { s.exit <- struct{}{} }
 
-func (s *source) wait() { <-s.done }
+func (s *Source) wait() { <-s.done }

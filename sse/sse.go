@@ -12,20 +12,23 @@ const Mimetype = "text/event-stream"
 // T 表示用于区分不同事件源的 ID，比如按用户区分，那么该类型可能是 int64 类型的用户 ID 值。
 type Server[T comparable] struct {
 	status  int
-	sources map[T]*source
+	sources map[T]*Source
 }
 
 func NewServer[T comparable](status int) *Server[T] {
 	return &Server[T]{status: status}
 }
 
-func (e *Server[T]) Serve(ctx context.Context) error {
-	e.sources = make(map[T]*source, 10)
+func (srv *Server[T]) Serve(ctx context.Context) error {
+	srv.sources = make(map[T]*Source, 10)
 
 	<-ctx.Done()
-	for _, s := range e.sources {
+	for _, s := range srv.sources {
 		s.Close()
 	}
-	e.sources = nil
+	srv.sources = nil
 	return ctx.Err()
 }
+
+// Len 当前活动的数量
+func (srv *Server[T]) Len() int { return len(srv.sources) }
