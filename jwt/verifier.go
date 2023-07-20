@@ -3,12 +3,11 @@
 package jwt
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 )
@@ -76,15 +75,13 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := j.GetToken(ctx)
 		if h == "" || j.blocker.TokenIsBlocked(h) {
-			return ctx.Problem("401")
+			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
 		t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
-		if errors.Is(err, &jwt.ValidationError{}) {
+		if err != nil { // 都算验证错误
 			ctx.Logs().ERROR().Error(err)
 			return ctx.Problem(web.ProblemUnauthorized)
-		} else if err != nil {
-			return ctx.InternalServerError(err)
 		}
 
 		if !t.Valid {

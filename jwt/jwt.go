@@ -20,7 +20,7 @@ import (
 	"io/fs"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/web"
 )
 

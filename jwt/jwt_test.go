@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	xjson "github.com/issue9/web/serializer/json"
@@ -21,6 +21,7 @@ import (
 )
 
 type testClaims struct {
+	jwt.MapClaims
 	ID      int64 `json:"id"`
 	expires int64
 	token   string
@@ -259,7 +260,7 @@ func TestVerifier_client(t *testing.T) {
 		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
-			Status(http.StatusInternalServerError)
+			Status(http.StatusUnauthorized)
 
 		// 改变 kid(kid 存在)，影响
 		j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
@@ -269,7 +270,7 @@ func TestVerifier_client(t *testing.T) {
 		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
-			Status(http.StatusInternalServerError)
+			Status(http.StatusUnauthorized)
 
 		// 改变 kid(kid 不存在)，影响
 		header["kid"] = "not-exists"
@@ -278,7 +279,7 @@ func TestVerifier_client(t *testing.T) {
 		servertest.Get(a, "http://localhost:8080/info").
 			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
-			Status(http.StatusInternalServerError)
+			Status(http.StatusUnauthorized)
 	})
 
 	s.Close(0)
@@ -296,16 +297,7 @@ func encodeHeader(a *assert.Assertion, header map[string]any) string {
 func decodeHeader(a *assert.Assertion, seg string) map[string]any {
 	a.TB().Helper()
 
-	var data []byte
-	var err error
-	if jwt.DecodePaddingAllowed {
-		if l := len(seg) % 4; l > 0 {
-			seg += strings.Repeat("=", 4-l)
-		}
-		data, err = base64.URLEncoding.DecodeString(seg)
-	} else {
-		data, err = base64.RawURLEncoding.DecodeString(seg)
-	}
+	data, err := base64.RawURLEncoding.DecodeString(seg)
 	a.NotError(err).NotNil(data)
 
 	header := make(map[string]any, 3)

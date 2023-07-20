@@ -28,7 +28,7 @@ func TestEvents(t *testing.T) {
 	s.Services().Add(web.Phrase("sse"), e)
 
 	s.NewRouter("def", nil).Get("/events/{id}", func(ctx *web.Context) web.Responser {
-		id, resp := ctx.ParamInt64("id", web.ProblemBadRequest)
+		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
 		if resp != nil {
 			return resp
 		}
