@@ -17,11 +17,11 @@ type memoryBlocker struct {
 }
 
 func (m *memoryBlocker) TokenIsBlocked(t string) bool {
-	return sliceutil.Exists(m.tokens, func(e string) bool { return e == t })
+	return sliceutil.Exists(m.tokens, func(e string, _ int) bool { return e == t })
 }
 
 func (m *memoryBlocker) ClaimsIsBlocked(t *testClaims) bool {
-	return sliceutil.Exists(m.claims, func(e string) bool { return e == strconv.FormatInt(t.ID, 10) })
+	return sliceutil.Exists(m.claims, func(e string, _ int) bool { return e == strconv.FormatInt(t.ID, 10) })
 }
 
 func (m *memoryBlocker) BlockToken(t string) { m.tokens = append(m.tokens, t) }

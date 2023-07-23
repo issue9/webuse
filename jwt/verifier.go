@@ -58,7 +58,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 		}
 
 		if kid, found := t.Header["kid"]; found {
-			if k, found := sliceutil.At(j.keys, func(e *key) bool { return e.id == kid }); found {
+			if k, found := sliceutil.At(j.keys, func(e *key, _ int) bool { return e.id == kid }); found {
 				t.Method = k.sign // 忽略由用户指定的 header['alg']，而是有 kid 指定。
 				return k.key, nil
 			}
@@ -118,7 +118,7 @@ func (j Verifier[T]) GetToken(ctx *web.Context) string {
 }
 
 func (j *Verifier[T]) addKey(id string, sign SigningMethod, keyData any) {
-	if sliceutil.Exists(j.keys, func(e *key) bool { return e.id == id }) {
+	if sliceutil.Exists(j.keys, func(e *key, _ int) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
 

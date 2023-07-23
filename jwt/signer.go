@@ -119,7 +119,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 }
 
 func (s *Signer) addKey(id string, sign SigningMethod, private any) {
-	if sliceutil.Exists(s.keys, func(e *key) bool { return e.id == id }) {
+	if sliceutil.Exists(s.keys, func(e *key, _ int) bool { return e.id == id }) {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
 

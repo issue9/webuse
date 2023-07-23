@@ -2,10 +2,10 @@ module github.com/issue9/middleware/v6
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
-	github.com/issue9/assert/v3 v3.0.4
+	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/sliceutil v0.12.0
-	github.com/issue9/web v0.78.0
+	github.com/issue9/sliceutil v0.14.0
+	github.com/issue9/web v0.78.1
 )
 
 require (
@@ -13,11 +13,11 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20230611145640-acc696258285 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/issue9/config v0.3.0 // indirect
+	github.com/issue9/config v0.4.0 // indirect
 	github.com/issue9/conv v1.3.4 // indirect
-	github.com/issue9/localeutil v0.19.2 // indirect
+	github.com/issue9/localeutil v0.20.0 // indirect
 	github.com/issue9/logs/v5 v5.0.0 // indirect
-	github.com/issue9/mux/v7 v7.2.1 // indirect
+	github.com/issue9/mux/v7 v7.2.2 // indirect
 	github.com/issue9/query/v3 v3.1.2 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/scheduled v0.13.0 // indirect
