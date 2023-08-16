@@ -82,7 +82,7 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 	accessClaims.SetExpired(s.expired)
 	ac, err := s.Sign(accessClaims)
 	if err != nil {
-		return ctx.InternalServerError(err)
+		return ctx.Error(err, "")
 	}
 
 	var rc string
@@ -91,7 +91,7 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 		r.SetExpired(s.refreshExpired)
 		rc, err = s.Sign(r)
 		if err != nil {
-			return ctx.InternalServerError(err)
+			return ctx.Error(err, "")
 		}
 	}
 
