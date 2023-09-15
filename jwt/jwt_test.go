@@ -16,8 +16,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	xjson "github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 type testClaims struct {
@@ -125,7 +124,7 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
 		},
 	})
@@ -214,7 +213,7 @@ func TestVerifier_client(t *testing.T) {
 
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
 		},
 	})

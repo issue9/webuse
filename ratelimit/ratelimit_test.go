@@ -10,8 +10,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 var (
@@ -23,7 +22,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})
@@ -34,7 +33,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 
 	r := s.NewRouter("def", nil)
 	r.Use(srv)
-	r.Get("/test", func(*server.Context) server.Responser {
+	r.Get("/test", func(*web.Context) web.Responser {
 		return web.Created(nil, "")
 	})
 

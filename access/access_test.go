@@ -11,8 +11,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 func TestAccess(t *testing.T) {
@@ -21,7 +20,7 @@ func TestAccess(t *testing.T) {
 	srv, err := web.NewServer("test", "1.0.0", &web.Options{
 		Logs:       &logs.Options{Handler: logs.NewTextHandler(logs.MilliLayout, &w), Levels: logs.AllLevels()},
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})

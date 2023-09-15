@@ -10,11 +10,10 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
-var _ server.Service = &Server[struct{}]{}
+var _ web.Service = &Server[struct{}]{}
 
 func TestEvents(t *testing.T) {
 	a := assert.New(t, false)
@@ -22,7 +21,7 @@ func TestEvents(t *testing.T) {
 	a.NotNil(e)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  []*server.Mimetype{{Type: Mimetype}},
+		Mimetypes:  []*web.Mimetype{{Type: Mimetype}},
 	})
 	a.NotError(err).NotNil(s)
 	s.Services().Add(web.Phrase("sse"), e)

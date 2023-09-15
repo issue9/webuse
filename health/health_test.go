@@ -13,18 +13,26 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 var _ web.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
+	dr, gc := caches.NewMemory()
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	go func() {
+		for now := range ticker.C {
+			a.NotError(gc(now))
+		}
+	}()
+
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Cache:      caches.NewMemory(1 * time.Minute),
-		Mimetypes: []*server.Mimetype{
+		Cache:      dr,
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})

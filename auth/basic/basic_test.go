@@ -9,8 +9,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 var (
@@ -26,7 +25,7 @@ func TestNew(t *testing.T) {
 	var b *Basic[[]byte]
 	srv, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})
@@ -55,7 +54,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})
@@ -91,7 +90,7 @@ func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 	})
