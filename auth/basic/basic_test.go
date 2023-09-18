@@ -32,17 +32,17 @@ func TestNew(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	a.Panic(func() {
-		b = New[[]byte](srv, nil, "", false)
+		New[[]byte](srv, nil, "", false)
 	})
 
-	b = New(srv, authFunc, "", false)
+	b = New(srv, authFunc, "", false).(*Basic[[]byte])
 
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.problemID, web.ProblemUnauthorized).
 		NotNil(b.auth)
 
-	b = New(srv, authFunc, "", true)
+	b = New(srv, authFunc, "", true).(*Basic[[]byte])
 
 	a.Equal(b.authorization, "Proxy-Authorization").
 		Equal(b.authenticate, "Proxy-Authenticate").
@@ -66,7 +66,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	r := s.NewRouter("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		username, found := b.GetValue(ctx)
+		username, found := GetValue[[]byte](ctx)
 		a.True(found).Equal(string(username), "Aladdin")
 		return web.Status(http.StatusCreated)
 	})
@@ -102,7 +102,7 @@ func TestServeHTTP_failed(t *testing.T) {
 	r := s.NewRouter("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		obj, found := b.GetValue(ctx)
+		obj, found := GetValue[[]byte](ctx)
 		a.True(found).Nil(obj)
 		return nil
 

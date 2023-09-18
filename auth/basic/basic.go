@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-// Package basic 实现 Basic 校验
+// Package basic 实现 [Basic] 校验
 //
-// https://tools.ietf.org/html/rfc7617
+// [Basic]: https://tools.ietf.org/html/rfc7617
 package basic
 
 import (
@@ -25,7 +25,7 @@ const prefixLen = 6 // len(prefix)
 //
 // username,password 表示用户登录信息。
 // 返回值中，ok 表示是否成功验证。如果成功验证，
-// 则 v 为用户希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
+// 则 v 为希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
 type AuthFunc[T any] func(username, password []byte) (v T, ok bool)
 
 // Basic 验证中间件
@@ -45,7 +45,9 @@ type Basic[T any] struct {
 // proxy 是否为代理，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
-func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) *Basic[T] {
+//
+// T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [Basic.GetValue] 获取。
+func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) web.Middleware {
 	if auth == nil {
 		panic("auth 参数不能为空")
 	}
@@ -80,8 +82,8 @@ func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 		secret, err := base64.StdEncoding.DecodeString(h)
 		if err != nil {
-			b.srv.Logs().ERROR().Error(err)
-			return b.unauthorization(ctx)
+			ctx.Header().Set(b.authenticate, b.realm)
+			return ctx.Error(err, b.problemID)
 		}
 
 		pp, ss, ok := bytes.Cut(secret, []byte{':'})
@@ -103,11 +105,11 @@ func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
 	return ctx.Problem(b.problemID)
 }
 
-func (b *Basic[T]) GetValue(ctx *web.Context) (T, bool) {
-	v, found := ctx.GetVar(valueKey)
-	if !found {
-		var vv T
-		return vv, false
+// GetValue 获取当前对话关联的登录信息
+func GetValue[T any](ctx *web.Context) (T, bool) {
+	if v, found := ctx.GetVar(valueKey); found {
+		return v.(T), true
 	}
-	return v.(T), true
+	var vv T
+	return vv, false
 }
