@@ -28,8 +28,8 @@ const prefixLen = 6 // len(prefix)
 // 则 v 为希望传递给用户的一些额外信息，比如登录用户的权限组什么的。
 type AuthFunc[T any] func(username, password []byte) (v T, ok bool)
 
-// Basic 验证中间件
-type Basic[T any] struct {
+// basic 验证中间件
+type basic[T any] struct {
 	srv *web.Server
 
 	auth  AuthFunc[T]
@@ -61,7 +61,7 @@ func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) web
 		problemID = web.ProblemProxyAuthRequired
 	}
 
-	return &Basic[T]{
+	return &basic[T]{
 		srv: srv,
 
 		auth:  auth,
@@ -73,7 +73,7 @@ func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) web
 	}
 }
 
-func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (b *basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := ctx.Request().Header.Get(b.authorization)
 		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
@@ -100,7 +100,7 @@ func (b *Basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
-func (b *Basic[T]) unauthorization(ctx *web.Context) web.Responser {
+func (b *basic[T]) unauthorization(ctx *web.Context) web.Responser {
 	ctx.Header().Set(b.authenticate, b.realm)
 	return ctx.Problem(b.problemID)
 }

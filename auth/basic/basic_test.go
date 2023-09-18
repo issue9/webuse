@@ -17,12 +17,12 @@ var (
 		return username, true
 	}
 
-	_ web.Middleware = &Basic[[]byte]{}
+	_ web.Middleware = &basic[[]byte]{}
 )
 
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
-	var b *Basic[[]byte]
+	var b *basic[[]byte]
 	srv, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
@@ -35,14 +35,14 @@ func TestNew(t *testing.T) {
 		New[[]byte](srv, nil, "", false)
 	})
 
-	b = New(srv, authFunc, "", false).(*Basic[[]byte])
+	b = New(srv, authFunc, "", false).(*basic[[]byte])
 
 	a.Equal(b.authorization, "Authorization").
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.problemID, web.ProblemUnauthorized).
 		NotNil(b.auth)
 
-	b = New(srv, authFunc, "", true).(*Basic[[]byte])
+	b = New(srv, authFunc, "", true).(*basic[[]byte])
 
 	a.Equal(b.authorization, "Proxy-Authorization").
 		Equal(b.authenticate, "Proxy-Authenticate").
