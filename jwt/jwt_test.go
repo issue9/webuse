@@ -19,6 +19,8 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
+var _ web.Middleware = &JWT[*testClaims]{}
+
 type testClaims struct {
 	jwt.MapClaims
 	ID      int64 `json:"id"`

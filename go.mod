@@ -5,7 +5,7 @@ require (
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/sliceutil v0.15.0
-	github.com/issue9/web v0.83.0
+	github.com/issue9/web v0.83.1
 )
 
 require (
@@ -16,7 +16,7 @@ require (
 	github.com/issue9/config v0.4.0 // indirect
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/localeutil v0.21.1 // indirect
-	github.com/issue9/logs/v5 v5.1.0 // indirect
+	github.com/issue9/logs/v5 v5.2.0 // indirect
 	github.com/issue9/mux/v7 v7.3.0 // indirect
 	github.com/issue9/query/v3 v3.1.2 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect

@@ -47,46 +47,18 @@ func GenIP(ctx *web.Context) (string, error) {
 //
 // rate 拿令牌的频率；
 // fn 为令牌桶名称的产生方法，默认为用户的 IP；
-func New(s *web.Server, prefix string, capacity uint64, rate time.Duration, fn GenFunc) *Ratelimit {
+func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) *Ratelimit {
 	if fn == nil {
 		fn = GenIP
 	}
 
 	return &Ratelimit{
-		store:       cache.Prefix(s.Cache(), prefix+"_"),
+		store:       c,
 		capacity:    capacity,
 		rate:        rate,
 		rateSeconds: int(rate.Seconds()),
 		genFunc:     fn,
 	}
-}
-
-// Transfer 将 oldName 的数据传送给 newName
-func (rate *Ratelimit) Transfer(oldName, newName string) error {
-	cntName := oldName + "_cnt"
-	lastName := oldName + "_time"
-
-	cnt, err := rate.store.Counter(cntName, rate.capacity, rate.rate).Value()
-	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
-		return err
-	}
-	var last time.Time
-	if err := rate.store.Get(lastName, &last); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
-		return err
-	}
-
-	if _, err = rate.store.Counter(newName+"_cnt", cnt-1, cache.Forever).Incr(1); err != nil {
-		return err
-	}
-	if err = rate.store.Set(newName+"_time", last, cache.Forever); err != nil {
-		return err
-	}
-
-	// TODO error
-	rate.store.Delete(cntName)
-	rate.store.Delete(lastName)
-
-	return nil
 }
 
 // Middleware 将当前中间件应用于 next

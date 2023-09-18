@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/serializer/json"
 	"github.com/issue9/web/servertest"
 )
@@ -28,7 +29,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	})
 	a.NotError(err).NotNil(s)
 	// 由 gen 方法限定在同一个请求
-	srv := New(s, "rl", 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
+	srv := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
 	a.NotNil(srv)
 
 	r := s.NewRouter("def", nil)
