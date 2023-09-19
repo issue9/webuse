@@ -24,7 +24,7 @@ import (
 // GenFunc 用于生成用户唯一 ID 的函数
 //
 // 用于区分令牌桶所属的用户
-type GenFunc func(*web.Context) (string, error)
+type GenFunc = func(*web.Context) (string, error)
 
 // Ratelimit 提供操作 Bucket 的一系列服务
 type Ratelimit struct {
@@ -40,7 +40,7 @@ func GenIP(ctx *web.Context) (string, error) {
 	if ip := ctx.ClientIP(); ip != "" {
 		return ip, nil
 	}
-	return "", errors.New("ratelimit: 无法为请求生成唯一标记！")
+	return "", web.NewLocaleError("can not get the ip")
 }
 
 // New 声明一个新的 Ratelimit

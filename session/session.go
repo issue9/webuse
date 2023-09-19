@@ -17,13 +17,13 @@ type contextType int
 
 type context[T any] struct {
 	id string
-	s  *Session[T]
+	s  *session[T]
 }
 
-// Session session 管理
+// session session 管理
 //
 // T 为每个 session 的数据类型，不能是指针类型。
-type Session[T any] struct {
+type session[T any] struct {
 	store              Store[T]
 	lifetime           int
 	name, path, domain string
@@ -41,7 +41,7 @@ func (c *context[T]) del() error { return c.s.store.Delete(c.id) }
 //
 // lifetime 为 session 的有效时间，单位为秒；其它参数为 cookie 的相关设置。
 func New[T any](store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) web.Middleware {
-	return &Session[T]{
+	return &session[T]{
 		store:    store,
 		lifetime: lifetime,
 		name:     name,
@@ -53,7 +53,7 @@ func New[T any](store Store[T], lifetime int, name, path, domain string, secure,
 	}
 }
 
-func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (s *session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		var id string
 

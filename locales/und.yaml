@@ -1,0 +1,11 @@
+id: und
+messages:
+    - key: can not get the ip
+      message:
+        msg: can not get the ip
+    - key: not found jwt signing method
+      message:
+        msg: not found jwt signing method
+    - key: not found the context session key
+      message:
+        msg: not found the context session key

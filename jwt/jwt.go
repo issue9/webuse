@@ -16,7 +16,6 @@
 package jwt
 
 import (
-	"errors"
 	"io/fs"
 	"time"
 
@@ -24,7 +23,7 @@ import (
 	"github.com/issue9/web"
 )
 
-var errSigningMethodNotFound = errors.New("jwt: 算法未找到")
+var errSigningMethodNotFound = web.NewLocaleError("not found jwt signing method")
 
 type (
 	// Claims JWT Claims 对象需要实现的接口

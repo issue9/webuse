@@ -1,0 +1,11 @@
+id: zh-Hans
+messages:
+    - key: can not get the ip
+      message:
+        msg: 无法获取客户的 IP 地址
+    - key: not found jwt signing method
+      message:
+        msg: 未找到 JWT 签名方法
+    - key: not found the context session key
+      message:
+        msg: 在当前对话中未找到相关的 session 数据
