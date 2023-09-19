@@ -26,8 +26,7 @@ import (
 // 用于区分令牌桶所属的用户
 type GenFunc = func(*web.Context) (string, error)
 
-// Ratelimit 提供操作 Bucket 的一系列服务
-type Ratelimit struct {
+type ratelimit struct {
 	store       web.Cache
 	capacity    uint64
 	rate        time.Duration
@@ -47,12 +46,12 @@ func GenIP(ctx *web.Context) (string, error) {
 //
 // rate 拿令牌的频率；
 // fn 为令牌桶名称的产生方法，默认为用户的 IP；
-func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) *Ratelimit {
+func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) web.Middleware {
 	if fn == nil {
 		fn = GenIP
 	}
 
-	return &Ratelimit{
+	return &ratelimit{
 		store:       c,
 		capacity:    capacity,
 		rate:        rate,
@@ -62,7 +61,7 @@ func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) *Ratelimi
 }
 
 // Middleware 将当前中间件应用于 next
-func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		size, err := rate.allow(ctx)
 		if err != nil {
@@ -81,7 +80,7 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 // 是否允许当前请求
 //
 // 如果允许，则返回当前可用的数量。
-func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
+func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 	name, err := rate.genFunc(ctx)
 	if err != nil {
 		return 0, err
@@ -127,7 +126,7 @@ func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
 	return size + cnt, nil
 }
 
-func setHeader(rate *Ratelimit, ctx *web.Context, size uint64) {
+func setHeader(rate *ratelimit, ctx *web.Context, size uint64) {
 	t := (rate.capacity - size) * uint64(rate.rateSeconds)
 	rest := ctx.Begin().Unix() + int64(t)
 

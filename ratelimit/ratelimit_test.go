@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	_ web.Middleware = &Ratelimit{}
+	_ web.Middleware = &ratelimit{}
 	_ GenFunc        = GenIP
 )
 
