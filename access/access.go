@@ -5,12 +5,6 @@ package access
 
 import "github.com/issue9/web"
 
-// access 生成用于打印访问记录的中间件
-type access struct {
-	logger web.Logger
-	format string
-}
-
 // New 声明 Access 中间件
 //
 // l 表示记录输出的通道；
@@ -22,15 +16,13 @@ func New(l web.Logger, format string) web.Middleware {
 		format = defaultFormat
 	}
 
-	return &access{logger: l, format: format}
-}
-
-func (a *access) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) web.Responser {
-		ctx.OnExit(func(ctx *web.Context, status int) {
-			r := ctx.Request()
-			a.logger.Printf(a.format, status, r.Method, r.URL.String())
-		})
-		return next(ctx)
-	}
+	return web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx *web.Context) web.Responser {
+			ctx.OnExit(func(ctx *web.Context, status int) {
+				r := ctx.Request()
+				l.Printf(format, status, r.Method, r.URL.String())
+			})
+			return next(ctx)
+		}
+	})
 }
