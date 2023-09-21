@@ -33,7 +33,7 @@ type (
 		// BuildRefresh 根据令牌生成刷新令牌用的 Claims
 		BuildRefresh(string) Claims
 
-		// SetExpired 设置过期时间
+		// SetExpired 设置当前令牌的过期时间
 		SetExpired(time.Duration)
 	}
 
@@ -68,9 +68,6 @@ func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc { return j.v.M
 // GetValue 返回解码后的 Claims 对象
 func (j *JWT[T]) GetValue(ctx *web.Context) (T, bool) { return j.v.GetValue(ctx) }
 
-// GetToken 获取客户端提交的 token
-func (j JWT[T]) GetToken(ctx *web.Context) string { return j.v.GetToken(ctx) }
-
 // Render 向客户端输出令牌
 //
 // 当前方法会将 accessClaims 进行签名，并返回 [web.Responser] 对象。
@@ -80,7 +77,7 @@ func (j *JWT[T]) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 
 // Sign 对 claims 进行签名
 //
-// 算法随机从 [Signer.AddKey] 添加的库里选取。
+// 算法从添加的库里随机选取。
 func (j *JWT[T]) Sign(claims Claims) (string, error) { return j.s.Sign(claims) }
 
 // AddHMAC 添加 HMAC 算法

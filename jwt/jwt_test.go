@@ -164,7 +164,7 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 		}
 
 		if d != nil {
-			d.BlockToken(j.GetToken(ctx))
+			d.BlockToken(GetToken(ctx))
 		}
 
 		return web.NoContent()

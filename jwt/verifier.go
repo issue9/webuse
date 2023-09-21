@@ -73,7 +73,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 // Middleware 解码用户的 token 并写入 *web.Context
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		h := j.GetToken(ctx)
+		h := GetToken(ctx)
 		if h == "" || j.blocker.TokenIsBlocked(h) {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}
@@ -109,7 +109,7 @@ func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
 }
 
 // GetToken 获取客户端提交的 token
-func (j Verifier[T]) GetToken(ctx *web.Context) string {
+func GetToken(ctx *web.Context) string {
 	h := ctx.Request().Header.Get("Authorization")
 	if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
 		h = h[prefixLen:]
