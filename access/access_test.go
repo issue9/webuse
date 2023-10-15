@@ -18,10 +18,10 @@ func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
 	w := bytes.Buffer{}
 	srv, err := web.NewServer("test", "1.0.0", &web.Options{
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(logs.MilliLayout, &w), Levels: logs.AllLevels()},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler(&w), Levels: logs.AllLevels(), Created: logs.MilliLayout},
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
 		},
 	})
 	a.NotError(err).NotNil(srv)

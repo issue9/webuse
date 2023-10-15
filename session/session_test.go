@@ -25,9 +25,9 @@ func TestSession(t *testing.T) {
 	srv, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
 		},
-		Logs: &logs.Options{Handler: logs.NewTermHandler(logs.NanoLayout, os.Stdout, nil)},
+		Logs: &logs.Options{Handler: logs.NewTermHandler(os.Stdout, nil), Created: logs.NanoLayout},
 	})
 	a.NotError(err).NotNil(srv)
 

@@ -33,7 +33,7 @@ func TestHealth(t *testing.T) {
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Cache:      dr,
 		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
 		},
 	})
 	a.NotError(err).NotNil(s)

@@ -127,7 +127,7 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
+			{Type: "application/json", MarshalBuilder: xjson.BuildMarshal, Unmarshal: xjson.Unmarshal},
 		},
 	})
 	a.NotError(err).NotNil(s)
@@ -216,7 +216,7 @@ func TestVerifier_client(t *testing.T) {
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", Marshal: xjson.Marshal, Unmarshal: xjson.Unmarshal},
+			{Type: "application/json", MarshalBuilder: xjson.BuildMarshal, Unmarshal: xjson.Unmarshal},
 		},
 	})
 	a.NotError(err).NotNil(s)
