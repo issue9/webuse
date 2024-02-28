@@ -8,11 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 type data struct {
@@ -22,12 +21,10 @@ type data struct {
 
 func TestSession(t *testing.T) {
 	a := assert.New(t, false)
-	srv, err := web.NewServer("test", "1.0.0", &web.Options{
+	srv, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
-		Logs: &logs.Options{Handler: logs.NewTermHandler(os.Stdout, nil), Created: logs.NanoLayout},
+		Mimetypes:  server.JSONMimetypes(),
+		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stdout, nil), Created: server.NanoLayout},
 	})
 	a.NotError(err).NotNil(srv)
 
@@ -36,9 +33,9 @@ func TestSession(t *testing.T) {
 
 	s := New(store, 60, "sesson_id", "/", "localhost", false, false)
 	a.NotNil(s)
-	srv.UseMiddleware(s)
+	srv.Routers().Use(s)
 
-	r := srv.NewRouter("default", nil)
+	r := srv.Routers().New("default", nil)
 	r.Get("/get1", func(ctx *web.Context) web.Responser {
 		want := &data{}
 		if resp := ctx.QueryObject(true, want, web.ProblemInternalServerError); resp != nil {

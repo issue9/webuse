@@ -4,25 +4,25 @@ package health
 
 import (
 	"errors"
-	"sort"
+	"slices"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 )
 
 const allKey = "all_key"
 
 type cacheStore struct {
 	cache  web.Cache
-	errlog web.Logger
+	errlog *web.Logger
 }
 
 // NewCacheStore 基于缓存的存取接口实现
 //
 // NOTE: 缓存是易失性的，不能永久性保存数据。
-func NewCacheStore(srv *web.Server, prefix string) Store {
-	access := cache.Prefix(srv.Cache(), prefix+"_")
+func NewCacheStore(srv web.Server, prefix string) Store {
+	access := web.NewCache(prefix+"_", srv.Cache())
 	errlog := srv.Logs().ERROR()
 	if err := access.Set(allKey, []string{}, cache.Forever); err != nil {
 		errlog.Error(err)
@@ -63,7 +63,7 @@ func (c *cacheStore) Save(state *State) {
 		return
 	}
 	all = append(all, key)
-	sort.Strings(all)
+	slices.Sort(all)
 	if err := c.cache.Set(allKey, all, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}

@@ -9,37 +9,35 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
+	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 var _ web.Middleware = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
-	dr, gc := caches.NewMemory()
+	dr, gc := memory.New()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 	go func() {
 		for now := range ticker.C {
-			a.NotError(gc(now))
+			gc(now)
 		}
 	}()
 
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Cache:      dr,
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(s)
 
 	h := New(NewCacheStore(s, "health_"))
-	r := s.NewRouter("def", nil)
+	r := s.Routers().New("def", nil)
 	r.Use(h)
 	r.Get("/", func(ctx *web.Context) web.Responser {
 		status, err := strconv.Atoi(ctx.Request().FormValue("status"))
@@ -49,7 +47,7 @@ func TestHealth(t *testing.T) {
 		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
 		return web.Status(status)
 	})
-	r.Post("/", func(ctx *web.Context) web.Responser {
+	r.Post("/", func(*web.Context) web.Responser {
 		time.Sleep(time.Microsecond * time.Duration(rand.Int63n(100))) // 防止过快，无法记录用时。
 		return nil
 	})

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 )
 
 // Store session 的存储接口
@@ -37,9 +37,7 @@ func NewCacheStore[T any](c web.Cache, ttl time.Duration) Store[T] {
 	}
 }
 
-func (s *cacheStore[T]) Delete(id string) error {
-	return s.c.Delete(id)
-}
+func (s *cacheStore[T]) Delete(id string) error { return s.c.Delete(id) }
 
 func (s *cacheStore[T]) Get(id string) (*T, error) {
 	var v T

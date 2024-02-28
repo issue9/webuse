@@ -30,7 +30,7 @@ type AuthFunc[T any] func(username, password []byte) (v T, ok bool)
 
 // basic 验证中间件
 type basic[T any] struct {
-	srv *web.Server
+	srv web.Server
 
 	auth  AuthFunc[T]
 	realm string
@@ -47,7 +47,7 @@ type basic[T any] struct {
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
 //
 // T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [Basic.GetValue] 获取。
-func New[T any](srv *web.Server, auth AuthFunc[T], realm string, proxy bool) web.Middleware {
+func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) web.Middleware {
 	if auth == nil {
 		panic("auth 参数不能为空")
 	}

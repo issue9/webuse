@@ -7,28 +7,25 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
 	w := bytes.Buffer{}
-	srv, err := web.NewServer("test", "1.0.0", &web.Options{
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(&w), Levels: logs.AllLevels(), Created: logs.MilliLayout},
+	srv, err := server.New("test", "1.0.0", &server.Options{
+		Logs:       &server.Logs{Handler: server.NewTextHandler(&w), Levels: server.AllLevels(), Created: server.MilliLayout},
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(srv)
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	r := srv.NewRouter("def", nil)
+	r := srv.Routers().New("def", nil)
 	m := New(srv.Logs().ERROR(), "")
 	a.NotNil(m)
 	r.Use(m)

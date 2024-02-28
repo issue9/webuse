@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 var (
@@ -23,11 +23,9 @@ var (
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 	var b *basic[[]byte]
-	srv, err := web.NewServer("test", "1.0.0", &web.Options{
+	srv, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(srv)
 
@@ -52,18 +50,16 @@ func TestNew(t *testing.T) {
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(s)
 
 	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
-	r := s.NewRouter("def", nil)
+	r := s.Routers().New("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		username, found := GetValue[[]byte](ctx)
@@ -88,24 +84,21 @@ func TestServeHTTP_ok(t *testing.T) {
 
 func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(s)
 
 	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)
 
-	r := s.NewRouter("def", nil)
+	r := s.Routers().New("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		obj, found := GetValue[[]byte](ctx)
 		a.True(found).Nil(obj)
 		return nil
-
 	})
 
 	defer servertest.Run(a, s)()

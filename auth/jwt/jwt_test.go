@@ -3,6 +3,7 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"io/fs"
@@ -13,10 +14,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	xjson "github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/servertest"
+	xjson "github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 var _ web.Middleware = &JWT[*testClaims]{}
@@ -124,14 +126,12 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 		ID: 1,
 	}
 
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: xjson.BuildMarshal, Unmarshal: xjson.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(s)
-	r := s.NewRouter("def", nil)
+	r := s.Routers().New("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return j.Render(ctx, http.StatusCreated, claims)
 	})
@@ -179,7 +179,7 @@ func verifierMiddleware(a *assert.Assertion, j *JWT[*testClaims], d *memoryBlock
 		a.TB().Helper()
 
 		resp := &Response{}
-		a.NotError(xjson.Unmarshal(body, resp))
+		a.NotError(xjson.Unmarshal(bytes.NewBuffer(body), resp))
 		a.NotEmpty(resp).
 			NotEmpty(resp.Access).
 			Zero(resp.Refresh)
@@ -213,14 +213,12 @@ func TestVerifier_client(t *testing.T) {
 		ID: 1,
 	}
 
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
-			{Type: "application/json", MarshalBuilder: xjson.BuildMarshal, Unmarshal: xjson.Unmarshal},
-		},
+		Mimetypes:  server.JSONMimetypes(),
 	})
 	a.NotError(err).NotNil(s)
-	r := s.NewRouter("def", nil)
+	r := s.Routers().New("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
 		return j.Render(ctx, http.StatusCreated, claims)
 	})

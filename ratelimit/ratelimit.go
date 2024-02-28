@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 )
 
 // GenFunc 用于生成用户唯一 ID 的函数
