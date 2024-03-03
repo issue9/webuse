@@ -102,3 +102,11 @@ func TestIPList_Middleware(t *testing.T) {
 		Do(nil).
 		Status(http.StatusForbidden)
 }
+
+func TestIsPort(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.True(isPort("333")).
+		False(isPort(":333")).
+		False(isPort(":]333"))
+}

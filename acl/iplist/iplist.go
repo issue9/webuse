@@ -83,6 +83,9 @@ func (l *IPList) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		}
 
 		cip := ctx.ClientIP()
+		if index := strings.LastIndexByte(cip, ':'); index > 0 && isPort(cip[index+1:]) {
+			cip = cip[:index]
+		}
 
 		if slices.Index(l.white, cip) >= 0 {
 			return next(ctx)
@@ -106,4 +109,13 @@ func (l *IPList) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 		return next(ctx)
 	}
+}
+
+func isPort(p string) bool {
+	for _, c := range p {
+		if c > '9' || c < '0' {
+			return false
+		}
+	}
+	return true
 }
