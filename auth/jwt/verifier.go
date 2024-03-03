@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package jwt
@@ -37,10 +39,10 @@ type (
 	contextKeyType int
 )
 
-// NewVerifier 声明 Verifier 对象
+// NewVerifier 声明 [Verifier] 对象
 //
 // b 为处理丢弃令牌的对象，如果为空表示不会对任何令牌作特殊处理；
-// f 为 Claims 对象的生成方法；
+// f 为 [Claims] 对象的生成方法；
 func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 	if b == nil {
 		b = defaultBlocker[T]{}

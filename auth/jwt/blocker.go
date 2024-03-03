@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package jwt
@@ -5,7 +7,7 @@ package jwt
 type (
 	// Blocker 判断令牌是否被丢弃
 	//
-	// 在某些情况下，需要强制用户的令牌不再可用，可以使用 Blocker 接口。
+	// 在某些情况下，需要强制用户的令牌不再可用，可以使用此接口。
 	Blocker[T Claims] interface {
 		// TokenIsBlocked 令牌是否已被提早丢弃
 		TokenIsBlocked(string) bool
@@ -21,6 +23,6 @@ type (
 	defaultBlocker[T Claims] struct{}
 )
 
-func (d defaultBlocker[T]) TokenIsBlocked(_ string) bool { return false }
+func (d defaultBlocker[T]) TokenIsBlocked(string) bool { return false }
 
-func (d defaultBlocker[T]) ClaimsIsBlocked(_ T) bool { return false }
+func (d defaultBlocker[T]) ClaimsIsBlocked(T) bool { return false }

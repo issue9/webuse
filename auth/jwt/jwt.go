@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package jwt JSON Web Tokens 验证

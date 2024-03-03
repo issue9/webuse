@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package access 记录接口访问记录
@@ -9,7 +11,7 @@ import "github.com/issue9/web"
 //
 // l 表示记录输出的通道；
 // format 表示记录的格式，接受三个参数，分别为状态码、请求方法和请求地址，
-// 默认使用 "[%d] %s\t%s\n"，可以使用 fmt.Sprintf 的顺序标记作调整；
+// 默认使用 "[%d] %s\t%s\n"，可以使用 [fmt.Sprintf] 的顺序标记作调整；
 func New(l *web.Logger, format string) web.Middleware {
 	const defaultFormat = "[%d] %s\t%s\n"
 	if format == "" {

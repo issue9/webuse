@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package jwt
@@ -18,7 +20,7 @@ import (
 // access 是必须的，表示请求数据的 token；
 // refresh 表示刷新的 token，如果为空，不会输出；
 // expires 表示 access 的过期时间；
-type BuildResponseFunc func(access, refresh string, expires int) any
+type BuildResponseFunc = func(access, refresh string, expires int) any
 
 type Response struct {
 	XMLName struct{} `json:"-" xml:"token"`

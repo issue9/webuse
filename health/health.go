@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package health API 状态检测
 package health
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/issue9/web"
@@ -48,7 +51,7 @@ func newState(route, method, path string) *State {
 	return &State{Route: route, Method: method, Pattern: path}
 }
 
-// New 声明 Health 实例
+// New 声明 [Health] 实例
 func New(store Store) *Health {
 	return &Health{Enabled: true, store: store}
 }
@@ -89,9 +92,9 @@ func (h *Health) save(ctx *web.Context, status int) {
 	state.Last = ctx.Begin()
 	state.Spend += dur
 
-	if status >= 400 && status < 500 {
+	if status >= http.StatusBadRequest && status < http.StatusInternalServerError {
 		state.UserErrors++
-	} else if status >= 500 {
+	} else if status >= http.StatusInternalServerError {
 		state.ServerErrors++
 	}
 

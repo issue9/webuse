@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package ratelimit API 限流中间件
@@ -42,7 +44,7 @@ func GenIP(ctx *web.Context) (string, error) {
 	return "", web.NewLocaleError("can not get the ip")
 }
 
-// New 声明一个新的 Ratelimit
+// New 声明 [Ratelimit] 对象
 //
 // rate 拿令牌的频率；
 // fn 为令牌桶名称的产生方法，默认为用户的 IP；
