@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io/fs"
 	"math/rand"
+	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 )
 
@@ -121,7 +121,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 }
 
 func (s *Signer) addKey(id string, sign SigningMethod, private any) {
-	if sliceutil.Exists(s.keys, func(e *key, _ int) bool { return e.id == id }) {
+	if slices.IndexFunc(s.keys, func(e *key) bool { return e.id == id }) >= 0 {
 		panic(fmt.Sprintf("存在同名的签名方法 %s", id))
 	}
 

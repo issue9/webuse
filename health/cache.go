@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 )
 
@@ -36,8 +35,8 @@ func NewCacheStore(srv web.Server, prefix string) Store {
 	}
 }
 
-func (c *cacheStore) getID(route, method, path string) string {
-	return route + "_" + method + "_" + path
+func (c *cacheStore) getID(route, method, pattern string) string {
+	return route + "_" + method + "_" + pattern
 }
 
 func (c *cacheStore) Get(route, method, pattern string) *State {
@@ -61,7 +60,7 @@ func (c *cacheStore) Save(state *State) {
 	}
 
 	all := c.keys()
-	if sliceutil.Index(all, func(e string, _ int) bool { return e == key }) > -1 {
+	if slices.Index(all, key) >= 0 {
 		return
 	}
 	all = append(all, key)
