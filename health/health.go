@@ -20,6 +20,8 @@ type Store interface {
 	Get(route, method, pattern string) *State
 
 	// Save 保存数据内容
+	//
+	// 如果数据已经存在，则会覆盖。
 	Save(*State)
 
 	// All 返回所有接口的状态信息
@@ -56,13 +58,37 @@ func New(store Store) *Health {
 	return &Health{Enabled: true, store: store}
 }
 
-// Register 注册 api
+// Register 注册一条路由项
 //
-// 这不是一个必须的操作，默认情况下，当 api 被第一次访问时，
-// 才会将该 api 的信息进行保存，此操作相当于提前进行一次访问。
-// 此操作对部分冷门的 api 可以保证其出现在 States() 中。
+// 这不是一个必须的操作。
+// [web.Server] 的路由是可以动态加载的，无法预加载所有的路由项，
+// 当路由项被第一次访问时，才会将该路由项的信息进行保存。
+// 此操作可以让指定的路由项出现在 States() 中。
+//
+// NOTE: 只有在路由项还不存在于 [Health] 时才会填一个零值对象。
 func (h *Health) Register(route, method, pattern string) {
-	h.store.Save(newState(route, method, pattern))
+	if h.store.Get(route, method, pattern) == nil {
+		h.store.Save(newState(route, method, pattern))
+	}
+}
+
+// Fill 将 [web.Server.Routers] 当前所拥有的路由项填充到 [Health]
+//
+// [web.Server] 的路由是可以动态加载的，无法预加载所有的路由项，
+// 当路由项被第一次访问时，才会将该路由项的信息进行保存。
+// 此操作可以让所有路由都出现在 States() 中。
+//
+// NOTE: 只有在路由项还不存在于 [Health] 时才会填一个零值对象。
+func (h *Health) Fill(s web.Server) {
+	for _, r := range s.Routers().Routers() {
+		for pattern, methods := range r.Routes() {
+			for _, method := range methods {
+				if h.store.Get(r.Name(), method, pattern) == nil {
+					h.store.Save(newState(r.Name(), method, pattern))
+				}
+			}
+		}
+	}
 }
 
 // States 返回所有的状态列表
