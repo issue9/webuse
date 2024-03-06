@@ -31,7 +31,6 @@ type session[T any] struct {
 	lifetime           int
 	name, path, domain string
 	secure, httpOnly   bool
-	sessions           map[string]T
 }
 
 func (c *context[T]) set(v *T) error { return c.s.store.Set(c.id, v) }
@@ -52,7 +51,6 @@ func New[T any](store Store[T], lifetime int, name, path, domain string, secure,
 		domain:   domain,
 		secure:   secure,
 		httpOnly: httpOnly,
-		sessions: make(map[string]T, 100),
 	}
 }
 
