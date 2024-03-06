@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package health API 状态检测
+// Package health API 状态统计
 package health
 
 import (
@@ -54,9 +54,7 @@ func newState(route, method, path string) *State {
 }
 
 // New 声明 [Health] 实例
-func New(store Store) *Health {
-	return &Health{Enabled: true, store: store}
-}
+func New(store Store) *Health { return &Health{Enabled: true, store: store} }
 
 // Register 注册一条路由项
 //
@@ -97,14 +95,9 @@ func (h *Health) States() []*State { return h.store.All() }
 // Middleware 将当前中间件应用于 next
 func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		if !h.Enabled {
-			return next(ctx)
+		if h.Enabled {
+			ctx.OnExit(func(c *web.Context, status int) { h.save(c, status) })
 		}
-
-		ctx.OnExit(func(c *web.Context, status int) {
-			h.save(c, status)
-		})
-
 		return next(ctx)
 	}
 }
@@ -128,11 +121,8 @@ func (h *Health) save(ctx *web.Context, status int) {
 		state.Min = dur
 		state.Max = dur
 	} else {
-		if state.Min > dur {
-			state.Min = dur
-		} else if state.Max < dur {
-			state.Max = dur
-		}
+		state.Min = min(state.Min, dur)
+		state.Max = max(state.Max, dur)
 	}
 
 	h.store.Save(state)
