@@ -10,10 +10,10 @@
 
 - access 客户端访问记录；
 - auth/basic 基本的验证处理；
-- jwt JSON Web Tokens 中间件；
+- auth/jwt JSON Web Tokens 中间件；
 - health 接口状态的监测；
 - acl/ratelimit x-rate-limit 的相关实现；
-- alc/iplist 黑白名单；
+- acl/iplist 黑白名单；
 - session session 管理；
 
 ## 安装
