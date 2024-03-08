@@ -1,4 +1,4 @@
-module github.com/issue9/middleware/v6
+module github.com/issue9/use/v6
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
