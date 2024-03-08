@@ -12,19 +12,16 @@ import "github.com/issue9/web"
 // l 表示记录输出的通道；
 // format 表示记录的格式，接受三个参数，分别为状态码、请求方法和请求地址，
 // 默认使用 "[%d] %s\t%s\n"，可以使用 [fmt.Sprintf] 的顺序标记作调整；
-func New(l *web.Logger, format string) web.Middleware {
+func New(l *web.Logger, format string) web.Plugin {
 	const defaultFormat = "[%d] %s\t%s\n"
 	if format == "" {
 		format = defaultFormat
 	}
 
-	return web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-		return func(ctx *web.Context) web.Responser {
-			ctx.OnExit(func(ctx *web.Context, status int) {
-				r := ctx.Request()
-				l.Printf(format, status, r.Method, r.URL.String())
-			})
-			return next(ctx)
-		}
+	return web.PluginFunc(func(s web.Server) {
+		s.OnExitContext(func(ctx *web.Context, status int) {
+			r := ctx.Request()
+			l.Printf(format, status, r.Method, r.URL.String())
+		})
 	})
 }

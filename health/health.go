@@ -56,12 +56,20 @@ func newState(route, method, path string) *State {
 // New 声明 [Health] 实例
 func New(store Store) *Health { return &Health{Enabled: true, store: store} }
 
+func (h *Health) Plugin(s web.Server) {
+	s.OnExitContext(func(ctx *web.Context, status int) {
+		if h.Enabled {
+			h.save(ctx, status)
+		}
+	})
+}
+
 // Register 注册一条路由项
 //
 // 这不是一个必须的操作。
 // [web.Server] 的路由是可以动态加载的，无法预加载所有的路由项，
 // 当路由项被第一次访问时，才会将该路由项的信息进行保存。
-// 此操作可以让指定的路由项出现在 States() 中。
+// 此操作可以让指定的路由项出现在 [Health.States] 中。
 //
 // NOTE: 只有在路由项还不存在于 [Health] 时才会填一个零值对象。
 func (h *Health) Register(route, method, pattern string) {
@@ -91,16 +99,6 @@ func (h *Health) Fill(s web.Server) {
 
 // States 返回所有的状态列表
 func (h *Health) States() []*State { return h.store.All() }
-
-// Middleware 将当前中间件应用于 next
-func (h *Health) Middleware(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) web.Responser {
-		if h.Enabled {
-			ctx.OnExit(func(c *web.Context, status int) { h.save(c, status) })
-		}
-		return next(ctx)
-	}
-}
 
 func (h *Health) save(ctx *web.Context, status int) {
 	route := ctx.Route()

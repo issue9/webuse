@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ web.Middleware = &Health{}
+var _ web.Plugin = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
@@ -39,8 +39,8 @@ func TestHealth(t *testing.T) {
 	a.NotError(err).NotNil(s)
 
 	h := New(NewCacheStore(s, "health_"))
+	s.Use(h)
 	r := s.Routers().New("def", nil)
-	r.Use(h)
 	r.Get("/", func(ctx *web.Context) web.Responser {
 		status, err := strconv.Atoi(ctx.Request().FormValue("status"))
 		if err != nil {

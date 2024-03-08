@@ -30,7 +30,7 @@ func TestAccess(t *testing.T) {
 	r := srv.Routers().New("def", nil)
 	m := New(srv.Logs().ERROR(), "")
 	a.NotNil(m)
-	r.Use(m)
+	srv.Use(m)
 
 	wait := make(chan bool, 1)
 	r.Get("/test", func(ctx *web.Context) web.Responser {
