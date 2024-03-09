@@ -3,6 +3,9 @@ messages:
     - key: can not get the ip
       message:
         msg: can not get the ip
+    - key: enable compression base on cpu used
+      message:
+        msg: enable compression base on cpu used
     - key: not found jwt signing method
       message:
         msg: not found jwt signing method

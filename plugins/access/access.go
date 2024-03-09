@@ -7,7 +7,7 @@ package access
 
 import "github.com/issue9/web"
 
-// New 声明 Access 中间件
+// New 声明 [Access] 中间件
 //
 // l 表示记录输出的通道；
 // format 表示记录的格式，接受三个参数，分别为状态码、请求方法和请求地址，

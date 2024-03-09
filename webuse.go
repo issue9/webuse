@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 //go:generate web locale -l=und -m -f=yaml ./
-//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-Hans.yaml
+//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-CN.yaml
 
 // Package webuse 适用 [web] 的中间件和插件
 //

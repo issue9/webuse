@@ -10,14 +10,14 @@
 
 ## 插件
 
-插件位于 plugins 目录之下：
+插件位于 [plugins](plugins) 目录之下：
 
 - access 客户端访问记录；
 - health 接口状态的监测；
 
 ## 中间件
 
-中间件位于 middlewares 目录之下：
+中间件位于 [middlewares](middlewares) 目录之下：
 
 - auth/basic 基本的验证处理；
 - auth/jwt JSON Web Tokens 中间件；

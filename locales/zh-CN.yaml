@@ -1,8 +1,11 @@
-id: zh-Hans
+id: zh-CN
 messages:
     - key: can not get the ip
       message:
         msg: 无法获取客户的 IP 地址
+    - key: enable compression base on cpu used
+      message:
+        msg: 基于 CPU 使用率决定是否启用压缩功能:w
     - key: not found jwt signing method
       message:
         msg: 未找到 JWT 签名方法
