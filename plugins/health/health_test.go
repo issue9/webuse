@@ -7,6 +7,7 @@ package health
 import (
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -35,6 +36,9 @@ func TestHealth(t *testing.T) {
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Cache:      dr,
 		Mimetypes:  server.JSONMimetypes(),
+		Logs: &server.Logs{
+			Handler: server.NewTermHandler(os.Stderr, nil),
+		},
 	})
 	a.NotError(err).NotNil(s)
 
@@ -95,8 +99,6 @@ func TestHealth(t *testing.T) {
 	state = mem.Get(r.Name(), http.MethodDelete, "/users")
 	a.Equal(1, state.Count).
 		Equal(0, state.ServerErrors).
-		Equal(1, state.UserErrors)
-
-	all := h.States()
-	a.Equal(3, len(all))
+		Equal(1, state.UserErrors).
+		Length(h.States(), 3)
 }

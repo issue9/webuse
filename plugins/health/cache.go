@@ -12,8 +12,6 @@ import (
 	"github.com/issue9/web"
 )
 
-const allKey = "all_key"
-
 type cacheStore struct {
 	cache  web.Cache
 	errlog *web.Logger
@@ -23,14 +21,14 @@ type cacheStore struct {
 //
 // NOTE: 缓存是易失性的，不能永久性保存数据。
 func NewCacheStore(srv web.Server, prefix string) Store {
-	access := web.NewCache(prefix+"_", srv.Cache())
+	c := web.NewCache(prefix, srv.Cache())
 	errlog := srv.Logs().ERROR()
-	if err := access.Set(allKey, []string{}, cache.Forever); err != nil {
+	if err := c.Set("", []string{}, cache.Forever); err != nil {
 		errlog.Error(err)
 	}
 
 	return &cacheStore{
-		cache:  access,
+		cache:  c,
 		errlog: errlog,
 	}
 }
@@ -43,8 +41,7 @@ func (c *cacheStore) Get(route, method, pattern string) *State {
 	key := c.getID(route, method, pattern)
 
 	s := &State{}
-	err := c.cache.Get(key, s)
-	if errors.Is(err, cache.ErrCacheMiss()) {
+	if err := c.cache.Get(key, s); errors.Is(err, cache.ErrCacheMiss()) {
 		state := newState(route, method, pattern)
 		c.Save(state)
 		return state
@@ -65,18 +62,18 @@ func (c *cacheStore) Save(state *State) {
 	}
 	all = append(all, key)
 	slices.Sort(all)
-	if err := c.cache.Set(allKey, all, cache.Forever); err != nil {
+	if err := c.cache.Set("", all, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}
 }
 
 func (c *cacheStore) keys() []string {
-	allInterface := []string{}
-	if err := c.cache.Get(allKey, &allInterface); err != nil {
+	all := []string{}
+	if err := c.cache.Get("", &all); err != nil {
 		c.errlog.Error(err)
 		return nil
 	}
-	return allInterface
+	return all
 }
 
 func (c *cacheStore) All() []*State {
@@ -84,7 +81,6 @@ func (c *cacheStore) All() []*State {
 	states := make([]*State, 0, len(all))
 	for _, key := range all {
 		s := &State{}
-
 		if err := c.cache.Get(key, s); err != nil {
 			c.errlog.Error(err)
 			continue

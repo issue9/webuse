@@ -3,8 +3,8 @@ module github.com/issue9/webuse/v6
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/issue9/assert/v4 v4.1.1
-	github.com/issue9/cache v0.9.2
-	github.com/issue9/web v0.87.4
+	github.com/issue9/cache v0.10.0
+	github.com/issue9/web v0.87.5
 	github.com/shirou/gopsutil/v3 v3.24.2
 )
 

@@ -31,11 +31,11 @@ type Store interface {
 // State 实际存在的数据类型
 type State struct {
 	XMLName      struct{}      `xml:"state" yaml:"-" json:"-"`
-	Route        string        `xml:"route" yaml:"route" json:"route"`         // 多个路由时，表示的路由名称
-	Method       string        `xml:"method,attr" yaml:"method" json:"method"` // 请求方法
-	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern"`   // 路由
-	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min"`
-	Max          time.Duration `xml:"max,attr" yaml:"max" json:"max"`
+	Route        string        `xml:"route" yaml:"route" json:"route"`                           // 多个路由时，表示的路由名称
+	Method       string        `xml:"method,attr" yaml:"method" json:"method"`                   // 请求方法
+	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern"`                     // 路由
+	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min"`                            // 最小的执行时间
+	Max          time.Duration `xml:"max,attr" yaml:"max" json:"max"`                            // 最大的执行时间
 	Count        int           `xml:"count,attr" yaml:"count" json:"count"`                      // 总的请求次数
 	UserErrors   int           `xml:"userErrors,attr" yaml:"userErrors" json:"userErrors"`       // 用户端出错次数，400-499
 	ServerErrors int           `xml:"serverErrors,attr" yaml:"serverErrors" json:"serverErrors"` // 服务端出错次数，>500
