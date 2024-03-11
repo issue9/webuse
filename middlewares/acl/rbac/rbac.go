@@ -58,5 +58,5 @@ func New[T comparable](s web.Server, super T, store Store[T], info *web.Logger, 
 }
 
 func (r *RBAC[T]) debug(uid T, res string, role *Role[T]) {
-	r.info.LocaleString(web.Phrase("用户 %v 因为角色 %v 获得访问 %s 的资格", uid, role.ID, res))
+	r.info.LocaleString(web.Phrase("user %v obtained access to %s due to %s", uid, res, role.ID))
 }

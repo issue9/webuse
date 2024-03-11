@@ -3,12 +3,27 @@ messages:
     - key: can not get the ip
       message:
         msg: can not get the ip
+    - key: child role has resource %s can not be deleted
+      message:
+        msg: child role has resource %s can not be deleted
     - key: enable compression base on cpu used
       message:
         msg: enable compression base on cpu used
     - key: not found jwt signing method
       message:
         msg: not found jwt signing method
+    - key: not found resource %s
+      message:
+        msg: not found resource %s
     - key: not found the context session key
       message:
         msg: not found the context session key
+    - key: the role %s has children role, can not deleted
+      message:
+        msg: the role %s has children role, can not deleted
+    - key: the role %s has users, can not deleted
+      message:
+        msg: the role %s has users, can not deleted
+    - key: user %v obtained access to %s due to %s
+      message:
+        msg: user %v obtained access to %s due to %s

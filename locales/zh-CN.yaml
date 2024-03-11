@@ -3,12 +3,27 @@ messages:
     - key: can not get the ip
       message:
         msg: 无法获取客户的 IP 地址
+    - key: child role has resource %s can not be deleted
+      message:
+        msg: 子角色占有了资源 %s，不能被删，不能被删除
     - key: enable compression base on cpu used
       message:
         msg: 基于 CPU 使用率决定是否启用压缩功能:w
     - key: not found jwt signing method
       message:
         msg: 未找到 JWT 签名方法
+    - key: not found resource %s
+      message:
+        msg: 未定义的资源 %s
     - key: not found the context session key
       message:
         msg: 在当前对话中未找到相关的 session 数据
+    - key: the role %s has children role, can not deleted
+      message:
+        msg: 不能删除拥有子角色的角色 %s
+    - key: the role %s has users, can not deleted
+      message:
+        msg: 不能删除还有关联用户的角色 %s
+    - key: user %v obtained access to %s due to %s
+      message:
+        msg: 用户 %[1]v 因为 %[3]s 获得了访问 %[2] 的资格
