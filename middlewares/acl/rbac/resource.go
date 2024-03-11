@@ -37,6 +37,9 @@ func (rbac *RBAC[T]) resourceExists(id string) bool {
 }
 
 // NewResources 声明一组资源
+//
+// id 为该资源组的唯一 ID；
+// title 对该资源组的描述；
 func (rbac *RBAC[T]) NewResources(id string, title web.LocaleStringer) *Resources[T] {
 	if _, found := rbac.resources[id]; found {
 		panic(fmt.Sprintf("已经存在同名的资源组 %s", id))

@@ -138,6 +138,47 @@ func (role *Role[T]) Unlink(uid T) error {
 	return nil
 }
 
+// Roles 返回所有从当前角色继承的角色
+//
+// all 表示是否包含间接继承的角色
+func (role *Role[T]) Roles(all bool) ([]*Role[T], error) {
+	roles := make([]*Role[T], 0, 10)
+
+	role.rbac.rolesMux.RLock()
+	defer role.rbac.rolesMux.RUnlock()
+
+	for _, r := range role.rbac.roles {
+		if r.Parent == role.ID {
+			roles = append(roles, r)
+		}
+	}
+
+	if !all {
+		return roles, nil
+	}
+
+	slices := roles
+
+	for len(slices) > 0 { // [RBAC.Roles] 如果未传递值，则返回所有，所以得保证 slices 不为空
+		rs, err := role.rbac.Roles(rolesID(slices)...)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, rs...)
+		slices = rs
+	}
+
+	return roles, nil
+}
+
+func rolesID[T comparable](roles []*Role[T]) []string {
+	keys := make([]string, 0, len(roles))
+	for _, r := range roles {
+		keys = append(keys, r.ID)
+	}
+	return keys
+}
+
 // Roles [Role.Parent] 在 p 中的角色列表
 //
 // 如果未指定 p，返回所有的角色列表。

@@ -122,3 +122,27 @@ func TestRole_Set(t *testing.T) {
 	a.NotError(err).Length(roles, 1).
 		Equal(roles[r1.ID].Name, "name").Equal(roles[r1.ID].Desc, "desc")
 }
+
+func TestRole_Roles(t *testing.T) {
+	a := assert.New(t, false)
+	s := newServer(a)
+	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotError(err).NotNil(rbac)
+
+	r1, err := rbac.Add("r1", "r1 desc", "")
+	a.NotError(err).NotNil(r1).Nil(r1.parent)
+
+	r2, err := rbac.Add("r2", "r2 desc", r1.ID)
+	a.NotError(err).NotNil(r2).Equal(r2.parent, r1)
+
+	r3, err := rbac.Add("r3", "r3 desc", r2.ID)
+	a.NotError(err).NotNil(r3).Equal(r3.parent, r2)
+
+	roles, err := r1.Roles(false)
+	a.NotError(err).Length(roles, 1).Equal(roles[0].ID, r2.ID)
+
+	roles, err = r1.Roles(true)
+	a.NotError(err).Length(roles, 2).
+		Equal(roles[0].ID, r2.ID).
+		Equal(roles[1].ID, r3.ID)
+}
