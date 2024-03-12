@@ -3,7 +3,7 @@
 [![Go](https://github.com/issue9/webuse/actions/workflows/go.yml/badge.svg)](https://github.com/issue9/webuse/actions/workflows/go.yml)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/issue9/webuse/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/webuse)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/webuse/v6)](https://pkg.go.dev/github.com/issue9/webuse/v6)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/webuse/v7)](https://pkg.go.dev/github.com/issue9/webuse/v7)
 [![Go version](https://img.shields.io/github/go-mod/go-version/issue9/webuse)](https://golang.org)
 
  适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件和插件；
@@ -29,7 +29,7 @@
 ## 安装
 
 ```shell
-go get github.com/issue9/webuse/v6
+go get github.com/issue9/webuse/v7
 ```
 
 ## 版权

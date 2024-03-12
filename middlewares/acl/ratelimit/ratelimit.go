@@ -6,12 +6,7 @@
 //
 // 这是以用户或是客户端为单位的限流中间件，并不能按 API 进行细化的限流。
 //
-// 提供了对以下报头的支持：
-// - X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-// - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-// - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
-//
-// 所有数据保存在 [web.Cache] 之中，缓存服务重启后数据也将重置。
+// NOTE: 所有数据保存在 [web.Cache] 之中，缓存服务重启后数据也将重置。
 package ratelimit
 
 import (
@@ -33,7 +28,9 @@ type ratelimit struct {
 	capacity    uint64
 	rate        time.Duration
 	rateSeconds int
-	genFunc     GenFunc
+	gen         GenFunc
+
+	limit, remaining, reset string
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
@@ -44,13 +41,32 @@ func GenIP(ctx *web.Context) (string, error) {
 	return "", web.NewLocaleError("can not get the ip")
 }
 
-// New 声明 [Ratelimit] 对象
+// New 声明 API 限流的中间件
 //
+// capacity 桶的容量；
 // rate 拿令牌的频率；
-// fn 为令牌桶名称的产生方法，默认为用户的 IP；
-func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) web.Middleware {
-	if fn == nil {
-		fn = GenIP
+// gen 为令牌桶名称的产生方法，默认为用户的 IP；
+// headers 自定义报头名称，可以指定以下值：
+//   - X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
+//   - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
+//   - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
+func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers map[string]string) web.Middleware {
+	if gen == nil {
+		gen = GenIP
+	}
+
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
+	if _, found := headers["X-Rate-Limit-Limit"]; !found {
+		headers["X-Rate-Limit-Limit"] = "X-Rate-Limit-Limit"
+	}
+	if _, found := headers["X-Rate-Limit-Remaining"]; !found {
+		headers["X-Rate-Limit-Remaining"] = "X-Rate-Limit-Remaining"
+	}
+	if _, found := headers["X-Rate-Limit-Reset"]; !found {
+		headers["X-Rate-Limit-Reset"] = "X-Rate-Limit-Reset"
 	}
 
 	return &ratelimit{
@@ -58,11 +74,14 @@ func New(c web.Cache, capacity uint64, rate time.Duration, fn GenFunc) web.Middl
 		capacity:    capacity,
 		rate:        rate,
 		rateSeconds: int(rate.Seconds()),
-		genFunc:     fn,
+		gen:         gen,
+
+		limit:     headers["X-Rate-Limit-Limit"],
+		remaining: headers["X-Rate-Limit-Remaining"],
+		reset:     headers["X-Rate-Limit-Reset"],
 	}
 }
 
-// Middleware 将当前中间件应用于 next
 func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		size, err := rate.allow(ctx)
@@ -71,10 +90,10 @@ func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		}
 
 		if size > 0 {
-			setHeader(rate, ctx, size)
+			rate.setHeader(ctx, size)
 			return next(ctx)
 		}
-		setHeader(rate, ctx, size)
+		rate.setHeader(ctx, size)
 		return ctx.Problem(web.ProblemTooManyRequests)
 	}
 }
@@ -83,7 +102,7 @@ func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 //
 // 如果允许，则返回当前可用的数量。
 func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
-	name, err := rate.genFunc(ctx)
+	name, err := rate.gen(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -128,12 +147,12 @@ func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 	return size + cnt, nil
 }
 
-func setHeader(rate *ratelimit, ctx *web.Context, size uint64) {
+func (rate *ratelimit) setHeader(ctx *web.Context, size uint64) {
 	t := (rate.capacity - size) * uint64(rate.rateSeconds)
 	rest := ctx.Begin().Unix() + int64(t)
 
 	h := ctx.Header()
-	h.Set("X-Rate-Limit-Limit", strconv.FormatUint(rate.capacity, 10))
-	h.Set("X-Rate-Limit-Remaining", strconv.FormatUint(size, 10))
-	h.Set("X-Rate-Limit-Reset", strconv.FormatInt(rest, 10))
+	h.Set(rate.limit, strconv.FormatUint(rate.capacity, 10))
+	h.Set(rate.remaining, strconv.FormatUint(size, 10))
+	h.Set(rate.reset, strconv.FormatInt(rest, 10))
 }

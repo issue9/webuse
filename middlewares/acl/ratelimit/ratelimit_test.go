@@ -16,10 +16,7 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var (
-	_ web.Middleware = &ratelimit{}
-	_ GenFunc        = GenIP
-)
+var _ web.Middleware = &ratelimit{}
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
@@ -29,7 +26,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	})
 	a.NotError(err).NotNil(s)
 	// 由 gen 方法限定在同一个请求
-	srv := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
+	srv := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil }, nil)
 	a.NotNil(srv)
 
 	r := s.Routers().New("def", nil)
