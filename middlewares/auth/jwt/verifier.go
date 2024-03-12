@@ -73,7 +73,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 	return j
 }
 
-// Middleware 解码用户的 token 并写入 *web.Context
+// Middleware 解码用户的 token 并写入 [web.Context]
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := GetToken(ctx)

@@ -19,7 +19,7 @@ const contextTypeKey contextType = iota + 1
 type contextType int
 
 type context[T any] struct {
-	id string
+	id string // session id
 	s  *session[T]
 }
 
@@ -97,13 +97,15 @@ func (s *session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 // GetValue 获取当前对话关联的信息
-func GetValue[T any](ctx *web.Context) (*T, error) {
+func GetValue[T any](ctx *web.Context) (sessionid string, val *T, err error) {
 	if c, found := ctx.GetVar(contextTypeKey); found {
-		return c.(*context[T]).get()
+		cc := c.(*context[T])
+		val, err := cc.get()
+		return cc.id, val, err
 	}
 
 	var v T
-	return &v, web.NewLocaleError("not found the context session key")
+	return "", &v, web.NewLocaleError("not found the context session key")
 }
 
 // SetValue 更新 session 保存的值

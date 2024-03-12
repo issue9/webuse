@@ -29,7 +29,7 @@ func (r *Role[T]) isAllow(uid T, res string) bool {
 }
 
 // Add 添加角色信息
-func (rbac *RBAC[T]) Add(name, desc string, parent string) (*Role[T], error) {
+func (rbac *RBAC[T]) Add(name, desc, parent string) (*Role[T], error) {
 	role := &Role[T]{
 		rbac:   rbac,
 		parent: rbac.roles[parent],

@@ -44,8 +44,10 @@ func TestSession(t *testing.T) {
 			return resp
 		}
 
-		v, err := GetValue[data](ctx)
-		a.NotError(err).Equal(v, want)
+		sid, v, err := GetValue[data](ctx)
+		a.NotError(err).
+			Equal(v, want).
+			NotEmpty(sid)
 
 		v.Count++
 		a.NotError(SetValue(ctx, v))
