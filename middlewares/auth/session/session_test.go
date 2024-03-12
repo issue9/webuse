@@ -17,8 +17,7 @@ import (
 )
 
 type data struct {
-	ID    string `query:"id"`
-	Count int    `query:"count"`
+	Count int `query:"count"`
 }
 
 func TestSession(t *testing.T) {
@@ -33,10 +32,10 @@ func TestSession(t *testing.T) {
 	store := NewCacheStore[data](srv.Cache(), 500*time.Microsecond)
 	a.NotNil(store)
 
-	s := New(store, 60, "sesson_id", "/", "localhost", false, false)
-	a.NotNil(s)
-	srv.Routers().Use(s)
+	session := New(store, 60, "sesson_id", "/", "localhost", false, false)
+	a.NotNil(session)
 
+	srv.Routers().Use(session)
 	r := srv.Routers().New("default", nil)
 	r.Get("/get1", func(ctx *web.Context) web.Responser {
 		want := &data{}
@@ -58,13 +57,29 @@ func TestSession(t *testing.T) {
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
+	// 第一次登录
 	resp := servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
 		Do(nil).
-		Status(http.StatusOK).
+		Status(http.StatusUnauthorized).
 		Resp()
+
+	// 第二次，带上 cookie
 	cookie := resp.Cookies()[0]
+	servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
+		Cookie(cookie).
+		Do(nil).
+		Status(http.StatusOK)
+
+	cookie = resp.Cookies()[0]
 	servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
 		Cookie(cookie).
 		Do(nil).
 		Status(http.StatusOK)
+
+	// 带cookie，但服务端删除了 sessionid
+	session.Logout(cookie.Value)
+	servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
+		Cookie(cookie).
+		Do(nil).
+		Status(http.StatusUnauthorized)
 }

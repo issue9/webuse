@@ -19,7 +19,7 @@ type Store[T any] interface {
 
 	// Get 查找指定 id 的 session
 	//
-	// 如果不存在，则返回零值，并将该零值保存到当前对象。
+	// 如果不存在，则 nil。
 	Get(id string) (*T, error)
 
 	// Set 更新指定 id 的 session
@@ -45,10 +45,7 @@ func (s *cacheStore[T]) Get(id string) (*T, error) {
 	var v T
 	err := s.c.Get(id, &v)
 	if errors.Is(err, cache.ErrCacheMiss()) {
-		if err := s.c.Set(id, &v, s.ttl); err != nil {
-			return &v, err
-		}
-		return &v, nil
+		return nil, nil
 	}
 	return &v, err
 }

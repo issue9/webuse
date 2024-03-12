@@ -14,19 +14,19 @@ import (
 	"github.com/issue9/web"
 )
 
-const contextTypeKey contextType = iota + 1
+const contextTypeKey contextType = 0
 
 type contextType int
 
 type context[T any] struct {
 	id string // session id
-	s  *session[T]
+	s  *Session[T]
 }
 
-// session session 管理
+// Session session 管理
 //
 // T 为每个 session 的数据类型，不能是指针类型。
-type session[T any] struct {
+type Session[T any] struct {
 	store              Store[T]
 	lifetime           int
 	name, path, domain string
@@ -42,8 +42,8 @@ func (c *context[T]) del() error { return c.s.store.Delete(c.id) }
 // New 声明 Session 中间件
 //
 // lifetime 为 session 的有效时间，单位为秒；其它参数为 cookie 的相关设置。
-func New[T any](store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) web.Middleware {
-	return &session[T]{
+func New[T any](store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) *Session[T] {
+	return &Session[T]{
 		store:    store,
 		lifetime: lifetime,
 		name:     name,
@@ -54,7 +54,10 @@ func New[T any](store Store[T], lifetime int, name, path, domain string, secure,
 	}
 }
 
-func (s *session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+// Logout 退出登录
+func (s *Session[T]) Logout(sessionid string) error { return s.store.Delete(sessionid) }
+
+func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		var id string
 
@@ -86,8 +89,12 @@ func (s *session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		c.Expires = ctx.Begin().Add(time.Second * time.Duration(s.lifetime)) // http 1.0 和 ie8 仅支持此属性
 		ctx.SetCookies(c)
 
-		if _, err = s.store.Get(id); err != nil { // 确保 Store 对象中存在该 ID
+		if v, err := s.store.Get(id); err != nil {
 			return ctx.Error(err, web.ProblemInternalServerError)
+		} else if v == nil {
+			var z T
+			s.store.Set(id, &z)
+			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
 		ctx.SetVar(contextTypeKey, &context[T]{id: id, s: s})
