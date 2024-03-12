@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package access 记录接口访问记录
+// Package access 记录接口访问日志
 package access
 
 import "github.com/issue9/web"
 
-// New 声明 [Access] 中间件
+// New 记录 API 访问日志
 //
 // l 表示记录输出的通道；
 // format 表示记录的格式，接受三个参数，分别为状态码、请求方法和请求地址，
