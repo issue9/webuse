@@ -112,11 +112,11 @@ func TestRole_Resource(t *testing.T) {
 	g2.New("id1", web.Phrase("id1"))
 	g2.New("id2", web.Phrase("id2"))
 
-	r1, err := rbac.Add("r1", "r1 desc", "")
+	r1, err := rbac.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1)
 	r1.Allow(joinID(g1.id, "id1"), joinID(g2.id, "id2"))
 
-	r2, err := rbac.Add("r2", "r2 desc", r1.ID)
+	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2)
 
 	a.Equal(r1.Resource(), &RoleResource{

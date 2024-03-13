@@ -28,8 +28,8 @@ func (r *Role[T]) isAllow(uid T, res string) bool {
 	return slices.Index(r.Users, uid) >= 0 && slices.Index(r.Resources, res) >= 0
 }
 
-// Add 添加角色信息
-func (rbac *RBAC[T]) Add(name, desc, parent string) (*Role[T], error) {
+// NewRole 添加角色信息
+func (rbac *RBAC[T]) NewRole(name, desc, parent string) (*Role[T], error) {
 	role := &Role[T]{
 		rbac:   rbac,
 		parent: rbac.roles[parent],
@@ -157,16 +157,21 @@ func (role *Role[T]) Roles(all bool) ([]*Role[T], error) {
 		return roles, nil
 	}
 
-	slices := roles
+	s := roles
+	role.rbac.rolesMux.RLock()
+	for len(s) > 0 {
+		ids := rolesID(s)
+		rs := make([]*Role[T], 0, 10)
 
-	for len(slices) > 0 { // [RBAC.Roles] 如果未传递值，则返回所有，所以得保证 slices 不为空
-		rs, err := role.rbac.Roles(rolesID(slices)...)
-		if err != nil {
-			return nil, err
+		for _, v := range role.rbac.roles {
+			if slices.Index(ids, v.Parent) >= 0 {
+				rs = append(rs, v)
+			}
 		}
 		roles = append(roles, rs...)
-		slices = rs
+		s = rs
 	}
+	role.rbac.rolesMux.RUnlock()
 
 	return roles, nil
 }
@@ -179,29 +184,16 @@ func rolesID[T comparable](roles []*Role[T]) []string {
 	return keys
 }
 
-// Roles [Role.Parent] 在 p 中的角色列表
-//
-// 如果未指定 p，返回所有的角色列表。
-func (rbac *RBAC[T]) Roles(p ...string) ([]*Role[T], error) {
+// Roles 当前的所有角色
+func (rbac *RBAC[T]) Roles() []*Role[T] {
 	roles := make([]*Role[T], 0, len(rbac.roles))
-
-	if len(p) == 0 {
-		rbac.rolesMux.RLock()
-		for _, v := range rbac.roles {
-			roles = append(roles, v)
-		}
-		rbac.rolesMux.RUnlock()
-	} else {
-		rbac.rolesMux.RLock()
-		for _, v := range rbac.roles {
-			if slices.Index(p, v.Parent) >= 0 {
-				roles = append(roles, v)
-			}
-		}
-		rbac.rolesMux.RUnlock()
+	rbac.rolesMux.RLock()
+	for _, v := range rbac.roles {
+		roles = append(roles, v)
 	}
+	rbac.rolesMux.RUnlock()
 
-	return roles, nil
+	return roles
 }
 
 // Role 返回指定的角色
@@ -209,6 +201,7 @@ func (rbac *RBAC[T]) Roles(p ...string) ([]*Role[T], error) {
 // 如果找不到，则返回 nil
 func (rbac *RBAC[T]) Role(id string) *Role[T] {
 	rbac.rolesMux.RLock()
-	defer rbac.rolesMux.RUnlock()
-	return rbac.roles[id]
+	r := rbac.roles[id]
+	rbac.rolesMux.RUnlock()
+	return r
 }
