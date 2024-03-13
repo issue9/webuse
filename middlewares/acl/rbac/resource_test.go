@@ -11,18 +11,20 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
-func TestRBAC_NewResources(t *testing.T) {
+func TestRBAC_NewGroup(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
-	group := rbac.NewResources("id", web.Phrase("test"))
+	group := rbac.NewGroup("id", web.Phrase("test"))
 	a.NotNil(group).
 		PanicString(func() {
-			rbac.NewResources("id", web.Phrase("test"))
+			rbac.NewGroup("id", web.Phrase("test"))
 		}, "已经存在同名的资源组 id")
 }
 
@@ -32,15 +34,15 @@ func RBAC_resourceExists(t *testing.T) {
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
-	g1 := rbac.NewResources("g1", nil)
+	g1 := rbac.NewGroup("g1", nil)
 	g1.New("1", nil)
 	g1.New("2", nil)
-	g2 := rbac.NewResources("g2", nil)
+	g2 := rbac.NewGroup("g2", nil)
 	g2.New("3", nil)
 	g2.New("4", nil)
-	a.True(rbac.resourceExists(g1.id + string(idSeparator) + "1")).
-		True(rbac.resourceExists(g2.id + string(idSeparator) + "3")).
-		False(rbac.resourceExists(g2.id + string(idSeparator) + "1"))
+	a.True(rbac.resourceExists(joinID(g1.id, "1"))).
+		True(rbac.resourceExists(joinID(g2.id, "3"))).
+		False(rbac.resourceExists(joinID(g2.id, "1")))
 }
 
 func TestResources_New(t *testing.T) {
@@ -56,7 +58,7 @@ func TestResources_New(t *testing.T) {
 	})
 	a.NotError(err).NotNil(rbac)
 
-	group := rbac.NewResources("id", web.Phrase("test"))
+	group := rbac.NewGroup("id", web.Phrase("test"))
 	a.NotNil(group)
 
 	m1 := group.New("id1", web.Phrase("desc"))
@@ -79,4 +81,55 @@ func TestResources_New(t *testing.T) {
 
 	// forbidden
 	servertest.Get(a, "http://localhost:8080/test?id=forbidden").Do(nil).Status(http.StatusForbidden)
+}
+
+func TestRBAC_Resources(t *testing.T) {
+	a := assert.New(t, false)
+	s := newServer(a)
+	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotError(err).NotNil(rbac)
+
+	g1 := rbac.NewGroup("g1", web.Phrase("test"))
+	g1.New("id1", web.Phrase("id1"))
+	g1.New("id2", web.Phrase("id2"))
+	g2 := rbac.NewGroup("g2", web.Phrase("test"))
+	g2.New("id1", web.Phrase("id1"))
+	g2.New("id2", web.Phrase("id2"))
+
+	a.Length(rbac.Resources(message.NewPrinter(language.SimplifiedChinese)), 2)
+}
+
+func TestRole_Resource(t *testing.T) {
+	a := assert.New(t, false)
+	s := newServer(a)
+	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotError(err).NotNil(rbac)
+
+	g1 := rbac.NewGroup("g1", web.Phrase("test"))
+	g1.New("id1", web.Phrase("id1"))
+	g1.New("id2", web.Phrase("id2"))
+	g2 := rbac.NewGroup("g2", web.Phrase("test"))
+	g2.New("id1", web.Phrase("id1"))
+	g2.New("id2", web.Phrase("id2"))
+
+	r1, err := rbac.Add("r1", "r1 desc", "")
+	a.NotError(err).NotNil(r1)
+	r1.Allow(joinID(g1.id, "id1"), joinID(g2.id, "id2"))
+
+	r2, err := rbac.Add("r2", "r2 desc", r1.ID)
+	a.NotError(err).NotNil(r2)
+
+	a.Equal(r1.Resource(), &RoleResource{
+		Current: []string{joinID(g1.id, "id1"), joinID(g2.id, "id2")},
+		Parent: []string{ // 没有父角色，则用全局的。
+			joinID(g1.id, "id1"),
+			joinID(g1.id, "id2"),
+			joinID(g2.id, "id1"),
+			joinID(g2.id, "id2"),
+		},
+	})
+
+	a.Equal(r2.Resource(), &RoleResource{
+		Parent: []string{joinID(g1.id, "id1"), joinID(g2.id, "id2")},
+	})
 }

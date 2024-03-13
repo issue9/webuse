@@ -52,10 +52,10 @@ func (rbac *RBAC[T]) Add(name, desc, parent string) (*Role[T], error) {
 	return role, nil
 }
 
-// SetResources 关联角色与资源
+// Allow 关联角色与资源
 //
 // 替换之前关联的资源。如果传递空值，将直接清空 [Role.Resources]
-func (role *Role[T]) SetResources(res ...string) error {
+func (role *Role[T]) Allow(res ...string) error {
 	if role.parent == nil {
 		for _, resID := range res { // res 是否真实存在
 			if !role.rbac.resourceExists(resID) {

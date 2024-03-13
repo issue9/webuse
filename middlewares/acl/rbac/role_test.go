@@ -38,7 +38,7 @@ func TestRBAC_Add(t *testing.T) {
 	a.NotError(err).Length(maps, 1).Equal(maps[0].ID, r2.ID)
 }
 
-func TestRole_SetResources(t *testing.T) {
+func TestRole_Allow(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
@@ -46,29 +46,29 @@ func TestRole_SetResources(t *testing.T) {
 
 	r1, err := rbac.Add("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
-	a.Equal(r1.SetResources("not-exists"), web.NewLocaleError("not found resource %s", "not-exists")).
+	a.Equal(r1.Allow("not-exists"), web.NewLocaleError("not found resource %s", "not-exists")).
 		Empty(r1.Resources)
 
-	res11 := "res1" + string(idSeparator) + "1"
-	res12 := "res1" + string(idSeparator) + "2"
+	res11 := joinID("res1", "1")
+	res12 := joinID("res1", "2")
 
-	g := rbac.NewResources("res1", nil)
+	g := rbac.NewGroup("res1", nil)
 	g.New("1", nil)
 	g.New("2", nil)
 
-	a.NotError(r1.SetResources(res11)).Length(r1.Resources, 1)
+	a.NotError(r1.Allow(res11)).Length(r1.Resources, 1)
 
 	// r2 继承自 r1
 
 	r2, err := rbac.Add("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2).
-		NotError(r2.SetResources(res11))
+		NotError(r2.Allow(res11))
 
 	// 子角色还有 res1_1
-	a.Equal(r1.SetResources(res12), web.NewLocaleError("child role has resource %s can not be deleted", res11))
-	a.NotError(r2.SetResources())                                                       // 清空 r2 的资源
-	a.NotError(r1.SetResources(res12))                                                  // 现在可以改变 r1 的资源
-	a.Equal(r2.SetResources(res11), web.NewLocaleError("not found resource %s", res11)) // 父类 r1 不拥有 res11
+	a.Equal(r1.Allow(res12), web.NewLocaleError("child role has resource %s can not be deleted", res11))
+	a.NotError(r2.Allow())                                                       // 清空 r2 的资源
+	a.NotError(r1.Allow(res12))                                                  // 现在可以改变 r1 的资源
+	a.Equal(r2.Allow(res11), web.NewLocaleError("not found resource %s", res11)) // 父类 r1 不拥有 res11
 }
 
 func TestRole_Del(t *testing.T) {

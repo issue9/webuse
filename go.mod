@@ -6,6 +6,7 @@ require (
 	github.com/issue9/cache v0.10.0
 	github.com/issue9/web v0.87.6
 	github.com/shirou/gopsutil/v3 v3.24.2
+	golang.org/x/text v0.14.0
 )
 
 require (
@@ -39,7 +40,6 @@ require (
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
