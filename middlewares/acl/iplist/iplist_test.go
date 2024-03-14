@@ -33,7 +33,7 @@ func TestIPLister_Set(t *testing.T) {
 	a.Length(l.List(), 2).Equal(l.List()[1], "192.168.2/*")
 }
 
-func TestIPList_Middleware(t *testing.T) {
+func TestWhite_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 
 	s, err := server.New("test", "1.0.0", &server.Options{
@@ -82,6 +82,57 @@ func TestIPList_Middleware(t *testing.T) {
 		Header("X-Forwarded-For", "192.168.2.2").
 		Do(nil).
 		Status(http.StatusCreated)
+}
+
+func TestBlack_Middleware(t *testing.T) {
+	a := assert.New(t, false)
+
+	s, err := server.New("test", "1.0.0", &server.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes:  server.JSONMimetypes(),
+		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
+	})
+	a.NotError(err).NotNil(s)
+
+	l := NewBlack()
+	a.NotNil(l)
+	l.Set("192.168.1.1")
+
+	router := s.Routers().New("def", nil)
+	router.Use(l)
+	router.Get("/test", func(ctx *web.Context) web.Responser {
+		return web.Created(nil, "")
+	})
+
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
+
+	servertest.Get(a, "http://localhost:8080/test").
+		Header("X-Forwarded-For", "192.168.1.1").
+		Do(nil).
+		Status(http.StatusForbidden)
+
+	servertest.Get(a, "http://localhost:8080/test").
+		Header("X-Forwarded-For", "192.168.1.2").
+		Do(nil).
+		Status(http.StatusCreated)
+
+	l.Set("192.168.1.2", "192.168.1.1", "192.168.2/*")
+
+	servertest.Get(a, "http://localhost:8080/test").
+		Header("X-Forwarded-For", "192.168.1.1").
+		Do(nil).
+		Status(http.StatusForbidden)
+
+	servertest.Get(a, "http://localhost:8080/test").
+		Header("X-Forwarded-For", "192.168.1.2").
+		Do(nil).
+		Status(http.StatusForbidden)
+
+	servertest.Get(a, "http://localhost:8080/test").
+		Header("X-Forwarded-For", "192.168.2.2").
+		Do(nil).
+		Status(http.StatusForbidden)
 }
 
 func TestSplitIP(t *testing.T) {
