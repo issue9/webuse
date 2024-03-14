@@ -12,110 +12,136 @@ import (
 	"github.com/issue9/web"
 )
 
-type IPList struct {
-	enable bool
+// IPLister 根据客户端的 IP 过滤
+type IPLister interface {
+	web.Middleware
 
-	white         []string
-	whiteWildcard []string
+	// Set 设置名单列表
+	//
+	// ip IP 地址，可以是具体的 IP 地址，比如 44.44.44.44，
+	// 也可以是通配符(以 /* 结尾)，比如 2.2/*，表示匹配 2.2.1.1 也匹配 2.22.1.1，
+	// 但是并不匹配 ipv6 的相同地址 ::0202:0202。
+	// 如果已经存在相同的值，则不会重复添加。
+	//
+	// NOTE: 传递空值将清空内容。
+	Set(ip ...string)
 
-	black         []string
-	blackWildcard []string
+	// List 返回名单列表
+	List() []string
 }
 
-// New 声明 [IPList] 对象
+type common struct {
+	list     []string
+	wildcard []string
+}
+
+type white struct {
+	*common
+}
+
+type black struct {
+	*common
+}
+
+func newCommon() *common {
+	return &common{
+		list:     make([]string, 0, 10),
+		wildcard: make([]string, 0, 10),
+	}
+}
+
+// NewWhite 声明白名单过滤器
 //
-// white 和 black 分别表示白名单和黑名单的值，格式可参考 [IPList.WithWhite]。
-// 如果同时存在于黑名单和白名单，则白名单优先于黑名单。
-func New(white, black []string) *IPList {
-	return (&IPList{enable: true}).WithBlack(black...).WithWhite(white...)
-}
+// 所有未在白名单中的 IP 都将被禁止访问。
+func NewWhite() IPLister { return &white{common: newCommon()} }
 
-func (l *IPList) Enable(v bool) {
-	l.enable = v
-}
-
-// WithWhite 添加白名单
+// NewWhite 声明黑名单过滤器
 //
-// ip IP 地址，可以是具体的 IP 地址，比如 44.44.44.44，
-// 也可以是通配符，比如 44.44/*。
-func (l *IPList) WithWhite(ip ...string) *IPList {
+// 所有未在黑名单中的 IP 才允许访问。
+func NewBlack() IPLister { return &black{common: newCommon()} }
+
+func (l *common) Set(ip ...string) {
 	for _, i := range ip {
 		if strings.HasSuffix(i, "/*") {
 			i = strings.TrimSuffix(i, "/*")
 
-			if slices.Index(l.whiteWildcard, i) < 0 {
-				l.whiteWildcard = append(l.whiteWildcard, i)
+			if slices.Index(l.wildcard, i) < 0 {
+				l.wildcard = append(l.wildcard, i)
 			}
 		} else {
-			if slices.Index(l.white, i) < 0 {
-				l.white = append(l.white, i)
+			if slices.Index(l.list, i) < 0 {
+				l.list = append(l.list, i)
 			}
 		}
 	}
-
-	return l
 }
 
-// WithBlack 添加黑名单
-//
-// ip IP 地址，格式可参考 [IPList.WithWhite]。
-func (l *IPList) WithBlack(ip ...string) *IPList {
-	for _, i := range ip {
-		if strings.HasSuffix(i, "/*") {
-			i = strings.TrimSuffix(i, "/*")
-			if slices.Index(l.blackWildcard, i) < 0 {
-				l.blackWildcard = append(l.blackWildcard, i)
-			}
-		} else {
-			if slices.Index(l.black, i) < 0 {
-				l.black = append(l.black, i)
-			}
+func (l *common) List() []string {
+	list := slices.Clone(l.list)
+	for _, w := range l.wildcard {
+		list = append(list, w+"/*")
+	}
+	return list
+}
+
+func (l *common) match(ip string) bool {
+	if slices.Index(l.list, ip) >= 0 {
+		return true
+	}
+
+	for _, ip := range l.wildcard {
+		if strings.HasPrefix(ip, ip) {
+			return true
 		}
 	}
 
-	return l
+	return false
 }
 
-func (l *IPList) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (l *white) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		if !l.enable {
+		host, err := splitIP(ctx.ClientIP())
+		if err != nil {
+			return ctx.Error(err, web.ProblemBadRequest)
+		}
+
+		if l.match(host) {
 			return next(ctx)
 		}
+		return ctx.Problem(web.ProblemForbidden)
+	}
+}
 
-		cip := ctx.ClientIP()
-		if index := strings.LastIndexByte(cip, ':'); index > 0 && isPort(cip[index+1:]) {
-			cip = cip[:index]
+func (l *black) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	return func(ctx *web.Context) web.Responser {
+		host, err := splitIP(ctx.ClientIP())
+		if err != nil {
+			return ctx.Problem(web.ProblemBadRequest)
 		}
 
-		if slices.Index(l.white, cip) >= 0 {
-			return next(ctx)
-		}
-
-		for _, ip := range l.whiteWildcard {
-			if strings.HasPrefix(cip, ip) {
-				return next(ctx)
-			}
-		}
-
-		if slices.Index(l.black, cip) >= 0 {
+		if l.match(host) {
 			return ctx.Problem(web.ProblemForbidden)
 		}
-
-		for _, ip := range l.blackWildcard {
-			if strings.HasPrefix(cip, ip) {
-				return ctx.Problem(web.ProblemForbidden)
-			}
-		}
-
 		return next(ctx)
 	}
 }
 
-func isPort(p string) bool {
-	for _, c := range p {
-		if c > '9' || c < '0' {
-			return false
+func splitIP(ip string) (string, error) {
+	if ip[0] == '[' { // ipv6 且带端口
+		if ip[len(ip)-1] == ']' {
+			return ip[1 : len(ip)-1], nil
+		} else if index := strings.LastIndex(ip, "]:"); index >= 0 {
+			return ip[1:index], nil
 		}
+		return "", web.NewLocaleError("invalid ip %s", ip)
 	}
-	return true
+
+	if index := strings.LastIndexByte(ip, ':'); index >= 0 {
+		ip4 := ip[:index]
+		if strings.IndexByte(ip4, ':') >= 0 { // ip4 不可能包含两个 :
+			return "", web.NewLocaleError("invalid ip %%s", ip)
+		}
+		return ip4, nil
+	}
+	return ip, nil
 }

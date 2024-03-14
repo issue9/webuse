@@ -6,6 +6,7 @@ package iplist
 
 import (
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert/v4"
@@ -14,40 +15,22 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ web.Middleware = &IPList{}
+var (
+	_ IPLister = &white{}
+	_ IPLister = &black{}
+)
 
-func TestIPList_WithWhite(t *testing.T) {
+func TestIPLister_Set(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := New([]string{"192.168.1.1"}, nil)
-	a.NotNil(l).
-		Length(l.white, 1).
-		Length(l.whiteWildcard, 0)
+	l := NewWhite()
+	a.NotNil(l)
 
-	l.WithWhite("192.168.1.1")
-	a.Length(l.white, 1).
-		Length(l.whiteWildcard, 0)
+	l.Set("192.168.1.1")
+	a.Length(l.List(), 1)
 
-	l.WithWhite("192.168.1/*")
-	a.Length(l.white, 1).
-		Length(l.whiteWildcard, 1)
-}
-
-func TestIPList_WithBlack(t *testing.T) {
-	a := assert.New(t, false)
-
-	l := New([]string{"192.168.1.1"}, nil)
-	a.NotNil(l).
-		Length(l.black, 0).
-		Length(l.blackWildcard, 0)
-
-	l.WithBlack("192.168.1.1")
-	a.Length(l.black, 1).
-		Length(l.blackWildcard, 0)
-
-	l.WithBlack("192.168.1/*")
-	a.Length(l.black, 1).
-		Length(l.blackWildcard, 1)
+	l.Set("192.168.1.1", "192.168.2/*")
+	a.Length(l.List(), 2).Equal(l.List()[1], "192.168.2/*")
 }
 
 func TestIPList_Middleware(t *testing.T) {
@@ -56,11 +39,13 @@ func TestIPList_Middleware(t *testing.T) {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes:  server.JSONMimetypes(),
+		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
 	})
 	a.NotError(err).NotNil(s)
 
-	l := New([]string{"192.168.1.1"}, nil)
+	l := NewWhite()
 	a.NotNil(l)
+	l.Set("192.168.1.1")
 
 	router := s.Routers().New("def", nil)
 	router.Use(l)
@@ -79,34 +64,38 @@ func TestIPList_Middleware(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/test").
 		Header("X-Forwarded-For", "192.168.1.2").
 		Do(nil).
-		Status(http.StatusCreated)
+		Status(http.StatusForbidden)
 
-	l.WithBlack("192.168.1.2")
-	l.WithBlack("192.168.1.1")
-	l.WithBlack("192.168.2/*")
+	l.Set("192.168.1.2", "192.168.1.1", "192.168.2/*")
 
-	// 同时存在于黑名单和白名单
 	servertest.Get(a, "http://localhost:8080/test").
 		Header("X-Forwarded-For", "192.168.1.1").
 		Do(nil).
 		Status(http.StatusCreated)
 
-	// 在黑名单中
 	servertest.Get(a, "http://localhost:8080/test").
 		Header("X-Forwarded-For", "192.168.1.2").
 		Do(nil).
-		Status(http.StatusForbidden)
+		Status(http.StatusCreated)
 
 	servertest.Get(a, "http://localhost:8080/test").
 		Header("X-Forwarded-For", "192.168.2.2").
 		Do(nil).
-		Status(http.StatusForbidden)
+		Status(http.StatusCreated)
 }
 
-func TestIsPort(t *testing.T) {
+func TestSplitIP(t *testing.T) {
 	a := assert.New(t, false)
 
-	a.True(isPort("333")).
-		False(isPort(":333")).
-		False(isPort(":]333"))
+	ip, err := splitIP("192.168.1.1")
+	a.NotError(err).Equal(ip, "192.168.1.1")
+
+	ip, err = splitIP("192.168.1.1:8080")
+	a.NotError(err).Equal(ip, "192.168.1.1")
+
+	ip, err = splitIP("[FC00:0:130F::9C0:876A:130B]:8080")
+	a.NotError(err).Equal(ip, "FC00:0:130F::9C0:876A:130B")
+
+	ip, err = splitIP("[FC00:0:130F::9C0:876A:130B]")
+	a.NotError(err).Equal(ip, "FC00:0:130F::9C0:876A:130B")
 }

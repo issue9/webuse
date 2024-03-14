@@ -49,14 +49,8 @@ type GetUIDFunc[T comparable] func(*web.Context) (T, web.Responser)
 // super 表示超级管理员的 ID；
 // info 用于输出一些提示信息，比如权限的判断依据等；
 // getUID 参考 [GetUIDFunc]；
+// loadInterval 如果大于 0，表示以该频率从 [Store] 加载数据；
 func New[T comparable](s web.Server, super T, store Store[T], info *web.Logger, getUID GetUIDFunc[T]) (*RBAC[T], error) {
-	// TODO 定时加载？
-
-	roles, err := store.Load()
-	if err != nil {
-		return nil, err
-	}
-
 	rbac := &RBAC[T]{
 		s:      s,
 		super:  super,
@@ -67,14 +61,32 @@ func New[T comparable](s web.Server, super T, store Store[T], info *web.Logger, 
 		resources: make([]string, 0, 100),
 		groups:    make(map[string]*Group[T], 50),
 
-		roles:    roles,
 		rolesMux: &sync.RWMutex{},
 	}
-	for _, role := range rbac.roles {
-		role.rbac = rbac
+
+	if err := rbac.Load(); err != nil {
+		return nil, err
 	}
 
 	return rbac, nil
+}
+
+// Load 加载数据
+func (rbac *RBAC[T]) Load() error {
+	roles, err := rbac.store.Load()
+	if err != nil {
+		return err
+	}
+
+	for _, role := range roles {
+		role.rbac = rbac
+	}
+
+	rbac.rolesMux.Lock()
+	rbac.roles = roles
+	rbac.rolesMux.Unlock()
+
+	return nil
 }
 
 func (r *RBAC[T]) debug(uid T, res string, role *Role[T]) {
