@@ -28,7 +28,7 @@ func TestAccess(t *testing.T) {
 	defer srv.Close(0)
 
 	r := srv.Routers().New("def", nil)
-	m := New(srv.Logs().ERROR(), "")
+	m := New(srv.Logs().ERROR().String, "")
 	a.NotNil(m)
 	srv.Use(m)
 
