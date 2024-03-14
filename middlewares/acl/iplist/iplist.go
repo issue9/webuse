@@ -139,7 +139,7 @@ func splitIP(ip string) (string, error) {
 	if index := strings.LastIndexByte(ip, ':'); index >= 0 {
 		ip4 := ip[:index]
 		if strings.IndexByte(ip4, ':') >= 0 { // ip4 不可能包含两个 :
-			return "", web.NewLocaleError("invalid ip %%s", ip)
+			return "", web.NewLocaleError("invalid ip %s", ip)
 		}
 		return ip4, nil
 	}

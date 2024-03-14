@@ -9,6 +9,9 @@ messages:
     - key: enable compression base on cpu used
       message:
         msg: 基于 CPU 使用率决定是否启用压缩功能:w
+    - key: invalid ip %s
+      message:
+        msg: 无效的 IP 地址 %s
     - key: not found jwt signing method
       message:
         msg: 未找到 JWT 签名方法

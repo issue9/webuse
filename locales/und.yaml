@@ -9,6 +9,9 @@ messages:
     - key: enable compression base on cpu used
       message:
         msg: enable compression base on cpu used
+    - key: invalid ip %s
+      message:
+        msg: invalid ip %s
     - key: not found jwt signing method
       message:
         msg: not found jwt signing method
