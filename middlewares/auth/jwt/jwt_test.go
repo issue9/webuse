@@ -27,14 +27,11 @@ var _ web.Middleware = &JWT[*testClaims]{}
 
 type testClaims struct {
 	jwt.MapClaims
-	ID      int64 `json:"id"`
-	expires int64
-	token   string
+	ID    int64 `json:"id"`
+	token string
 }
 
-func (c *testClaims) SetExpired(t time.Duration) {
-	c.expires = time.Now().Add(t).Unix()
-}
+func (c *testClaims) IsRefresh() bool { return c.token != "" }
 
 func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{token: token} }
 

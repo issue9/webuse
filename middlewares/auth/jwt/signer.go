@@ -17,8 +17,8 @@ import (
 
 // BuildResponseFunc 根据给定的参数返回给定客户端的对象
 //
-// access 是必须的，表示请求数据的 token；
-// refresh 表示刷新的 token，如果为空，不会输出；
+// access 访问令牌是必须的；
+// refresh 刷新令牌，如果为空，不会输出；
 // expires 表示 access 的过期时间；
 type BuildResponseFunc = func(access, refresh string, expires int) any
 
@@ -81,23 +81,20 @@ func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
 //
 // 当前方法会将 accessClaims 进行签名，并返回 [web.Responser] 对象。
 func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.Responser {
-	accessClaims.SetExpired(s.expired)
-	ac, err := s.Sign(accessClaims)
+	accessToken, err := s.Sign(accessClaims)
 	if err != nil {
 		return ctx.Error(err, "")
 	}
 
-	var rc string
+	var refreshToken string
 	if s.refresh {
-		r := accessClaims.BuildRefresh(ac)
-		r.SetExpired(s.refreshExpired)
-		rc, err = s.Sign(r)
+		refreshToken, err = s.Sign(accessClaims.BuildRefresh(accessToken))
 		if err != nil {
 			return ctx.Error(err, "")
 		}
 	}
 
-	return web.Response(status, s.br(ac, rc, s.expires))
+	return web.Response(status, s.br(accessToken, refreshToken, s.expires))
 }
 
 // Sign 对 claims 进行签名

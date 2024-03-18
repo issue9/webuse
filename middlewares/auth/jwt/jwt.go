@@ -35,8 +35,8 @@ type (
 		// BuildRefresh 根据令牌生成刷新令牌用的 Claims
 		BuildRefresh(string) Claims
 
-		// SetExpired 设置当前令牌的过期时间
-		SetExpired(time.Duration)
+		// IsRefresh 是否为刷新令牌的 [Claims] 对象
+		IsRefresh() bool
 	}
 
 	SigningMethod = jwt.SigningMethod
