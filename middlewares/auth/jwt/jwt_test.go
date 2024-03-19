@@ -25,19 +25,7 @@ import (
 
 var _ web.Middleware = &JWT[*testClaims]{}
 
-type testClaims struct {
-	jwt.MapClaims
-	ID    int64 `json:"id"`
-	token string
-}
-
-func (c *testClaims) IsRefresh() bool { return c.token != "" }
-
-func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{token: token} }
-
-func (c *testClaims) Valid() error { return nil }
-
-func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *JWT[*testClaims], Blocker[*testClaims]) {
+func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *JWT[*testClaims]) {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes:  server.JSONMimetypes(),
@@ -49,16 +37,16 @@ func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *J
 	j := New[*testClaims](m, b, expired, refresh, nil)
 	a.NotNil(j)
 
-	return s, j, m
+	return s, j
 }
 
 func TestVerifier_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 	fsys := os.DirFS("./testdata")
 
-	s, j, m := newJWT(a, time.Hour, 0)
+	s, j := newJWT(a, time.Hour, 0)
 	j.Add("hmac-secret", jwt.SigningMethodHS256, []byte("secret"), []byte("secret"))
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 
 	a.PanicString(func() {
 		j.AddHMAC("hmac-secret", jwt.SigningMethodHS256, []byte("secret"))
@@ -69,44 +57,44 @@ func TestVerifier_Middleware(t *testing.T) {
 	}, "存在同名的签名方法 hmac-secret")
 
 	pub, pvt := readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
-	s, j, m = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, 0)
 	j.Add("rsa", jwt.SigningMethodRS256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
-	s, j, m = newJWT(a, time.Hour, 0)
+	verifierMiddleware(a, s, j)
+	s, j = newJWT(a, time.Hour, 0)
 	j.AddRSA("rsa-2", jwt.SigningMethodRS256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
-	s, j, m = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, 0)
 	j.Add("rsa-pss", jwt.SigningMethodPS256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
-	s, j, m = newJWT(a, time.Hour, 0)
+	verifierMiddleware(a, s, j)
+	s, j = newJWT(a, time.Hour, 0)
 	j.AddRSAPSS("rsa-pss-2", jwt.SigningMethodPS256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "ec256-public.pem", "ec256-private.pem")
-	s, j, m = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, 0)
 	j.Add("ecdsa", jwt.SigningMethodES256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
-	s, j, m = newJWT(a, time.Hour, 0)
+	verifierMiddleware(a, s, j)
+	s, j = newJWT(a, time.Hour, 0)
 	j.AddECDSA("ecdsa-2", jwt.SigningMethodES256, pub, pvt)
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "ed25519-public.pem", "ed25519-private.pem")
-	s, j, m = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, 0)
 	j.Add("ed25519", jwt.SigningMethodEdDSA, pub, pvt)
-	verifierMiddleware(a, s, j, m)
-	s, j, m = newJWT(a, time.Hour, 0)
+	verifierMiddleware(a, s, j)
+	s, j = newJWT(a, time.Hour, 0)
 	j.AddEd25519("ed25519-2", jwt.SigningMethodEdDSA, pub, pvt)
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 
 	// 一次性加载多个
-	s, j, m = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, 0)
 	j.AddFromFS("ed25519", jwt.SigningMethodEdDSA, fsys, "ed25519-public.pem", "ed25519-private.pem")
 	j.AddFromFS("ecdsa", jwt.SigningMethodES256, fsys, "ec256-public.pem", "ec256-private.pem")
 	j.AddFromFS("rsa-pss", jwt.SigningMethodPS256, fsys, "rsa-public.pem", "rsa-private.pem")
 	j.AddFromFS("rsa", jwt.SigningMethodRS256, fsys, "rsa-public.pem", "rsa-private.pem")
-	verifierMiddleware(a, s, j, m)
+	verifierMiddleware(a, s, j)
 }
 
 func readFile(a *assert.Assertion, fsys fs.FS, public, private string) ([]byte, []byte) {
@@ -119,7 +107,7 @@ func readFile(a *assert.Assertion, fsys fs.FS, public, private string) ([]byte, 
 	return pub, pvt
 }
 
-func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims], d Blocker[*testClaims]) {
+func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) {
 	a.TB().Helper()
 
 	claims := &testClaims{
@@ -190,7 +178,7 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims], 
 
 func TestVerifier_client(t *testing.T) {
 	a := assert.New(t, false)
-	s, j, _ := newJWT(a, time.Hour, 2*time.Hour)
+	s, j := newJWT(a, time.Hour, 2*time.Hour)
 	j.AddRSAFromFS("rsa", jwt.SigningMethodRS256, os.DirFS("./testdata"), "rsa-public.pem", "rsa-private.pem")
 
 	claims := &testClaims{

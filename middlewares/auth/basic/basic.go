@@ -42,13 +42,15 @@ type basic[T any] struct {
 	problemID     string
 }
 
-// New 声明一个 Basic 验证的中间件
+// New 声明一个 [Basic 验证]的中间件
 //
 // proxy 是否为代理，主要是报头的输出内容不同，判断方式完全相同。
 // true 会输出 Proxy-Authorization 和 Proxy-Authenticate 报头和 407 状态码，
 // 而 false 则是输出 Authorization 和 WWW-Authenticate 报头和 401 状态码；
 //
-// T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [Basic.GetValue] 获取。
+// T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [GetValue] 获取。
+//
+// [Basic 验证]: https://datatracker.ietf.org/doc/html/rfc7617
 func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) web.Middleware {
 	if auth == nil {
 		panic("auth 参数不能为空")

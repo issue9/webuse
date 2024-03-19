@@ -71,7 +71,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 
 func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	if c, found := j.GetValue(ctx); found {
-		return j.blocker.BlockToken(GetToken(ctx), c.IsRefresh())
+		return j.blocker.BlockToken(GetToken(ctx), c.BaseToken() != "")
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 
 	claims := t.Claims.(T)
 
-	if refresh != claims.IsRefresh() {
+	if refresh != (claims.BaseToken() != "") {
 		return ctx.Problem(web.ProblemUnauthorized)
 	}
 
@@ -114,6 +114,10 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 
 	if refresh { // 刷新令牌是一次性的
 		if err := j.blocker.BlockToken(token, true); err != nil {
+			ctx.Logs().ERROR().Error(err)
+		}
+
+		if err := j.blocker.BlockToken(claims.BaseToken(), false); err != nil {
 			ctx.Logs().ERROR().Error(err)
 		}
 	}

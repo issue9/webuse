@@ -6,6 +6,7 @@ package jwt
 
 import (
 	"github.com/issue9/web"
+
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
