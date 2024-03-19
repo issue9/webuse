@@ -14,7 +14,11 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/middlewares/auth"
 )
+
+var _ auth.Auth = &Session[int]{}
 
 type data struct {
 	Count int `query:"count"`
@@ -54,6 +58,13 @@ func TestSession(t *testing.T) {
 		return web.OK(nil)
 	})
 
+	r.Delete("/get1", func(ctx *web.Context) web.Responser {
+		if err := session.Logout(ctx); err != nil {
+			return ctx.Error(err, web.ProblemInternalServerError)
+		}
+		return web.NoContent()
+	})
+
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
@@ -65,19 +76,28 @@ func TestSession(t *testing.T) {
 
 	// 第二次，带上 cookie
 	cookie := resp.Cookies()[0]
-	servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
+	resp = servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
 		Cookie(cookie).
 		Do(nil).
-		Status(http.StatusOK)
+		Status(http.StatusOK).
+		Resp()
 
 	cookie = resp.Cookies()[0]
-	servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
+	resp = servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
 		Cookie(cookie).
 		Do(nil).
-		Status(http.StatusOK)
+		Status(http.StatusOK).
+		Resp()
 
-	// 带cookie，但服务端删除了 sessionid
-	session.Logout(cookie.Value)
+	// 带 cookie，但服务端删除了 sessionid
+	cookie = resp.Cookies()[0]
+	resp = servertest.Delete(a, "http://localhost:8080/get1?count=1&id=").
+		Cookie(cookie).
+		Do(nil).
+		Status(http.StatusNoContent).
+		Resp()
+
+	//cookie = resp.Cookies()[0]
 	servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
 		Cookie(cookie).
 		Do(nil).

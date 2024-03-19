@@ -12,6 +12,8 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
 var (
@@ -19,7 +21,7 @@ var (
 		return username, true
 	}
 
-	_ web.Middleware = &basic[[]byte]{}
+	_ auth.Auth = &basic[[]byte]{}
 )
 
 func TestNew(t *testing.T) {

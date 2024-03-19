@@ -64,7 +64,14 @@ func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Dur
 	return &JWT[T]{v: v, s: s}
 }
 
-// Middleware 解码用户的 token 并写入 *web.Context
+func (j *JWT[T]) Logout(ctx *web.Context) error { return j.v.Logout(ctx) }
+
+// VerifiyRefresh 验证刷新令牌
+func (j *JWT[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
+	return j.v.VerifiyRefresh(next)
+}
+
+// Middleware 解码用户的 token 并写入 [web.Context]
 func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc { return j.v.Middleware(next) }
 
 // GetValue 返回解码后的 Claims 对象

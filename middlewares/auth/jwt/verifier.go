@@ -69,6 +69,13 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 	return j
 }
 
+func (j *Verifier[T]) Logout(ctx *web.Context) error {
+	if c, found := j.GetValue(ctx); found {
+		return j.blocker.BlockToken(GetToken(ctx), c.IsRefresh())
+	}
+	return nil
+}
+
 // VerifiyRefresh 验证刷新令牌
 func (j *Verifier[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser { return j.resp(ctx, true, next) }
@@ -80,12 +87,12 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc) web.Responser {
-	h := GetToken(ctx)
-	if h == "" || j.blocker.TokenIsBlocked(h) {
+	token := GetToken(ctx)
+	if token == "" || j.blocker.TokenIsBlocked(token) {
 		return ctx.Problem(web.ProblemUnauthorized)
 	}
 
-	t, err := jwt.ParseWithClaims(h, j.claimsBuilder(), j.keyFunc)
+	t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), j.keyFunc)
 	if err != nil { // 都算验证错误
 		ctx.Logs().ERROR().Error(err)
 		return ctx.Problem(web.ProblemUnauthorized)
@@ -106,7 +113,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 	}
 
 	if refresh { // 刷新令牌是一次性的
-		if err := j.blocker.BlockToken(h, true); err != nil {
+		if err := j.blocker.BlockToken(token, true); err != nil {
 			ctx.Logs().ERROR().Error(err)
 		}
 	}
@@ -116,14 +123,13 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 	return next(ctx)
 }
 
-// GetValue 返回解码后的 Claims 对象
-func (j *Verifier[T]) GetValue(ctx *web.Context) (T, bool) {
-	v, found := ctx.GetVar(contextKey)
-	if !found {
-		var vv T
-		return vv, false
+// GetValue 返回解码后的 [Claims] 对象
+func (j *Verifier[T]) GetValue(ctx *web.Context) (claims T, found bool) {
+	if v, found := ctx.GetVar(contextKey); found {
+		return v.(T), true
 	}
-	return v.(T), true
+	var vv T
+	return vv, false
 }
 
 // GetToken 获取客户端提交的 token

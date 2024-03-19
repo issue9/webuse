@@ -54,9 +54,6 @@ func New[T any](store Store[T], lifetime int, name, path, domain string, secure,
 	}
 }
 
-// Logout 退出登录
-func (s *Session[T]) Logout(sessionid string) error { return s.store.Delete(sessionid) }
-
 func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		var id string
@@ -102,6 +99,17 @@ func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		return next(ctx)
 	}
 }
+
+func (s *Session[T]) Logout(ctx *web.Context) error {
+	id, _, err := GetValue[T](ctx)
+	if err == nil {
+		err = s.Delete(id)
+	}
+	return err
+}
+
+// Logout 退出登录
+func (s *Session[T]) Delete(sessionid string) error { return s.store.Delete(sessionid) }
 
 // GetValue 获取当前对话关联的信息
 func GetValue[T any](ctx *web.Context) (sessionid string, val *T, err error) {

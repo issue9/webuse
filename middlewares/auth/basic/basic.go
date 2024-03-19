@@ -102,6 +102,8 @@ func (b *basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
+func (b *basic[T]) Logout(*web.Context) error { return nil }
+
 func (b *basic[T]) unauthorization(ctx *web.Context) web.Responser {
 	ctx.Header().Set(b.authenticate, b.realm)
 	return ctx.Problem(b.problemID)

@@ -148,20 +148,9 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims], 
 
 	r.Delete("/login", j.Middleware(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
-
-		val, found := j.GetValue(ctx)
-		if !found {
-			return web.Status(http.StatusNotFound)
+		if err := j.Logout(ctx); err != nil {
+			return ctx.Error(err, web.ProblemInternalServerError)
 		}
-
-		if val.ID != claims.ID {
-			return web.Status(http.StatusUnauthorized)
-		}
-
-		if d != nil {
-			d.BlockToken(GetToken(ctx), false)
-		}
-
 		return web.NoContent()
 	}))
 
