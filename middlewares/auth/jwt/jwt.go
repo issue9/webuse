@@ -47,6 +47,9 @@ type (
 
 func ErrSigningMethodNotFound() error { return errSigningMethodNotFound }
 
+// New 声明 [JWT] 对象
+//
+// 参数可参考 [NewVerifier] 和 [NewSigner]
 func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Duration, br BuildResponseFunc) *JWT[T] {
 	v := NewVerifier(b, f)
 	s := NewSigner(expired, refresh, br)
@@ -57,7 +60,7 @@ func (j *JWT[T]) Logout(ctx *web.Context) error { return j.v.Logout(ctx) }
 
 // VerifiyRefresh 验证刷新令牌
 func (j *JWT[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
-	return j.v.VerifiyRefresh(next)
+	return j.v.VerifyRefresh(next)
 }
 
 // Middleware 解码用户的 token 并写入 [web.Context]

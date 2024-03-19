@@ -76,8 +76,12 @@ func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	return nil
 }
 
-// VerifiyRefresh 验证刷新令牌
-func (j *Verifier[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
+// VerifyRefresh 验证刷新令牌
+//
+// NOTE: 可以通过 [GetValue] 获得当前刷新令牌关联的用户信息；
+//
+// NOTE: 此操作会让现有的令牌和刷新令牌都失效。
+func (j *Verifier[T]) VerifyRefresh(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser { return j.resp(ctx, true, next) }
 }
 
@@ -92,20 +96,9 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 		return ctx.Problem(web.ProblemUnauthorized)
 	}
 
-	t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), j.keyFunc)
-	if err != nil { // 都算验证错误
-		ctx.Logs().ERROR().Error(err)
-		return ctx.Problem(web.ProblemUnauthorized)
-	}
-
-	if !t.Valid {
-		return ctx.Problem(web.ProblemUnauthorized)
-	}
-
-	claims := t.Claims.(T)
-
-	if refresh != (claims.BaseToken() != "") {
-		return ctx.Problem(web.ProblemUnauthorized)
+	claims, resp := j.parseClaims(ctx, token)
+	if resp != nil {
+		return resp
 	}
 
 	if j.blocker.ClaimsIsBlocked(claims) {
@@ -113,18 +106,42 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 	}
 
 	if refresh { // 刷新令牌是一次性的
+		baseToken := claims.BaseToken()
+		if baseToken == "" { // 不是刷新令牌
+			return ctx.Problem(web.ProblemUnauthorized)
+		}
+
 		if err := j.blocker.BlockToken(token, true); err != nil {
 			ctx.Logs().ERROR().Error(err)
 		}
 
-		if err := j.blocker.BlockToken(claims.BaseToken(), false); err != nil {
+		if err := j.blocker.BlockToken(baseToken, false); err != nil {
 			ctx.Logs().ERROR().Error(err)
+		}
+
+		claims, resp = j.parseClaims(ctx, baseToken) // 拿到基本的用户信息，由之的一的 SetVar 写入上下文
+		if resp != nil {
+			return resp
 		}
 	}
 
 	ctx.SetVar(contextKey, claims)
-
 	return next(ctx)
+}
+
+func (j *Verifier[T]) parseClaims(ctx *web.Context, token string) (T, web.Responser) {
+	var zero T
+
+	t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), j.keyFunc)
+	if err != nil { // 都算验证错误
+		return zero, ctx.Problem(web.ProblemUnauthorized)
+	}
+
+	if !t.Valid {
+		return zero, ctx.Problem(web.ProblemUnauthorized)
+	}
+
+	return t.Claims.(T), nil
 }
 
 // GetValue 返回解码后的 [Claims] 对象
@@ -137,12 +154,15 @@ func (j *Verifier[T]) GetValue(ctx *web.Context) (claims T, found bool) {
 }
 
 // GetToken 获取客户端提交的 token
+//
+// 如果 Authorization 不是 bearer 开头，则返回空值。
 func GetToken(ctx *web.Context) string {
 	h := ctx.Request().Header.Get("Authorization")
 	if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
-		h = h[prefixLen:]
+		return h[prefixLen:]
 	}
-	return h
+	ctx.Logs().DEBUG().LocaleString(web.Phrase("the client Authorization header %s is invalid JWT format", h))
+	return ""
 }
 
 func (j *Verifier[T]) addKey(id string, sign SigningMethod, keyData any) {

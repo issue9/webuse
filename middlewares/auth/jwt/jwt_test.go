@@ -30,21 +30,22 @@ func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *J
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes:  server.JSONMimetypes(),
 	})
-	a.NotError(err).NotNil(s)
+	a.NotError(err).NotNil(s).
+		NotError(s.Cache().Clean())
 
 	m := NewCacheBlocker[*testClaims](s, "test_", expired, refresh)
 	b := func() *testClaims { return &testClaims{} }
-	j := New[*testClaims](m, b, expired, refresh, nil)
+	j := New(m, b, expired, refresh, nil)
 	a.NotNil(j)
 
 	return s, j
 }
 
-func TestVerifier_Middleware(t *testing.T) {
+func TestJWT_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 	fsys := os.DirFS("./testdata")
 
-	s, j := newJWT(a, time.Hour, 0)
+	s, j := newJWT(a, time.Hour, time.Hour*2)
 	j.Add("hmac-secret", jwt.SigningMethodHS256, []byte("secret"), []byte("secret"))
 	verifierMiddleware(a, s, j)
 
@@ -57,39 +58,39 @@ func TestVerifier_Middleware(t *testing.T) {
 	}, "存在同名的签名方法 hmac-secret")
 
 	pub, pvt := readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.Add("rsa", jwt.SigningMethodRS256, pub, pvt)
 	verifierMiddleware(a, s, j)
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.AddRSA("rsa-2", jwt.SigningMethodRS256, pub, pvt)
 	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "rsa-public.pem", "rsa-private.pem")
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.Add("rsa-pss", jwt.SigningMethodPS256, pub, pvt)
 	verifierMiddleware(a, s, j)
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.AddRSAPSS("rsa-pss-2", jwt.SigningMethodPS256, pub, pvt)
 	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "ec256-public.pem", "ec256-private.pem")
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.Add("ecdsa", jwt.SigningMethodES256, pub, pvt)
 	verifierMiddleware(a, s, j)
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.AddECDSA("ecdsa-2", jwt.SigningMethodES256, pub, pvt)
 	verifierMiddleware(a, s, j)
 
 	pub, pvt = readFile(a, fsys, "ed25519-public.pem", "ed25519-private.pem")
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.Add("ed25519", jwt.SigningMethodEdDSA, pub, pvt)
 	verifierMiddleware(a, s, j)
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.AddEd25519("ed25519-2", jwt.SigningMethodEdDSA, pub, pvt)
 	verifierMiddleware(a, s, j)
 
 	// 一次性加载多个
-	s, j = newJWT(a, time.Hour, 0)
+	s, j = newJWT(a, time.Hour, time.Hour*2)
 	j.AddFromFS("ed25519", jwt.SigningMethodEdDSA, fsys, "ed25519-public.pem", "ed25519-private.pem")
 	j.AddFromFS("ecdsa", jwt.SigningMethodES256, fsys, "ec256-public.pem", "ec256-private.pem")
 	j.AddFromFS("rsa-pss", jwt.SigningMethodPS256, fsys, "rsa-public.pem", "rsa-private.pem")
@@ -110,14 +111,27 @@ func readFile(a *assert.Assertion, fsys fs.FS, public, private string) ([]byte, 
 func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) {
 	a.TB().Helper()
 
-	claims := &testClaims{
-		ID: 1,
-	}
+	const id = 1
 
 	r := s.Routers().New("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
+		claims := &testClaims{
+			ID:      id,
+			Created: time.Now(),
+		}
 		return j.Render(ctx, http.StatusCreated, claims)
 	})
+
+	r.Post("/refresh", j.VerifiyRefresh(func(ctx *web.Context) web.Responser {
+		a.TB().Helper()
+
+		claims, ok := j.GetValue(ctx)
+		if !ok {
+			return ctx.Problem(web.ProblemUnauthorized)
+		}
+
+		return j.Render(ctx, http.StatusCreated, &testClaims{ID: claims.ID, Created: ctx.Begin()})
+	}))
 
 	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
@@ -127,7 +141,7 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 			return web.Status(http.StatusNotFound)
 		}
 
-		if val.ID != claims.ID {
+		if val.ID != id {
 			return web.Status(http.StatusUnauthorized)
 		}
 
@@ -148,32 +162,59 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 	servertest.Post(a, "http://localhost:8080/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
-		a.TB().Helper()
+		//a.TB().Helper()
 
 		resp := &Response{}
 		a.NotError(xjson.Unmarshal(bytes.NewBuffer(body), resp))
 		a.NotEmpty(resp).
 			NotEmpty(resp.Access).
-			Zero(resp.Refresh)
+			NotEmpty(resp.Refresh)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", "BEARER "+resp.Access).
+			Header("Authorization", prefix+resp.Access).
+			Do(nil).
+			Status(http.StatusOK)
+
+		resp2 := &Response{}
+		servertest.Post(a, "http://localhost:8080/refresh", nil).
+			Header("Authorization", prefix+resp.Refresh).
+			Do(nil).
+			Status(http.StatusCreated).
+			BodyFunc(func(a *assert.Assertion, body []byte) {
+				a.NotError(xjson.Unmarshal(bytes.NewBuffer(body), resp2)).
+					NotEmpty(resp2).
+					NotEmpty(resp2.Access).
+					NotEmpty(resp2.Refresh)
+			})
+
+		a.True(j.v.blocker.TokenIsBlocked(resp.Access)).
+			True(j.v.blocker.TokenIsBlocked(resp.Refresh)).
+			False(j.v.blocker.TokenIsBlocked(resp2.Access)).
+			False(j.v.blocker.TokenIsBlocked(resp2.Refresh))
+
+		// 旧令牌已经无法访问
+		servertest.Get(a, "http://localhost:8080/info").
+			Header("Authorization", prefix+resp.Access).
+			Do(nil).
+			Status(http.StatusUnauthorized)
+
+		// 新令牌可以访问
+		servertest.Get(a, "http://localhost:8080/info").
+			Header("Authorization", prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header("Authorization", resp.Access).
+			Header("Authorization", prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", resp.Access).
+			Header("Authorization", prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
-
-	s.Close(0)
 }
 
 func TestVerifier_client(t *testing.T) {

@@ -4,16 +4,23 @@
 
 package jwt
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type testClaims struct {
 	jwt.MapClaims
-	ID    int64 `json:"id"`
-	token string
+	ID      int64     `json:"id"`
+	Created time.Time `json:"created"`
+	Token   string    //`json:"token"`
 }
 
-func (c *testClaims) BaseToken() string { return c.token }
+func (c *testClaims) BaseToken() string { return c.Token }
 
-func (c *testClaims) BuildRefresh(token string) Claims { return &testClaims{token: token} }
+func (c *testClaims) BuildRefresh(token string) Claims {
+	return &testClaims{Token: token, Created: time.Now(), ID: c.ID}
+}
 
 func (c *testClaims) Valid() error { return nil }

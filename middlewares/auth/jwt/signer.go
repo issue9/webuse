@@ -80,6 +80,8 @@ func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
 // Render 向客户端输出令牌
 //
 // 当前方法会将 accessClaims 进行签名，并返回 [web.Responser] 对象。
+//
+// status 返回给客户端的状态码；
 func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.Responser {
 	accessToken, err := s.Sign(accessClaims)
 	if err != nil {
