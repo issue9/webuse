@@ -44,10 +44,6 @@ type (
 // b 为处理丢弃令牌的对象，如果为空表示不会对任何令牌作特殊处理；
 // f 为 [Claims] 对象的生成方法；
 func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
-	if b == nil {
-		b = defaultBlocker[T]{}
-	}
-
 	j := &Verifier[T]{
 		blocker:       b,
 		claimsBuilder: f,
@@ -107,6 +103,12 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 
 	if j.blocker.ClaimsIsBlocked(claims) {
 		return ctx.Problem(web.ProblemUnauthorized)
+	}
+
+	if refresh { // 刷新令牌是一次性的
+		if err := j.blocker.BlockToken(h, true); err != nil {
+			ctx.Logs().ERROR().Error(err)
+		}
 	}
 
 	ctx.SetVar(contextKey, claims)
