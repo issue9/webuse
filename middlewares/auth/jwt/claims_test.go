@@ -19,8 +19,8 @@ type testClaims struct {
 
 func (c *testClaims) BaseToken() string { return c.Token }
 
-func (c *testClaims) BuildRefresh(token string) Claims {
-	return &testClaims{Token: token, Created: time.Now(), ID: c.ID}
+func (c *testClaims) BuildRefresh(token string, created time.Time) Claims {
+	return &testClaims{Token: token, Created: created, ID: c.ID}
 }
 
 func (c *testClaims) Valid() error { return nil }

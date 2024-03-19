@@ -4,7 +4,11 @@
 
 package jwt
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 // Claims Claims 对象需要实现的接口
 type Claims interface {
@@ -12,8 +16,9 @@ type Claims interface {
 
 	// BuildRefresh 根据令牌 token 生成刷新令牌的 [Claims]
 	//
-	// 返回对象也是 [Claims] 的实现，可以通过返回对象的 [Claims.BaseToken] 获得关联的基础令牌。
-	BuildRefresh(string) Claims
+	// token 生成的刷新令牌与此令牌相关联，此值可通过返回对象的 [Claims.BaseToken] 返回；
+	// created 表示刷新令牌的刷新时间，一般为 [time.Now]；
+	BuildRefresh(token string, created time.Time) Claims
 
 	// BaseToken 刷新令牌关联的令牌
 	//
