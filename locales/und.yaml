@@ -21,6 +21,9 @@ messages:
     - key: not found the context session key
       message:
         msg: not found the context session key
+    - key: the client Authorization header %s is invalid JWT format
+      message:
+        msg: the client Authorization header %s is invalid JWT format
     - key: the role %s has children role, can not deleted
       message:
         msg: the role %s has children role, can not deleted

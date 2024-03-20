@@ -20,7 +20,6 @@ jobs:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v5
         with:
-          stable: '!contains(${{ matrix.go }}, "beta") && !contains(${{ matrix.go }}, "rc")'
           go-version: ${{ matrix.go }}
         id: go
 
@@ -33,6 +32,7 @@ jobs:
         run: go test -p=1 -parallel=1 -v -coverprofile='coverage.txt' -covermode=atomic ./...
 
       - name: Upload Coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
+          token: ${{ secrets.CODECOV_TOKEN }}

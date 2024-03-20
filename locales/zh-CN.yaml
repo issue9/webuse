@@ -21,6 +21,9 @@ messages:
     - key: not found the context session key
       message:
         msg: 在当前对话中未找到相关的 session 数据
+    - key: the client Authorization header %s is invalid JWT format
+      message:
+        msg: 客户端提交到 Authorization 报头的 JWT 格式错误
     - key: the role %s has children role, can not deleted
       message:
         msg: 不能删除拥有子角色的角色 %s
