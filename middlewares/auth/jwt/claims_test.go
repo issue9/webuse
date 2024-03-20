@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/issue9/web"
 )
 
 type testClaims struct {
@@ -19,8 +20,8 @@ type testClaims struct {
 
 func (c *testClaims) BaseToken() string { return c.Token }
 
-func (c *testClaims) BuildRefresh(token string, created time.Time) Claims {
-	return &testClaims{Token: token, Created: created, ID: c.ID}
+func (c *testClaims) BuildRefresh(token string, ctx *web.Context) Claims {
+	return &testClaims{Token: token, Created: ctx.Begin(), ID: c.ID}
 }
 
 func (c *testClaims) Valid() error { return nil }

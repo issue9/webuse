@@ -90,7 +90,7 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 
 	var refreshToken string
 	if s.refresh {
-		refreshToken, err = s.Sign(accessClaims.BuildRefresh(accessToken, ctx.Begin()))
+		refreshToken, err = s.Sign(accessClaims.BuildRefresh(accessToken, ctx))
 		if err != nil {
 			return ctx.Error(err, "")
 		}

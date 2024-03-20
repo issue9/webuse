@@ -5,9 +5,8 @@
 package jwt
 
 import (
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/issue9/web"
 )
 
 // Claims Claims 对象需要实现的接口
@@ -17,8 +16,8 @@ type Claims interface {
 	// BuildRefresh 根据令牌 token 生成刷新令牌的 [Claims]
 	//
 	// token 生成的刷新令牌与此令牌相关联，此值可通过返回对象的 [Claims.BaseToken] 返回；
-	// created 表示刷新令牌的刷新时间，一般为 [time.Now]；
-	BuildRefresh(token string, created time.Time) Claims
+	// ctx 生成此刷新令牌的请求环境；
+	BuildRefresh(token string, ctx *web.Context) Claims
 
 	// BaseToken 刷新令牌关联的令牌
 	//
