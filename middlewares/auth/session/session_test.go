@@ -33,27 +33,28 @@ func TestSession(t *testing.T) {
 	})
 	a.NotError(err).NotNil(srv)
 
-	store := NewCacheStore[data](srv.Cache(), 500*time.Microsecond)
+	store := NewCacheStore[*data](srv.Cache(), 500*time.Microsecond)
 	a.NotNil(store)
 
-	session := New(store, 60, "sesson_id", "/", "localhost", false, false)
+	session := New(srv, store, 60, "sesson_id", "/", "localhost", false, false)
 	a.NotNil(session)
 
 	srv.Routers().Use(session)
 	r := srv.Routers().New("default", nil)
+
 	r.Get("/get1", func(ctx *web.Context) web.Responser {
+		//a.TB().Helper()
+
 		want := &data{}
 		if resp := ctx.QueryObject(true, want, web.ProblemInternalServerError); resp != nil {
 			return resp
 		}
 
-		sid, v, err := GetValue[data](ctx)
-		a.NotError(err).
-			Equal(v, want).
-			NotEmpty(sid)
+		v, err := GetValue[*data](ctx)
+		a.NotError(err).Equal(v, want)
 
 		v.Count++
-		a.NotError(SetValue(ctx, v))
+		a.NotError(session.Save(ctx, v))
 
 		return web.OK(nil)
 	})
@@ -68,38 +69,39 @@ func TestSession(t *testing.T) {
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	// 第一次登录
-	resp := servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
-		Do(nil).
-		Status(http.StatusUnauthorized).
-		Resp()
-
-	// 第二次，带上 cookie
-	cookie := resp.Cookies()[0]
-	resp = servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
-		Cookie(cookie).
+	// 第一次验证，初始化 cookie
+	resp := servertest.Get(a, "http://localhost:8080/get1").
 		Do(nil).
 		Status(http.StatusOK).
 		Resp()
 
-	cookie = resp.Cookies()[0]
+	// 第二次，带上 cookie
+	cookie := resp.Cookies()[0]
 	resp = servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
 		Cookie(cookie).
 		Do(nil).
 		Status(http.StatusOK).
 		Resp()
 
-	// 带 cookie，但服务端删除了 sessionid
+	// 第三次访问
 	cookie = resp.Cookies()[0]
-	resp = servertest.Delete(a, "http://localhost:8080/get1?count=1&id=").
+	resp = servertest.Get(a, "http://localhost:8080/get1?count=2&id=").
+		Cookie(cookie).
+		Do(nil).
+		Status(http.StatusOK).
+		Resp()
+
+	// 删除 cookie
+	cookie = resp.Cookies()[0]
+	resp = servertest.Delete(a, "http://localhost:8080/get1").
 		Cookie(cookie).
 		Do(nil).
 		Status(http.StatusNoContent).
 		Resp()
 
-	//cookie = resp.Cookies()[0]
-	servertest.Get(a, "http://localhost:8080/get1?count=1&id=").
+	// cookie 已经被删除
+	servertest.Get(a, "http://localhost:8080/get1?count=0&id=").
 		Cookie(cookie).
 		Do(nil).
-		Status(http.StatusUnauthorized)
+		Status(http.StatusOK)
 }

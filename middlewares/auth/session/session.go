@@ -9,42 +9,45 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"reflect"
 	"time"
 
+	"github.com/issue9/rands/v3"
+	"github.com/issue9/unique/v2"
 	"github.com/issue9/web"
 )
 
+var errSessionIDNotExists = web.NewLocaleError("session id not exists in context")
+
 const contextTypeKey contextType = 0
+const idKey contextType = 1
 
 type contextType int
 
-type context[T any] struct {
-	id string // session id
-	s  *Session[T]
-}
-
 // Session session 管理
-//
-// T 为每个 session 的数据类型，不能是指针类型。
 type Session[T any] struct {
-	store              Store[T]
+	rands *unique.Rands
+	store Store[T]
+
+	// cookie 的相关设置
 	lifetime           int
 	name, path, domain string
 	secure, httpOnly   bool
 }
 
-func (c *context[T]) set(v *T) error { return c.s.store.Set(c.id, v) }
+func ErrSessionKDNotExists() error { return errSessionIDNotExists }
 
-func (c *context[T]) get() (*T, error) { return c.s.store.Get(c.id) }
-
-func (c *context[T]) del() error { return c.s.store.Delete(c.id) }
-
-// New 声明 Session 中间件
+// New 声明 [Session] 中间件
 //
 // lifetime 为 session 的有效时间，单位为秒；其它参数为 cookie 的相关设置。
-func New[T any](store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) *Session[T] {
+func New[T any](s web.Server, store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) *Session[T] {
+	r := unique.NewRands(100, nil, 10, 11, rands.AlphaNumber())
+	s.Services().Add(web.Phrase("gen session id"), r)
+
 	return &Session[T]{
-		store:    store,
+		rands: r,
+		store: store,
+
 		lifetime: lifetime,
 		name:     name,
 		path:     path,
@@ -56,28 +59,25 @@ func New[T any](store Store[T], lifetime int, name, path, domain string, secure,
 
 func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		var id string
-
 		c, err := ctx.Request().Cookie(s.name)
 		if err != nil && !errors.Is(err, http.ErrNoCookie) { // 不退出，给定默认值。
 			ctx.Logs().ERROR().Error(err)
 		}
 
+		var id string
 		if c == nil {
+			id = s.rands.String()
 			c = &http.Cookie{
 				Name:     s.name,
 				Path:     s.path,
 				Domain:   s.domain,
 				Secure:   s.secure,
 				HttpOnly: s.httpOnly,
+				Value:    url.QueryEscape(id),
 			}
-		}
-
-		if c.Value == "" {
-			id = ctx.Server().UniqueID()
-			c.Value = url.QueryEscape(id)
 		} else {
-			if id, err = url.QueryUnescape(c.Value); err != nil {
+			id, err = url.QueryUnescape(c.Value)
+			if err != nil {
 				return ctx.Error(err, web.ProblemInternalServerError)
 			}
 		}
@@ -85,56 +85,78 @@ func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		c.MaxAge = s.lifetime
 		c.Expires = ctx.Begin().Add(time.Second * time.Duration(s.lifetime)) // http 1.0 和 ie8 仅支持此属性
 		ctx.SetCookies(c)
+		ctx.SetVar(idKey, id)
 
-		if v, err := s.store.Get(id); err != nil {
+		v, found, err := s.store.Get(id)
+		if err != nil {
 			return ctx.Error(err, web.ProblemInternalServerError)
-		} else if v == nil {
-			var z T
-			s.store.Set(id, &z)
-			return ctx.Problem(web.ProblemUnauthorized)
+		} else if !found {
+			var zero T
+			// BUG 多层指针？
+			if t := reflect.TypeOf(zero); t.Kind() == reflect.Pointer {
+				v = reflect.New(t.Elem()).Interface().(T)
+			}
+
+			// 生成 v，需要保存
+			if err := s.store.Set(id, v); err != nil {
+				return ctx.Error(err, web.ProblemInternalServerError)
+			}
 		}
 
-		ctx.SetVar(contextTypeKey, &context[T]{id: id, s: s})
+		ctx.SetVar(contextTypeKey, v)
 
 		return next(ctx)
 	}
 }
 
+// Logout 退出登录
 func (s *Session[T]) Logout(ctx *web.Context) error {
-	id, _, err := GetValue[T](ctx)
+	id, err := s.GetSessionID(ctx)
 	if err == nil {
 		err = s.Delete(id)
 	}
 	return err
 }
 
-// Logout 退出登录
+// Delete 删除 session id
 func (s *Session[T]) Delete(sessionid string) error { return s.store.Delete(sessionid) }
 
+func (s *Session[T]) GetSessionID(ctx *web.Context) (string, error) {
+	v, found := ctx.GetVar(idKey)
+	if !found {
+		return "", ErrSessionKDNotExists()
+	}
+	return v.(string), nil
+}
+
+// Save 保存 val
+func (s *Session[T]) Save(ctx *web.Context, val T) error {
+	SetValue(ctx, val)
+	id, err := s.GetSessionID(ctx)
+	if err != nil {
+		return err
+	}
+	return s.store.Set(id, val)
+}
+
 // GetValue 获取当前对话关联的信息
-func GetValue[T any](ctx *web.Context) (sessionid string, val *T, err error) {
-	if c, found := ctx.GetVar(contextTypeKey); found {
-		cc := c.(*context[T])
-		val, err := cc.get()
-		return cc.id, val, err
+func GetValue[T any](ctx *web.Context) (val T, err error) {
+	v, found := ctx.GetVar(contextTypeKey)
+	if found {
+		return v.(T), nil
 	}
 
-	var v T
-	return "", &v, web.NewLocaleError("not found the context session key")
+	return v.(T), web.NewLocaleError("not found the context session key")
 }
 
-// SetValue 更新 session 保存的值
-func SetValue[T any](ctx *web.Context, val *T) error {
-	if c, found := ctx.GetVar(contextTypeKey); found {
-		return c.(*context[T]).set(val)
-	}
-	return web.NewLocaleError("not found the context session key")
+// SetValue 更新 [web.Context] 保存的值
+func SetValue[T any](ctx *web.Context, val T) error {
+	ctx.SetVar(contextTypeKey, val)
+	return nil
 }
 
-// DelValue 删除 session 中保存的值
+// DelValue 删除 [web.Context] 中保存的值
 func DelValue[T any](ctx *web.Context) error {
-	if c, found := ctx.GetVar(contextTypeKey); found {
-		return c.(*context[T]).del()
-	}
+	ctx.DelVar(contextTypeKey)
 	return nil
 }

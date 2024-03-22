@@ -19,11 +19,11 @@ type Store[T any] interface {
 
 	// Get 查找指定 id 的 session
 	//
-	// 如果不存在，则 nil。
-	Get(id string) (*T, error)
+	// bool 表示是否找到了该值；
+	Get(id string) (T, bool, error)
 
 	// Set 更新指定 id 的 session
-	Set(id string, v *T) error
+	Set(id string, v T) error
 }
 
 type cacheStore[T any] struct {
@@ -41,15 +41,19 @@ func NewCacheStore[T any](c web.Cache, ttl time.Duration) Store[T] {
 
 func (s *cacheStore[T]) Delete(id string) error { return s.c.Delete(id) }
 
-func (s *cacheStore[T]) Get(id string) (*T, error) {
+func (s *cacheStore[T]) Get(id string) (T, bool, error) {
 	var v T
 	err := s.c.Get(id, &v)
-	if errors.Is(err, cache.ErrCacheMiss()) {
-		return nil, nil
+	switch {
+	case errors.Is(err, cache.ErrCacheMiss()):
+		return v, false, nil
+	case err != nil:
+		return v, false, err
+	default:
+		return v, true, nil
 	}
-	return &v, err
 }
 
-func (s *cacheStore[T]) Set(id string, v *T) error {
+func (s *cacheStore[T]) Set(id string, v T) error {
 	return s.c.Set(id, v, s.ttl)
 }
