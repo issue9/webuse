@@ -15,11 +15,12 @@ import (
 	"github.com/issue9/rands/v3"
 	"github.com/issue9/unique/v2"
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/internal/mauth"
 )
 
 var errSessionIDNotExists = web.NewLocaleError("session id not exists in context")
 
-const contextTypeKey contextType = 0
 const idKey contextType = 1
 
 type contextType int
@@ -35,7 +36,7 @@ type Session[T any] struct {
 	secure, httpOnly   bool
 }
 
-func ErrSessionKDNotExists() error { return errSessionIDNotExists }
+func ErrSessionIDNotExists() error { return errSessionIDNotExists }
 
 // New 声明 [Session] 中间件
 //
@@ -103,7 +104,7 @@ func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			}
 		}
 
-		ctx.SetVar(contextTypeKey, v)
+		mauth.Set(ctx, v)
 
 		return next(ctx)
 	}
@@ -124,14 +125,14 @@ func (s *Session[T]) Delete(sessionid string) error { return s.store.Delete(sess
 func (s *Session[T]) GetSessionID(ctx *web.Context) (string, error) {
 	v, found := ctx.GetVar(idKey)
 	if !found {
-		return "", ErrSessionKDNotExists()
+		return "", ErrSessionIDNotExists()
 	}
 	return v.(string), nil
 }
 
 // Save 保存 val
 func (s *Session[T]) Save(ctx *web.Context, val T) error {
-	SetValue(ctx, val)
+	mauth.Set(ctx, val)
 	id, err := s.GetSessionID(ctx)
 	if err != nil {
 		return err
@@ -139,24 +140,4 @@ func (s *Session[T]) Save(ctx *web.Context, val T) error {
 	return s.store.Set(id, val)
 }
 
-// GetValue 获取当前对话关联的信息
-func GetValue[T any](ctx *web.Context) (val T, err error) {
-	v, found := ctx.GetVar(contextTypeKey)
-	if found {
-		return v.(T), nil
-	}
-
-	return v.(T), web.NewLocaleError("not found the context session key")
-}
-
-// SetValue 更新 [web.Context] 保存的值
-func SetValue[T any](ctx *web.Context, val T) error {
-	ctx.SetVar(contextTypeKey, val)
-	return nil
-}
-
-// DelValue 删除 [web.Context] 中保存的值
-func DelValue[T any](ctx *web.Context) error {
-	ctx.DelVar(contextTypeKey)
-	return nil
-}
+func (s *Session[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }

@@ -66,8 +66,7 @@ func (j *JWT[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
 // Middleware 解码用户的 token 并写入 [web.Context]
 func (j *JWT[T]) Middleware(next web.HandlerFunc) web.HandlerFunc { return j.v.Middleware(next) }
 
-// GetValue 返回解码后的 Claims 对象
-func (j *JWT[T]) GetValue(ctx *web.Context) (T, bool) { return j.v.GetValue(ctx) }
+func (j *JWT[T]) GetInfo(ctx *web.Context) (T, bool) { return j.v.GetInfo(ctx) }
 
 // Render 向客户端输出令牌
 //

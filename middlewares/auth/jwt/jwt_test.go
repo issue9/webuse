@@ -21,9 +21,12 @@ import (
 	xjson "github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/internal/mauth"
+	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
-var _ web.Middleware = &JWT[*testClaims]{}
+var _ auth.Auth[*testClaims] = &JWT[*testClaims]{}
 
 func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *JWT[*testClaims]) {
 	s, err := server.New("test", "1.0.0", &server.Options{
@@ -125,7 +128,7 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 	r.Post("/refresh", j.VerifiyRefresh(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
-		claims, ok := j.GetValue(ctx)
+		claims, ok := j.GetInfo(ctx)
 		if !ok {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}
@@ -136,7 +139,7 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
-		val, found := j.GetValue(ctx)
+		val, found := j.GetInfo(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
 		}
@@ -171,13 +174,13 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 			NotEmpty(resp.Refresh)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", prefix+resp.Access).
+			Header(mauth.AuthorizationHeader, prefix+resp.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
 		resp2 := &Response{}
 		servertest.Post(a, "http://localhost:8080/refresh", nil).
-			Header("Authorization", prefix+resp.Refresh).
+			Header(mauth.AuthorizationHeader, prefix+resp.Refresh).
 			Do(nil).
 			Status(http.StatusCreated).
 			BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -194,24 +197,24 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 
 		// 旧令牌已经无法访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", prefix+resp.Access).
+			Header(mauth.AuthorizationHeader, prefix+resp.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 新令牌可以访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", prefix+resp2.Access).
+			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header("Authorization", prefix+resp2.Access).
+			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", prefix+resp2.Access).
+			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
@@ -232,7 +235,7 @@ func TestVerifier_client(t *testing.T) {
 	})
 
 	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
-		val, found := j.GetValue(ctx)
+		val, found := j.GetInfo(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
 		}
@@ -265,7 +268,7 @@ func TestVerifier_client(t *testing.T) {
 		header["alg"] = "ES256"
 		parts[0] = encodeHeader(a, header)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
+			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
@@ -275,7 +278,7 @@ func TestVerifier_client(t *testing.T) {
 		header["alg"] = "none"
 		parts[0] = encodeHeader(a, header)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
+			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
@@ -284,7 +287,7 @@ func TestVerifier_client(t *testing.T) {
 		header["alg"] = "none"
 		parts[0] = encodeHeader(a, header)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header("Authorization", "BEARER "+strings.Join(parts, ".")).
+			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})

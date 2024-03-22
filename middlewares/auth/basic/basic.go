@@ -10,14 +10,12 @@ package basic
 import (
 	"bytes"
 	"encoding/base64"
-	"strings"
 
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/internal/mauth"
+	"github.com/issue9/webuse/v7/middlewares/auth"
 )
-
-type keyType int
-
-const valueKey keyType = 1
 
 const prefix = "basic "
 
@@ -51,12 +49,12 @@ type basic[T any] struct {
 // T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [GetValue] 获取。
 //
 // [Basic 验证]: https://datatracker.ietf.org/doc/html/rfc7617
-func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) web.Middleware {
+func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth.Auth[T] {
 	if auth == nil {
 		panic("auth 参数不能为空")
 	}
 
-	authorization := "Authorization"
+	authorization := mauth.AuthorizationHeader
 	authenticate := "WWW-Authenticate"
 	problemID := web.ProblemUnauthorized
 	if proxy {
@@ -79,10 +77,7 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) web.
 
 func (b *basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		h := ctx.Request().Header.Get(b.authorization)
-		if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
-			h = h[prefixLen:]
-		}
+		h := auth.GetToken(ctx, prefix, b.authorization)
 
 		secret, err := base64.StdEncoding.DecodeString(h)
 		if err != nil {
@@ -98,8 +93,8 @@ func (b *basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 		if !ok {
 			return b.unauthorization(ctx)
 		}
-		ctx.SetVar(valueKey, v)
 
+		mauth.Set(ctx, v)
 		return next(ctx)
 	}
 }
@@ -111,11 +106,4 @@ func (b *basic[T]) unauthorization(ctx *web.Context) web.Responser {
 	return ctx.Problem(b.problemID)
 }
 
-// GetValue 获取当前对话关联的登录信息
-func GetValue[T any](ctx *web.Context) (T, bool) {
-	if v, found := ctx.GetVar(valueKey); found {
-		return v.(T), true
-	}
-	var vv T
-	return vv, false
-}
+func (b *basic[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }

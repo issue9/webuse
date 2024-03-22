@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
+	"github.com/issue9/webuse/v7/internal/mauth"
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
@@ -21,7 +22,7 @@ var (
 		return username, true
 	}
 
-	_ auth.Auth = &basic[[]byte]{}
+	_ auth.Auth[[]byte] = &basic[[]byte]{}
 )
 
 func TestNew(t *testing.T) {
@@ -39,7 +40,7 @@ func TestNew(t *testing.T) {
 
 	b = New(srv, authFunc, "", false).(*basic[[]byte])
 
-	a.Equal(b.authorization, "Authorization").
+	a.Equal(b.authorization, mauth.AuthorizationHeader).
 		Equal(b.authenticate, "WWW-Authenticate").
 		Equal(b.problemID, web.ProblemUnauthorized).
 		NotNil(b.auth)
@@ -66,7 +67,7 @@ func TestServeHTTP_ok(t *testing.T) {
 	r := s.Routers().New("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		username, found := GetValue[[]byte](ctx)
+		username, found := b.GetInfo(ctx)
 		a.True(found).Equal(string(username), "Aladdin")
 		return web.Status(http.StatusCreated)
 	})
@@ -81,7 +82,7 @@ func TestServeHTTP_ok(t *testing.T) {
 
 	// 正确的访问
 	servertest.Get(a, "http://localhost:8080/path").
-		Header("Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
+		Header(mauth.AuthorizationHeader, "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
 		Do(nil).
 		Status(http.StatusCreated)
 }
@@ -100,7 +101,7 @@ func TestServeHTTP_failed(t *testing.T) {
 	r := s.Routers().New("def", nil)
 	r.Use(b)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		obj, found := GetValue[[]byte](ctx)
+		obj, found := b.GetInfo(ctx)
 		a.True(found).Nil(obj)
 		return nil
 	})
@@ -115,7 +116,7 @@ func TestServeHTTP_failed(t *testing.T) {
 
 	// 错误的编码
 	servertest.Get(a, "http://localhost:8080/path").
-		Header("Authorization", "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
+		Header(mauth.AuthorizationHeader, "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
 		Do(nil).
 		Status(http.StatusUnauthorized)
 }

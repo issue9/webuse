@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
-var _ auth.Auth = &Session[int]{}
+var _ auth.Auth[int] = &Session[int]{}
 
 type data struct {
 	Count int `query:"count"`
@@ -43,15 +43,15 @@ func TestSession(t *testing.T) {
 	r := srv.Routers().New("default", nil)
 
 	r.Get("/get1", func(ctx *web.Context) web.Responser {
-		//a.TB().Helper()
+		// a.TB().Helper()
 
 		want := &data{}
 		if resp := ctx.QueryObject(true, want, web.ProblemInternalServerError); resp != nil {
 			return resp
 		}
 
-		v, err := GetValue[*data](ctx)
-		a.NotError(err).Equal(v, want)
+		v, found := session.GetInfo(ctx)
+		a.True(found).Equal(v, want)
 
 		v.Count++
 		a.NotError(session.Save(ctx, v))

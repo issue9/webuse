@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"io/fs"
 	"slices"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/internal/mauth"
+	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
 const (
-	contextKey contextKeyType = 1
-
 	prefix = "bearer "
 
 	prefixLen = 7 // len(prefix)
@@ -35,8 +35,6 @@ type (
 	}
 
 	BuildClaimsFunc[T Claims] func() T
-
-	contextKeyType int
 )
 
 // NewVerifier 声明 [Verifier] 对象
@@ -70,8 +68,8 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 }
 
 func (j *Verifier[T]) Logout(ctx *web.Context) error {
-	if c, found := j.GetValue(ctx); found {
-		return j.blocker.BlockToken(GetToken(ctx), c.BaseToken() != "")
+	if c, found := j.GetInfo(ctx); found {
+		return j.blocker.BlockToken(auth.GetToken(ctx, prefix, mauth.AuthorizationHeader), c.BaseToken() != "")
 	}
 	return nil
 }
@@ -91,7 +89,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc) web.Responser {
-	token := GetToken(ctx)
+	token := auth.GetToken(ctx, prefix, mauth.AuthorizationHeader)
 	if token == "" || j.blocker.TokenIsBlocked(token) {
 		return ctx.Problem(web.ProblemUnauthorized)
 	}
@@ -125,7 +123,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 		}
 	}
 
-	ctx.SetVar(contextKey, claims)
+	mauth.Set(ctx, claims)
 	return next(ctx)
 }
 
@@ -144,26 +142,7 @@ func (j *Verifier[T]) parseClaims(ctx *web.Context, token string) (T, web.Respon
 	return t.Claims.(T), nil
 }
 
-// GetValue 返回解码后的 [Claims] 对象
-func (j *Verifier[T]) GetValue(ctx *web.Context) (claims T, found bool) {
-	if v, found := ctx.GetVar(contextKey); found {
-		return v.(T), true
-	}
-	var vv T
-	return vv, false
-}
-
-// GetToken 获取客户端提交的 token
-//
-// 如果 Authorization 不是 bearer 开头，则返回空值。
-func GetToken(ctx *web.Context) string {
-	h := ctx.Request().Header.Get("Authorization")
-	if len(h) > prefixLen && strings.ToLower(h[:prefixLen]) == prefix {
-		return h[prefixLen:]
-	}
-	ctx.Logs().DEBUG().LocaleString(web.Phrase("the client Authorization header %s is invalid JWT format", h))
-	return ""
-}
+func (j *Verifier[T]) GetInfo(ctx *web.Context) (claims T, found bool) { return mauth.Get[T](ctx) }
 
 func (j *Verifier[T]) addKey(id string, sign SigningMethod, keyData any) {
 	if slices.IndexFunc(j.keys, func(e *key) bool { return e.id == id }) >= 0 {

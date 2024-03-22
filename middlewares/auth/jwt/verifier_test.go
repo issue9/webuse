@@ -11,6 +11,6 @@ import (
 )
 
 var (
-	_ web.MiddlewareFunc = (&Verifier[*testClaims]{}).VerifyRefresh
-	_ auth.Auth          = &Verifier[*testClaims]{}
+	_ web.MiddlewareFunc     = (&Verifier[*testClaims]{}).VerifyRefresh
+	_ auth.Auth[*testClaims] = &Verifier[*testClaims]{}
 )
