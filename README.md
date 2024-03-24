@@ -25,6 +25,8 @@
 - auth/session session 管理；
 - acl/ratelimit x-rate-limit 的相关实现；
 - acl/iplist 黑白名单；
+- acl/rbac 简单的 RBAC 管理；
+- skip 根据条件跳过路由的执行；
 
 ## 安装
 

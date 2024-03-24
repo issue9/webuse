@@ -12,6 +12,8 @@ import (
 )
 
 // Auth 登录凭证的验证接口
+//
+// T 表示每次验证后，附加在 [web.Context] 上的数据。
 type Auth[T any] interface {
 	web.Middleware
 
