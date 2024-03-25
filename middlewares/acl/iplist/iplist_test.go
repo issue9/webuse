@@ -13,6 +13,8 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 var (
@@ -35,13 +37,7 @@ func TestIPLister_Set(t *testing.T) {
 
 func TestWhite_Middleware(t *testing.T) {
 	a := assert.New(t, false)
-
-	s, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
-	})
-	a.NotError(err).NotNil(s)
+	s := testserver.New(a)
 
 	l := NewWhite()
 	a.NotNil(l)

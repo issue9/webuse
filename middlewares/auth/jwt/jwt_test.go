@@ -19,22 +19,18 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
 	xjson "github.com/issue9/web/mimetype/json"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
+	"github.com/issue9/webuse/v7/internal/testserver"
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
 var _ auth.Auth[*testClaims] = &JWT[*testClaims]{}
 
 func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *JWT[*testClaims]) {
-	s, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-	})
-	a.NotError(err).NotNil(s).
-		NotError(s.Cache().Clean())
+	s := testserver.New(a)
+	a.NotError(s.Cache().Clean())
 
 	m := NewCacheBlocker[*testClaims](s, "test_", expired, refresh)
 	b := func() *testClaims { return &testClaims{} }

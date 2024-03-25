@@ -11,24 +11,20 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 func TestAccess(t *testing.T) {
 	a := assert.New(t, false)
-	w := bytes.Buffer{}
-	srv, err := server.New("test", "1.0.0", &server.Options{
-		Logs:       &server.Logs{Handler: server.NewTextHandler(&w), Levels: server.AllLevels(), Created: server.MilliLayout},
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-	})
-	a.NotError(err).NotNil(srv)
+	srv := testserver.New(a)
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
+	w := bytes.Buffer{}
 	r := srv.Routers().New("def", nil)
-	m := New(srv.Logs().ERROR().String, "")
+	m := New(func(s string) { w.WriteString(s) }, "")
 	a.NotNil(m)
 	srv.Use(m)
 

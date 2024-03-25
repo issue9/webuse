@@ -6,15 +6,14 @@ package session
 
 import (
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
+	"github.com/issue9/webuse/v7/internal/testserver"
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
@@ -26,12 +25,8 @@ type data struct {
 
 func TestSession(t *testing.T) {
 	a := assert.New(t, false)
-	srv, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stdout, nil), Created: server.NanoLayout},
-	})
-	a.NotError(err).NotNil(srv)
+	srv := testserver.New(a)
+
 
 	store := NewCacheStore[*data](srv.Cache(), 500*time.Microsecond)
 	a.NotNil(store)

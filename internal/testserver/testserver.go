@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-package rbac
+// Package testserver 提供测试用的 [web.Server] 对象
+package testserver
 
 import (
 	"net/http"
@@ -13,11 +14,13 @@ import (
 	"github.com/issue9/web/server"
 )
 
-func newServer(a *assert.Assertion) web.Server {
-	srv, err := server.New("test", "1.0.0", &server.Options{
+func New(a *assert.Assertion) web.Server {
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes:  server.JSONMimetypes(),
 		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
 	})
-	a.NotError(err).NotNil(srv)
-	return srv
+	a.NotError(err).NotNil(s)
+
+	return s
 }

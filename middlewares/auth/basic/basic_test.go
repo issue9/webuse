@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/web/server/servertest"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
+	"github.com/issue9/webuse/v7/internal/testserver"
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
@@ -27,12 +28,8 @@ var (
 
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
+	srv := testserver.New(a)
 	var b *basic[[]byte]
-	srv, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-	})
-	a.NotError(err).NotNil(srv)
 
 	a.Panic(func() {
 		New[[]byte](srv, nil, "", false)

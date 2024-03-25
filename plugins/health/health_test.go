@@ -7,40 +7,24 @@ package health
 import (
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 var _ web.Plugin = &Health{}
 
 func TestHealth(t *testing.T) {
 	a := assert.New(t, false)
-	dr, gc := memory.New()
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-	go func() {
-		for now := range ticker.C {
-			gc(now)
-		}
-	}()
 
-	s, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Cache:      dr,
-		Mimetypes:  server.JSONMimetypes(),
-		Logs: &server.Logs{
-			Handler: server.NewTermHandler(os.Stderr, nil),
-		},
-	})
-	a.NotError(err).NotNil(s)
+	s := testserver.New(a)
+	//dr :=s.Cache().(cache.Driver)
 
 	h := New(NewCacheStore(s, "health_"))
 	s.Use(h)

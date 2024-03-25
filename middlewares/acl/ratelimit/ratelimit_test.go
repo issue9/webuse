@@ -12,19 +12,17 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache"
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 var _ web.Middleware = &ratelimit{}
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-	})
-	a.NotError(err).NotNil(s)
+	s:=testserver.New(a)
+
 	// 由 gen 方法限定在同一个请求
 	srv := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil }, nil)
 	a.NotNil(srv)

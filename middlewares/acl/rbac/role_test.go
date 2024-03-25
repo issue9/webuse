@@ -9,11 +9,13 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 func TestRBAC_NewRole(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -33,7 +35,7 @@ func TestRBAC_NewRole(t *testing.T) {
 
 func TestRole_Allow(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -66,7 +68,7 @@ func TestRole_Allow(t *testing.T) {
 
 func TestRole_Del(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -86,7 +88,7 @@ func TestRole_Del(t *testing.T) {
 
 func TestRole_Link(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -103,7 +105,7 @@ func TestRole_Link(t *testing.T) {
 
 func TestRole_Set(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -118,7 +120,7 @@ func TestRole_Set(t *testing.T) {
 
 func TestRole_Roles(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 

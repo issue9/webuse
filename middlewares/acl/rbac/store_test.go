@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 var _ Store[int64] = &cacheStore[int64]{}
@@ -24,7 +26,7 @@ func newRole[T comparable](id string) *Role[T] {
 
 func TestCacheStore(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
+	srv := testserver.New(a)
 	s := NewCacheStore[int64](srv, "c_")
 	a.NotNil(s)
 

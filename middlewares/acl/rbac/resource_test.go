@@ -13,11 +13,14 @@ import (
 	"github.com/issue9/web/server/servertest"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 func TestRBAC_NewGroup(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
+
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -30,7 +33,7 @@ func TestRBAC_NewGroup(t *testing.T) {
 
 func RBAC_resourceExists(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -47,7 +50,7 @@ func RBAC_resourceExists(t *testing.T) {
 
 func TestResources_New(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 
 	rbac, err := New(s, "1", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(ctx *web.Context) (string, web.Responser) {
 		q, err := ctx.Queries(true)
@@ -85,7 +88,7 @@ func TestResources_New(t *testing.T) {
 
 func TestRBAC_Resources(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
@@ -101,7 +104,7 @@ func TestRBAC_Resources(t *testing.T) {
 
 func TestRole_Resource(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a)
+	s := testserver.New(a)
 	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
 	a.NotError(err).NotNil(rbac)
 
