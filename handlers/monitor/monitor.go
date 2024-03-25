@@ -31,10 +31,10 @@ func New(s web.Server, dur time.Duration) *Monitor {
 	}
 }
 
-// Handler 输出监视信息
+// Handle 输出监视信息
 //
 // NOTE: 这是一个 SSE 连接，需要保证 content-type 的正确性。
-func (m *Monitor) Handler(ctx *web.Context) web.Responser {
+func (m *Monitor) Handle(ctx *web.Context) web.Responser {
 	source, wait := m.s.NewSource(0, ctx)
 	event := source.NewEvent("monitor", json.Marshal)
 	var cancel context.CancelFunc

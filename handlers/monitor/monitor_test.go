@@ -12,11 +12,14 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/nop"
 	"github.com/issue9/web/mimetype/sse"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
+
+var _ web.HandlerFunc = (&Monitor{}).Handle
 
 func TestMonitor(t *testing.T) {
 	a := assert.New(t, false)
@@ -32,7 +35,7 @@ func TestMonitor(t *testing.T) {
 
 	r := s.Routers().New("def", nil)
 	m := New(s, time.Second)
-	r.Get("/stats", m.Handler)
+	r.Get("/stats", m.Handle)
 
 	stats := make(chan *sse.Message, 10)
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/stats", nil)

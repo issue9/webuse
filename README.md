@@ -10,7 +10,10 @@
 
 ## handlers
 
+位于 [handlers](handlers) 之下：
+
 - monitor 系统状态监视；
+- static 静态文件处理；
 
 ## 插件
 
