@@ -6,7 +6,11 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/webuse/v7)](https://pkg.go.dev/github.com/issue9/webuse/v7)
 [![Go version](https://img.shields.io/github/go-mod/go-version/issue9/webuse)](https://golang.org)
 
- 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件和插件；
+ 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件和一些常用的路由函数；
+
+## handlers
+
+- monitor 系统状态监视；
 
 ## 插件
 
@@ -20,12 +24,13 @@
 
 中间件位于 [middlewares](middlewares) 目录之下：
 
+- acl/iplist 黑白名单；
+- acl/ratelimit x-rate-limit 的相关实现；
+- acl/rbac 简单的 RBAC 管理；
+- adapter: 与标准库的适配；
 - auth/basic 基本的验证处理；
 - auth/jwt JSON Web Tokens 中间件；
 - auth/session session 管理；
-- acl/ratelimit x-rate-limit 的相关实现；
-- acl/iplist 黑白名单；
-- acl/rbac 简单的 RBAC 管理；
 - skip 根据条件跳过路由的执行；
 
 ## 安装
