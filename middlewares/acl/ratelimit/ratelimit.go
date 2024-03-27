@@ -107,7 +107,7 @@ func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 		return 0, err
 	}
 	cntName := name + "_cnt"
-	lastName := name + "_time"
+	lastName := name + "_last"
 	counter := rate.store.Counter(cntName, rate.capacity, rate.rate)
 
 	size, err := counter.Decr(1) // 先扣点，保证多并发情况下不会有问题。

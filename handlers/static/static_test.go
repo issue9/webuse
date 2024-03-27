@@ -6,47 +6,20 @@ package static
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
-	"golang.org/x/text/language"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
-
-func newServer(a *assert.Assertion) web.Server {
-	o := &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Language:   language.English,
-		Mimetypes: []*server.Mimetype{
-			{
-				Name:      "application/json",
-				Marshal:   func(*web.Context, any) ([]byte, error) { return nil, nil },
-				Unmarshal: func(io.Reader, any) error { return nil },
-				Problem:   "application/problem+json",
-			},
-		},
-		Logs: &server.Logs{
-			Handler:  server.NewTermHandler(os.Stderr, nil),
-			Location: true,
-			Created:  server.NanoLayout,
-			Levels:   server.AllLevels(),
-		},
-	}
-	srv, err := server.New("test", "1.0.0", o)
-	a.NotError(err).NotNil(srv)
-
-	return srv
-}
 
 func TestServeFileHandler(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
+	srv := testserver.New(a)
 	router := srv.Routers().New("def", nil)
 
 	defer servertest.Run(a, srv)()
@@ -75,7 +48,7 @@ func TestServeFileHandler(t *testing.T) {
 
 func TestAttachmentHandler(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
+	srv := testserver.New(a)
 	router := srv.Routers().New("def", nil)
 
 	defer servertest.Run(a, srv)()

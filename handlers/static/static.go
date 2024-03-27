@@ -7,12 +7,11 @@ package static
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
+	"mime"
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/mux/v7"
@@ -77,10 +76,10 @@ func ServeFile(ctx *web.Context, fsys fs.FS, name, index string) web.Responser {
 // filename 为显示给客户端的文件名，如果为空，则会取 name 的文件名部分；
 // inline 是否在浏览器内打开，主要看浏览器本身是否支持；
 func Attachment(ctx *web.Context, fsys fs.FS, name, filename string, inline bool) web.Responser {
-	if filename != "" && strings.ContainsFunc(filename, func(r rune) bool { return r == '/' || r == filepath.Separator }) {
-		panic(fmt.Sprintf("filename: %s 不能包含路径分隔符", filename))
-	} else if filename == "" {
+	if filename == "" {
 		filename = filepath.Base(name)
+	} else if strings.ContainsFunc(filename, func(r rune) bool { return r == '/' || r == filepath.Separator }) {
+		panic(fmt.Sprintf("filename: %s 不能包含路径分隔符", filename))
 	}
 	filename = url.QueryEscape(filename) // 防止中文乱码
 
@@ -89,39 +88,8 @@ func Attachment(ctx *web.Context, fsys fs.FS, name, filename string, inline bool
 		attach = "inline"
 	}
 
-	file, err := fsys.Open(name)
-	if err != nil {
-		return ctx.Error(err, "")
-	}
-	defer file.Close()
-
-	stat, err := file.Stat()
-	if err != nil {
-		return ctx.Error(err, "")
-	}
-
-	// 先读 512 字节用于解析文件类型
-	const headerSize = 512
-	fh := make([]byte, headerSize)
-	n, err := file.Read(fh)
-	if err != nil {
-		return ctx.Error(err, "")
-	}
-	fh = fh[:n]
-
-	h := ctx.Header()
-	h.Set(contentDisposition, attach+"; filename="+filename)
-	h.Set("content-type", http.DetectContentType(fh))
-	h.Set("content-length", strconv.FormatInt(stat.Size(), 10))
-
-	if _, err = ctx.Write(fh); err != nil {
-		return ctx.Error(err, "")
-	}
-	if n == headerSize { // 可能没有读完
-		if _, err = io.Copy(ctx, file); err != nil {
-			return ctx.Error(err, "")
-		}
-	}
-
+	cd := mime.FormatMediaType(attach, map[string]string{"filename": filename})
+	ctx.Header().Set(contentDisposition, cd)
+	http.ServeFileFS(ctx, ctx.Request(), fsys, name)
 	return nil
 }
