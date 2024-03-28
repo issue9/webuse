@@ -9,7 +9,7 @@ require (
 	github.com/issue9/mux/v7 v7.4.2
 	github.com/issue9/rands/v3 v3.0.1
 	github.com/issue9/unique/v2 v2.1.0
-	github.com/issue9/web v0.88.3
+	github.com/issue9/web v0.89.0
 	github.com/shirou/gopsutil/v3 v3.24.2
 	golang.org/x/text v0.14.0
 )

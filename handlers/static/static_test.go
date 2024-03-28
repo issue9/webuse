@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/web/server/servertest"
@@ -46,7 +47,7 @@ func TestServeFileHandler(t *testing.T) {
 		})
 }
 
-func TestAttachmentHandler(t *testing.T) {
+func TestAttachmentFileHandler(t *testing.T) {
 	a := assert.New(t, false)
 	srv := testserver.New(a)
 	router := srv.Routers().New("def", nil)
@@ -55,17 +56,34 @@ func TestAttachmentHandler(t *testing.T) {
 	defer srv.Close(0)
 
 	a.PanicString(func() {
-		AttachmentHandler(nil, "path", "filename", true)
+		AttachmentFileHandler(nil, "path", "filename", true)
 	}, "参数 fsys 不能为空")
 
 	a.PanicString(func() {
-		AttachmentHandler(os.DirFS("./testdata"), "", "filename", true)
+		AttachmentFileHandler(os.DirFS("./testdata"), "", "filename", true)
 	}, "参数 name 不能为空")
 
-	router.Get("/attach/{path}", AttachmentHandler(os.DirFS("./testdata"), "path", "中文", true))
+	router.Get("/attach/{path}", AttachmentFileHandler(os.DirFS("./testdata"), "path", "中文", true))
 
-	servertest.Get(a, "http://localhost:8080/attach/file1.txt"). // file1.txt
-									Do(nil).
-									Status(http.StatusOK).
-									Header(contentDisposition, "inline; filename="+url.QueryEscape("中文"))
+	servertest.Get(a, "http://localhost:8080/attach/file1.txt").
+		Do(nil).
+		Status(http.StatusOK).
+		Header(contentDisposition, "inline; filename="+url.QueryEscape("中文"))
+}
+
+func TestAttachmentReaderHandler(t *testing.T) {
+	a := assert.New(t, false)
+	srv := testserver.New(a)
+	router := srv.Routers().New("def", nil)
+
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
+
+	reader := bytes.NewReader([]byte("abc"))
+	router.Get("/attach/path", AttachmentReaderHandler("中文", true, time.Now(), reader))
+
+	servertest.Get(a, "http://localhost:8080/attach/path").
+		Do(nil).
+		Status(http.StatusOK).
+		Header(contentDisposition, "inline; filename="+url.QueryEscape("中文"))
 }
