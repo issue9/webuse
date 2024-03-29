@@ -12,6 +12,22 @@ import (
 	"github.com/issue9/web"
 )
 
+// Store 存储 API 状态的接口
+type Store interface {
+	// Get 获取指定 API 的数据
+	//
+	// 如果还不存在，则应该将只有 route、method 和 pattern 不为空的 [State] 对象写入当前接口并返回。
+	Get(route, method, pattern string) *State
+
+	// Save 保存数据内容
+	//
+	// 如果数据已经存在，则会覆盖。
+	Save(*State)
+
+	// All 返回所有接口的状态信息
+	All() []*State
+}
+
 type cacheStore struct {
 	cache  web.Cache
 	errlog *web.Logger

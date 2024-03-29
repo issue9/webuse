@@ -12,22 +12,6 @@ import (
 	"github.com/issue9/web"
 )
 
-// Store 存储 API 状态的接口
-type Store interface {
-	// Get 获取指定 API 的数据
-	//
-	// 如果还不存在，则返回空对象。
-	Get(route, method, pattern string) *State
-
-	// Save 保存数据内容
-	//
-	// 如果数据已经存在，则会覆盖。
-	Save(*State)
-
-	// All 返回所有接口的状态信息
-	All() []*State
-}
-
 // State 实际存在的数据类型
 type State struct {
 	XMLName      struct{}      `xml:"state" yaml:"-" json:"-"`
