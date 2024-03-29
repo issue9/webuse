@@ -15,24 +15,23 @@ import (
 
 // Store 存储接口
 type Store[T comparable] interface {
-	// Load 加载所有的角色
-	Load() (map[string]*Role[T], error)
+	// Load 加载 gid 下的所有角色
+	Load(gid string) (map[string]*Role[T], error)
 
 	// Del 删除指定角色
 	//
 	// 如果角色下面还有子角色或是用户时，不应该删除。
-	Del(string) error
+	Del(gid, roleID string) error
 
 	// Set 修改角色信息
 	//
 	// 如果修改了角色可访问的资源列表，应该检测子角色是否拥有该资源。
-	Set(*Role[T]) error
+	Set(gid string, r *Role[T]) error
 
 	// Add 添加角色信息
-	Add(*Role[T]) error
-
-	// Exists 是否存在指定 id 的角色
-	Exists(string) (bool, error)
+	//
+	// r.id 是由 [Server.UniqueID] 保证不重复的，如果出现重复的情况，应该直接 panic.
+	Add(gid string, r *Role[T]) error
 }
 
 type cacheStore[T comparable] struct {
@@ -53,31 +52,37 @@ func NewCacheStore[T comparable](s web.Server, prefix string) Store[T] {
 	}
 }
 
-func (s *cacheStore[T]) getKeys() ([]string, error) {
-	keys := []string{}
-	if err := s.c.Get("", &keys); err != nil {
+func (s *cacheStore[T]) getRoleIDs(gid string) ([]string, error) {
+	ids := []string{}
+	err := s.c.Get(gid, &ids)
+	if errors.Is(err, cache.ErrCacheMiss()) {
+		return ids, nil
+	} else if err != nil {
 		return nil, err
 	}
-	return keys, nil
+	return ids, nil
 }
 
-func (s *cacheStore[T]) setKeys(keys []string) error { return s.c.Set("", keys, cache.Forever) }
+func (s *cacheStore[T]) setRoleIDs(gid string, ids []string) error {
+	return s.c.Set(gid, ids, cache.Forever)
+}
 
-func (s *cacheStore[T]) Load() (map[string]*Role[T], error) {
-	keys, err := s.getKeys()
+func (s *cacheStore[T]) Load(gid string) (map[string]*Role[T], error) {
+	ids, err := s.getRoleIDs(gid)
 	if err != nil {
 		return nil, err
 	}
 
-	roles := make([]*Role[T], 0, len(keys))
-	for _, item := range keys {
+	roles := make([]*Role[T], 0, len(ids))
+	for _, item := range ids {
 		r := &Role[T]{}
-		if err := s.c.Get(item, r); err != nil {
+		if err := s.c.Get(gid+item, r); err != nil {
 			return nil, err
 		}
 		roles = append(roles, r)
 	}
 
+	// 确定 parent 关系
 	ms := make(map[string]*Role[T], len(roles))
 	for _, role := range roles {
 		if role.Parent != "" {
@@ -91,49 +96,41 @@ func (s *cacheStore[T]) Load() (map[string]*Role[T], error) {
 	return ms, nil
 }
 
-func (s *cacheStore[T]) Del(id string) error {
-	keys, err := s.getKeys()
+func (s *cacheStore[T]) Del(gid, id string) error {
+	ids, err := s.getRoleIDs(gid)
 	if err != nil {
 		return err
 	}
 
-	if err := s.c.Delete(id); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+	if err := s.c.Delete(gid + id); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 		return err
 	}
 
-	if index := slices.Index(keys, id); index >= 0 {
-		keys = slices.Delete(keys, index, index+1)
-		return s.setKeys(keys)
+	if index := slices.Index(ids, id); index >= 0 {
+		ids = slices.Delete(ids, index, index+1)
+		return s.setRoleIDs(gid, ids)
 	}
 	return nil
 }
 
-func (s *cacheStore[T]) Set(role *Role[T]) error {
-	return s.c.Set(role.ID, role, cache.Forever)
+func (s *cacheStore[T]) Set(gid string, role *Role[T]) error {
+	return s.c.Set(gid+role.ID, role, cache.Forever)
 }
 
-func (s *cacheStore[T]) Add(role *Role[T]) error {
-	keys, err := s.getKeys()
+func (s *cacheStore[T]) Add(gid string, role *Role[T]) error {
+	ids, err := s.getRoleIDs(gid)
 	if err != nil {
 		return err
 	}
 
-	if slices.Index(keys, role.ID) >= 0 {
+	if slices.Index(ids, role.ID) >= 0 {
 		// 由 server.UniqueID() 保证 role.ID 唯一性，如果不唯一，肯定是代码级别的错误。
 		panic(fmt.Sprintf("角色 %s 已经存在", role.ID))
 	}
 
-	if err := s.c.Set(role.ID, role, cache.Forever); err != nil {
+	if err := s.c.Set(gid+role.ID, role, cache.Forever); err != nil {
 		return err
 	}
 
-	return s.setKeys(append(keys, role.ID))
-}
-
-func (s *cacheStore[T]) Exists(id string) (bool, error) {
-	keys, err := s.getKeys()
-	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
-		return false, err
-	}
-	return slices.Index(keys, id) >= 0, nil
+	return s.setRoleIDs(gid, append(ids, role.ID))
 }

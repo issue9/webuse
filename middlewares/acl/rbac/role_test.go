@@ -13,33 +13,37 @@ import (
 	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
-func TestRBAC_NewRole(t *testing.T) {
+func TestRoleGroup_New(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	g, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(g)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := g.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
 
-	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
+	r2, err := g.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2).Equal(r2.parent, r1)
 
-	roles, err := rbac.store.Load()
-	a.NotError(err).Length(roles, 2).Equal(rbac.Role(r2.ID).parent, rbac.Role(r1.ID))
+	roles, err := g.rbac.store.Load(g.id)
+	a.NotError(err).Length(roles, 2).Equal(g.Role(r2.ID).parent, g.Role(r1.ID))
 
 	// rbac.Roles
 
-	a.Length(rbac.Roles(), 2)
+	a.Length(g.Roles(), 2)
 }
 
 func TestRole_Allow(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
 	a.Equal(r1.Allow("not-exists"), web.NewLocaleError("not found resource %s", "not-exists")).
 		Empty(r1.Resources)
@@ -47,7 +51,7 @@ func TestRole_Allow(t *testing.T) {
 	res11 := joinID("res1", "1")
 	res12 := joinID("res1", "2")
 
-	g := rbac.NewGroup("res1", nil)
+	g := rbac.NewResourceGroup("res1", nil)
 	g.New("1", nil)
 	g.New("2", nil)
 
@@ -55,7 +59,7 @@ func TestRole_Allow(t *testing.T) {
 
 	// r2 继承自 r1
 
-	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
+	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2).
 		NotError(r2.Allow(res11))
 
@@ -69,12 +73,14 @@ func TestRole_Allow(t *testing.T) {
 func TestRole_Del(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
-	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
+	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2).Equal(r2.parent, r1)
 	r2.Users = []string{"1"}
 
@@ -89,10 +95,12 @@ func TestRole_Del(t *testing.T) {
 func TestRole_Link(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
 
 	a.NotError(r1.Link("user1")).
@@ -106,14 +114,16 @@ func TestRole_Link(t *testing.T) {
 func TestRole_Set(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
 	r1.Set("name", "desc")
 	a.Equal(r1.Name, "name").Equal(r1.Desc, "desc")
-	roles, err := rbac.store.Load()
+	roles, err := rg1.rbac.store.Load(rg1.id)
 	a.NotError(err).Length(roles, 1).
 		Equal(roles[r1.ID].Name, "name").Equal(roles[r1.ID].Desc, "desc")
 }
@@ -121,16 +131,18 @@ func TestRole_Set(t *testing.T) {
 func TestRole_Roles(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1).Nil(r1.parent)
 
-	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
+	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2).Equal(r2.parent, r1)
 
-	r3, err := rbac.NewRole("r3", "r3 desc", r2.ID)
+	r3, err := rg1.NewRole("r3", "r3 desc", r2.ID)
 	a.NotError(err).NotNil(r3).Equal(r3.parent, r2)
 
 	roles, err := r1.Roles(false)

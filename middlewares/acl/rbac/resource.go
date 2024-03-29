@@ -15,8 +15,8 @@ import (
 
 const idSeparator = '_'
 
-// Group 表示一组资源
-type Group[T comparable] struct {
+// ResourceGroup 表示一组资源
+type ResourceGroup[T comparable] struct {
 	rbac  *RBAC[T]
 	id    string
 	title web.LocaleStringer
@@ -36,7 +36,9 @@ type RoleResource struct {
 
 	// Parent 角色的父类能访问的资源
 	//
-	// Parent 必然是包含了 Current 的所有值。
+	// 必然也是当前角色所能访问的最大资源列表。
+	//
+	// Parent 肯定是包含了 Current 的所有值。
 	Parent []string `json:"parent" xml:"parent" yaml:"parent"`
 }
 
@@ -48,38 +50,40 @@ func (rbac *RBAC[T]) resourceExists(id string) bool {
 	}
 
 	gid := id[:index]
-	if g, found := rbac.groups[gid]; found {
+	if g, found := rbac.resourceGroups[gid]; found {
 		_, f := g.items[id]
 		return f
 	}
 	return false
 }
 
-// NewGroup 声明一组资源
+// NewResourceGroup 声明一组资源
 //
 // id 为该资源组的唯一 ID；
 // title 对该资源组的描述；
-func (rbac *RBAC[T]) NewGroup(id string, title web.LocaleStringer) *Group[T] {
-	if _, found := rbac.groups[id]; found {
+func (rbac *RBAC[T]) NewResourceGroup(id string, title web.LocaleStringer) *ResourceGroup[T] {
+	if _, found := rbac.resourceGroups[id]; found {
 		panic(fmt.Sprintf("已经存在同名的资源组 %s", id))
 	}
 
-	res := &Group[T]{
+	res := &ResourceGroup[T]{
 		rbac:  rbac,
 		id:    id,
 		title: title,
 		items: make(map[string]web.LocaleStringer, 10),
 	}
-	rbac.groups[id] = res
+	rbac.resourceGroups[id] = res
 	return res
 }
+
+func (rbac *RBAC[T]) ResourceGroup(id string) *ResourceGroup[T] { return rbac.resourceGroups[id] }
 
 func joinID(gid, id string) string { return gid + string(idSeparator) + id }
 
 // New 添加新的资源
 //
 // 返回的是用于判断是否拥有当前资源权限的中间件。
-func (r *Group[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
+func (r *ResourceGroup[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
 	id = joinID(r.id, id)
 
 	if _, found := r.items[id]; found {
@@ -95,13 +99,8 @@ func (r *Group[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
 				return resp
 			}
 
-			if uid == r.rbac.super {
-				return next(ctx)
-			}
-
-			for _, role := range r.rbac.roles {
-				if role.isAllow(uid, id) {
-					r.rbac.debug(uid, id, role)
+			for _, roleG := range r.rbac.roleGroups {
+				if roleG.isAllow(uid, id) {
 					return next(ctx)
 				}
 			}
@@ -113,8 +112,8 @@ func (r *Group[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
 
 // Resources 所有资源的列表
 func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resource {
-	res := make([]*Resource, 0, len(rbac.groups))
-	for _, role := range rbac.groups {
+	res := make([]*Resource, 0, len(rbac.resourceGroups))
+	for _, role := range rbac.resourceGroups {
 		items := make([]*Resource, 0, len(role.items))
 		for id, item := range role.items {
 			items = append(items, &Resource{ID: id, Title: item.LocaleString(p)})
@@ -133,7 +132,7 @@ func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resource {
 func (role *Role[T]) Resource() *RoleResource {
 	var parent []string
 	if role.parent == nil {
-		parent = role.rbac.resources
+		parent = role.group.rbac.resources
 	} else {
 		parent = role.parent.Resources
 	}

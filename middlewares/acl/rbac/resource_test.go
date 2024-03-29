@@ -17,30 +17,30 @@ import (
 	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
-func TestRBAC_NewGroup(t *testing.T) {
+func TestRBAC_NewResourceGroup(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
 
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
 
-	group := rbac.NewGroup("id", web.Phrase("test"))
+	group := rbac.NewResourceGroup("id", web.Phrase("test"))
 	a.NotNil(group).
 		PanicString(func() {
-			rbac.NewGroup("id", web.Phrase("test"))
+			rbac.NewResourceGroup("id", web.Phrase("test"))
 		}, "已经存在同名的资源组 id")
 }
 
 func RBAC_resourceExists(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
 
-	g1 := rbac.NewGroup("g1", nil)
+	g1 := rbac.NewResourceGroup("g1", nil)
 	g1.New("1", nil)
 	g1.New("2", nil)
-	g2 := rbac.NewGroup("g2", nil)
+	g2 := rbac.NewResourceGroup("g2", nil)
 	g2.New("3", nil)
 	g2.New("4", nil)
 	a.True(rbac.resourceExists(joinID(g1.id, "1"))).
@@ -52,16 +52,19 @@ func TestResources_New(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
 
-	rbac, err := New(s, "1", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(ctx *web.Context) (string, web.Responser) {
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(ctx *web.Context) (string, web.Responser) {
 		q, err := ctx.Queries(true)
 		if err != nil {
 			return "", ctx.Error(err, "")
 		}
 		return q.String("id", ""), nil
 	})
-	a.NotError(err).NotNil(rbac)
+	a.NotNil(rbac)
 
-	group := rbac.NewGroup("id", web.Phrase("test"))
+	rg1, err := rbac.NewRoleGroup("g1", "1")
+	a.NotError(err).NotNil(rg1)
+
+	group := rbac.NewResourceGroup("id", web.Phrase("test"))
 	a.NotNil(group)
 
 	m1 := group.New("id1", web.Phrase("desc"))
@@ -89,13 +92,13 @@ func TestResources_New(t *testing.T) {
 func TestRBAC_Resources(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
 
-	g1 := rbac.NewGroup("g1", web.Phrase("test"))
+	g1 := rbac.NewResourceGroup("g1", web.Phrase("test"))
 	g1.New("id1", web.Phrase("id1"))
 	g1.New("id2", web.Phrase("id2"))
-	g2 := rbac.NewGroup("g2", web.Phrase("test"))
+	g2 := rbac.NewResourceGroup("g2", web.Phrase("test"))
 	g2.New("id1", web.Phrase("id1"))
 	g2.New("id2", web.Phrase("id2"))
 
@@ -105,21 +108,23 @@ func TestRBAC_Resources(t *testing.T) {
 func TestRole_Resource(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	rbac, err := New(s, "", NewCacheStore[string](s, "c_"), s.Logs().INFO(), func(*web.Context) (string, web.Responser) { return "1", nil })
-	a.NotError(err).NotNil(rbac)
+	rbac := New(s, NewCacheStore[string](s, "c_"), func(*web.Context) (string, web.Responser) { return "1", nil })
+	a.NotNil(rbac)
+	rg1, err := rbac.NewRoleGroup("g1", "")
+	a.NotError(err).NotNil(rg1)
 
-	g1 := rbac.NewGroup("g1", web.Phrase("test"))
+	g1 := rbac.NewResourceGroup("g1", web.Phrase("test"))
 	g1.New("id1", web.Phrase("id1"))
 	g1.New("id2", web.Phrase("id2"))
-	g2 := rbac.NewGroup("g2", web.Phrase("test"))
+	g2 := rbac.NewResourceGroup("g2", web.Phrase("test"))
 	g2.New("id1", web.Phrase("id1"))
 	g2.New("id2", web.Phrase("id2"))
 
-	r1, err := rbac.NewRole("r1", "r1 desc", "")
+	r1, err := rg1.NewRole("r1", "r1 desc", "")
 	a.NotError(err).NotNil(r1)
 	r1.Allow(joinID(g1.id, "id1"), joinID(g2.id, "id2"))
 
-	r2, err := rbac.NewRole("r2", "r2 desc", r1.ID)
+	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2)
 
 	a.Equal(r1.Resource(), &RoleResource{
