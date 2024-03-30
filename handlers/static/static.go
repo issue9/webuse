@@ -6,17 +6,18 @@
 package static
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"mime"
 	"net/http"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/issue9/mux/v7"
 	"github.com/issue9/web"
 )
 
@@ -53,29 +54,38 @@ func AttachmentReaderHandler(filename string, inline bool, modtime time.Time, co
 // ServeFileHandler 构建静态文件服务对象
 //
 // fsys 为文件系统；
-// name 表示地址中表示文件名部分的参数名称；
-// index 表示目录下的默认文件名；
+// name 表示地址中表示文件名部分的参数名称。
+// 以 val 表示 name 指定的参数，依以下规则读取内容：
+//   - val 以 / 结尾，读取 val + index 指向的文件，若不存在返回 404;
+//   - val 不以 / 结尾，则被当作普通的文件读取，若不存在返回 404，如果实际表示目录，则读取目录结构；
 func ServeFileHandler(fsys fs.FS, name, index string) web.HandlerFunc {
-	if fsys == nil {
-		panic("参数 fsys 不能为空")
-	}
-	if name == "" {
-		panic("参数 name 不能为空")
-	}
-
 	return func(ctx *web.Context) web.Responser {
 		p, _ := ctx.Route().Params().Get(name) // 空值也是允许的值
-		return ServeFile(ctx, fsys, p, index)
-	}
-}
+		if p == "" {
+			p = "."
+		}
 
-// ServeFile 提供了静态文件服务
-//
-// name 表示需要读取的文件名，相对于 fsys；
-// index 表示 name 为目录时，默认读取的文件，为空表示 index.html；
-func ServeFile(ctx *web.Context, fsys fs.FS, name, index string) web.Responser {
-	mux.ServeFile(fsys, name, index, ctx, ctx.Request())
-	return nil
+		stat, err := fs.Stat(fsys, p)
+		if err != nil {
+			return ctx.Error(err, "")
+		}
+
+		if !stat.IsDir() {
+			http.ServeFileFS(ctx, ctx.Request(), fsys, p)
+			return nil
+		}
+
+		index = path.Join(p, index)
+		if stat, err = fs.Stat(fsys, index); err == nil && !stat.IsDir() {
+			http.ServeFileFS(ctx, ctx.Request(), fsys, index)
+			return nil
+		} else if errors.Is(err, fs.ErrNotExist) || !stat.IsDir() {
+			http.ServeFileFS(ctx, ctx.Request(), fsys, p) // 没找到 index 指向的文件，返回上一层的目录结构 p
+			return nil
+		} else {
+			return ctx.Error(err, "")
+		}
+	}
 }
 
 // AttachmentFile 将文件作为下载对象

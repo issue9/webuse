@@ -26,25 +26,32 @@ func TestServeFileHandler(t *testing.T) {
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	a.PanicString(func() {
-		ServeFileHandler(nil, "path", "index.html")
-	}, "参数 fsys 不能为空")
+	router.Get("/def/{path}", ServeFileHandler(os.DirFS("./testdata"), "path", "default.html"))
+	router.Get("/not/{path}", ServeFileHandler(os.DirFS("./testdata"), "path", "not-exists.html"))
 
-	a.PanicString(func() {
-		ServeFileHandler(os.DirFS("./testdata"), "", "index.html")
-	}, "参数 name 不能为空")
+	servertest.Get(a, "http://localhost:8080/def/file.txt").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("file\n")
 
-	router.Get("/serve/{path}", ServeFileHandler(os.DirFS("./testdata"), "path", "index.html"))
-	servertest.Get(a, "http://localhost:8080/serve/file1.txt"). // file1.txt
-									Do(nil).
-									Status(http.StatusOK).
-									StringBody("file1")
-	servertest.Get(a, "http://localhost:8080/serve/"). // index.html
-								Do(nil).
-								Status(http.StatusOK).
-								BodyFunc(func(a *assert.Assertion, body []byte) {
-			a.True(bytes.HasPrefix(body, []byte("<!DOCTYPE html>")))
-		})
+	servertest.Get(a, "http://localhost:8080/def/").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("default.html\n")
+
+	servertest.Get(a, "http://localhost:8080/def").
+		Do(nil).
+		Status(http.StatusNotFound)
+
+	servertest.Get(a, "http://localhost:8080/not/").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody(`<pre>
+<a href="default.html">default.html</a>
+<a href="file.txt">file.txt</a>
+<a href="index.html">index.html</a>
+</pre>
+`)
 }
 
 func TestAttachmentFileHandler(t *testing.T) {
