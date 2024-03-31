@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
 )
 
@@ -59,14 +60,14 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 		headers = map[string]string{}
 	}
 
-	if _, found := headers["X-Rate-Limit-Limit"]; !found {
-		headers["X-Rate-Limit-Limit"] = "X-Rate-Limit-Limit"
+	if _, found := headers[header.XRateLimitLimit]; !found {
+		headers[header.XRateLimitLimit] = header.XRateLimitLimit
 	}
-	if _, found := headers["X-Rate-Limit-Remaining"]; !found {
-		headers["X-Rate-Limit-Remaining"] = "X-Rate-Limit-Remaining"
+	if _, found := headers[header.XRateLimitRemaining]; !found {
+		headers[header.XRateLimitRemaining] = header.XRateLimitRemaining
 	}
-	if _, found := headers["X-Rate-Limit-Reset"]; !found {
-		headers["X-Rate-Limit-Reset"] = "X-Rate-Limit-Reset"
+	if _, found := headers[header.XRateLimitReset]; !found {
+		headers[header.XRateLimitReset] = header.XRateLimitReset
 	}
 
 	return &ratelimit{
@@ -76,9 +77,9 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 		rateSeconds: int(rate.Seconds()),
 		gen:         gen,
 
-		limit:     headers["X-Rate-Limit-Limit"],
-		remaining: headers["X-Rate-Limit-Remaining"],
-		reset:     headers["X-Rate-Limit-Reset"],
+		limit:     headers[header.XRateLimitLimit],
+		remaining: headers[header.XRateLimitRemaining],
+		reset:     headers[header.XRateLimitReset],
 	}
 }
 

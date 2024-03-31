@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
 
@@ -21,7 +22,7 @@ var _ web.Middleware = &ratelimit{}
 
 func TestRatelimit_Middleware(t *testing.T) {
 	a := assert.New(t, false)
-	s:=testserver.New(a)
+	s := testserver.New(a)
 
 	// 由 gen 方法限定在同一个请求
 	srv := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil }, nil)
@@ -38,26 +39,26 @@ func TestRatelimit_Middleware(t *testing.T) {
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).
 		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "4").
-		Header("X-Rate-Limit-Remaining", "3")
+		Header(header.XRateLimitLimit, "4").
+		Header(header.XRateLimitRemaining, "3")
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).
 		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "4").
-		Header("X-Rate-Limit-Remaining", "2")
+		Header(header.XRateLimitLimit, "4").
+		Header(header.XRateLimitRemaining, "2")
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).
 		Status(http.StatusCreated).
-		Header("X-Rate-Limit-Limit", "4").
-		Header("X-Rate-Limit-Remaining", "1")
+		Header(header.XRateLimitLimit, "4").
+		Header(header.XRateLimitRemaining, "1")
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).
 		Status(http.StatusTooManyRequests).
-		Header("X-Rate-Limit-Limit", "4").
-		Header("X-Rate-Limit-Remaining", "0")
+		Header(header.XRateLimitLimit, "4").
+		Header(header.XRateLimitRemaining, "0")
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).
 		Status(http.StatusTooManyRequests).
-		Header("X-Rate-Limit-Limit", "4").
-		Header("X-Rate-Limit-Remaining", "0")
+		Header(header.XRateLimitLimit, "4").
+		Header(header.XRateLimitRemaining, "0")
 }

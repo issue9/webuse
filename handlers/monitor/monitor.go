@@ -8,7 +8,6 @@ package monitor
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/issue9/web"
@@ -52,7 +51,6 @@ func (m *Monitor) Handle(ctx *web.Context) web.Responser {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("s:%+v", stats)
 		return event.Sent(stats)
 	}, m.dur, true, false)
 

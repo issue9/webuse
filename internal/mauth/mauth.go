@@ -11,8 +11,6 @@ type keyType int
 
 const valueKey keyType = 1
 
-const AuthorizationHeader = "Authorization"
-
 // Set 更新 [web.Context] 保存的值
 func Set[T any](ctx *web.Context, val T) { ctx.SetVar(valueKey, val) }
 

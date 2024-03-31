@@ -17,11 +17,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
 	xjson "github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server/servertest"
 
-	"github.com/issue9/webuse/v7/internal/mauth"
 	"github.com/issue9/webuse/v7/internal/testserver"
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
@@ -170,13 +170,13 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 			NotEmpty(resp.Refresh)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, prefix+resp.Access).
+			Header(header.Authorization, prefix+resp.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
 		resp2 := &Response{}
 		servertest.Post(a, "http://localhost:8080/refresh", nil).
-			Header(mauth.AuthorizationHeader, prefix+resp.Refresh).
+			Header(header.Authorization, prefix+resp.Refresh).
 			Do(nil).
 			Status(http.StatusCreated).
 			BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -193,24 +193,24 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 
 		// 旧令牌已经无法访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, prefix+resp.Access).
+			Header(header.Authorization, prefix+resp.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 新令牌可以访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
+			Header(header.Authorization, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
+			Header(header.Authorization, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, prefix+resp2.Access).
+			Header(header.Authorization, prefix+resp2.Access).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
@@ -257,33 +257,33 @@ func TestVerifier_client(t *testing.T) {
 
 		token, parts, err := jwt.NewParser().ParseUnverified(m.Access, &jwt.RegisteredClaims{})
 		a.NotError(err).Equal(3, len(parts)).NotNil(token)
-		header := decodeHeader(a, parts[0])
-		a.Equal(header["alg"], "none").NotEmpty(header["kid"])
+		headers := decodeHeader(a, parts[0])
+		a.Equal(headers["alg"], "none").NotEmpty(headers["kid"])
 
 		// 改变 alg，影响
-		header["alg"] = "ES256"
-		parts[0] = encodeHeader(a, header)
+		headers["alg"] = "ES256"
+		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 改变 kid(kid 存在)，影响
 		j.AddECDSAFromFS("ecdsa", jwt.SigningMethodES256, os.DirFS("./testdata"), "ec256-public.pem", "ec256-private.pem")
-		header["kid"] = "ecdsa"
-		header["alg"] = "none"
-		parts[0] = encodeHeader(a, header)
+		headers["kid"] = "ecdsa"
+		headers["alg"] = "none"
+		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 改变 kid(kid 不存在)，影响
-		header["kid"] = "not-exists"
-		header["alg"] = "none"
-		parts[0] = encodeHeader(a, header)
+		headers["kid"] = "not-exists"
+		headers["alg"] = "none"
+		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(mauth.AuthorizationHeader, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})

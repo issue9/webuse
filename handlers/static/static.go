@@ -18,10 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
 )
-
-const contentDisposition = "Content-Disposition"
 
 // AttachmentFileHandler 将 name 作为一个附件提供给客户端
 //
@@ -107,7 +106,7 @@ func AttachmentFile(ctx *web.Context, fsys fs.FS, name, filename string, inline 
 	}
 
 	cd := mime.FormatMediaType(attach, map[string]string{"filename": filename})
-	ctx.Header().Set(contentDisposition, cd)
+	ctx.Header().Set(header.ContentDisposition, cd)
 	http.ServeFileFS(ctx, ctx.Request(), fsys, name)
 	return nil
 }
@@ -126,7 +125,7 @@ func AttachmentReader(ctx *web.Context, filename string, inline bool, modtime ti
 	}
 
 	cd := mime.FormatMediaType(attach, map[string]string{"filename": url.QueryEscape(filename)})
-	ctx.Header().Set(contentDisposition, cd)
+	ctx.Header().Set(header.ContentDisposition, cd)
 	http.ServeContent(ctx, ctx.Request(), filename, modtime, content)
 	return nil
 }

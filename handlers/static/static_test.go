@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web/server/servertest"
 
 	"github.com/issue9/webuse/v7/internal/testserver"
@@ -72,10 +73,10 @@ func TestAttachmentFileHandler(t *testing.T) {
 
 	router.Get("/attach/{path}", AttachmentFileHandler(os.DirFS("./testdata"), "path", "中文", true))
 
-	servertest.Get(a, "http://localhost:8080/attach/file1.txt").
+	servertest.Get(a, "http://localhost:8080/attach/file.txt").
 		Do(nil).
 		Status(http.StatusOK).
-		Header(contentDisposition, "inline; filename="+url.QueryEscape("中文"))
+		Header(header.ContentDisposition, "inline; filename="+url.QueryEscape("中文"))
 }
 
 func TestAttachmentReaderHandler(t *testing.T) {
@@ -92,5 +93,5 @@ func TestAttachmentReaderHandler(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/attach/path").
 		Do(nil).
 		Status(http.StatusOK).
-		Header(contentDisposition, "inline; filename="+url.QueryEscape("中文"))
+		Header(header.ContentDisposition, "inline; filename="+url.QueryEscape("中文"))
 }

@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"encoding/base64"
 
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
@@ -54,12 +55,12 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth
 		panic("auth 参数不能为空")
 	}
 
-	authorization := mauth.AuthorizationHeader
-	authenticate := "WWW-Authenticate"
+	authorization := header.Authorization
+	authenticate := header.WWWAuthenticate
 	problemID := web.ProblemUnauthorized
 	if proxy {
-		authorization = "Proxy-Authorization"
-		authenticate = "Proxy-Authenticate"
+		authorization = header.ProxyAuthorization
+		authenticate = header.ProxyAuthenticate
 		problemID = web.ProblemProxyAuthRequired
 	}
 
