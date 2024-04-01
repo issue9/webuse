@@ -9,16 +9,16 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/web"
 	"github.com/issue9/web/server/servertest"
 
 	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
-func TestNew(t *testing.T) {
+func TestRegister(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
-	s.Routers().New("def", nil).Any("/debug{path}", New("path", web.ProblemNotAcceptable))
+	//s.Routers().New("def", nil).Any("/debug{path}", New("path", web.ProblemNotAcceptable))
+	Register(s.Routers().New("def", nil), "/debug")
 
 	defer servertest.Run(a, s)()
 	defer s.Close(0)

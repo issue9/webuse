@@ -14,6 +14,11 @@ import (
 	"github.com/issue9/web"
 )
 
+// Register 向 r 注册所有以 path 开头的路径作为调试
+func Register(r *web.Router, path string) {
+	r.Get(path+"{name}", New("name", web.ProblemNotFound))
+}
+
 // New 输出调试信息
 //
 // p 是指路由中的参数名，比如以下示例中，p 的值为 debug：
@@ -21,9 +26,9 @@ import (
 //	r.Get("/test{debug}", New("debug", web.ProblemNotFound))
 //
 // p 所代表的路径包含了前缀的 /。
-func New(name, nameNotExists string) web.HandlerFunc {
+func New(name, notExists string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		p, resp := ctx.PathString(name, nameNotExists)
+		p, resp := ctx.PathString(name, notExists)
 		if resp != nil {
 			return resp
 		}
