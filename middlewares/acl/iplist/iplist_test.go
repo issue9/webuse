@@ -10,7 +10,10 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
@@ -53,29 +56,29 @@ func TestWhite_Middleware(t *testing.T) {
 	defer s.Close(0)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.1").
+		Header(header.XForwardedFor, "192.168.1.1").
 		Do(nil).
 		Status(http.StatusCreated)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.2").
+		Header(header.XForwardedFor, "192.168.1.2").
 		Do(nil).
 		Status(http.StatusForbidden)
 
 	l.Set("192.168.1.2", "192.168.1.1", "192.168.2/*")
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.1").
+		Header(header.XForwardedFor, "192.168.1.1").
 		Do(nil).
 		Status(http.StatusCreated)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.2").
+		Header(header.XForwardedFor, "192.168.1.2").
 		Do(nil).
 		Status(http.StatusCreated)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.2.2").
+		Header(header.XForwardedFor, "192.168.2.2").
 		Do(nil).
 		Status(http.StatusCreated)
 }
@@ -83,10 +86,10 @@ func TestWhite_Middleware(t *testing.T) {
 func TestBlack_Middleware(t *testing.T) {
 	a := assert.New(t, false)
 
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
+		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
 
@@ -104,29 +107,29 @@ func TestBlack_Middleware(t *testing.T) {
 	defer s.Close(0)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.1").
+		Header(header.XForwardedFor, "192.168.1.1").
 		Do(nil).
 		Status(http.StatusForbidden)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.2").
+		Header(header.XForwardedFor, "192.168.1.2").
 		Do(nil).
 		Status(http.StatusCreated)
 
 	l.Set("192.168.1.2", "192.168.1.1", "192.168.2/*")
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.1").
+		Header(header.XForwardedFor, "192.168.1.1").
 		Do(nil).
 		Status(http.StatusForbidden)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.1.2").
+		Header(header.XForwardedFor, "192.168.1.2").
 		Do(nil).
 		Status(http.StatusForbidden)
 
 	servertest.Get(a, "http://localhost:8080/test").
-		Header("X-Forwarded-For", "192.168.2.2").
+		Header(header.XForwardedFor, "192.168.2.2").
 		Do(nil).
 		Status(http.StatusForbidden)
 }

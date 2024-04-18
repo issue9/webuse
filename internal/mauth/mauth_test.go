@@ -17,7 +17,7 @@ import (
 func TestGetSet(t *testing.T) {
 	a := assert.New(t, false)
 
-	s, err := server.New("test", "1.0.0", nil)
+	s, err := server.NewHTTP("test", "1.0.0", nil)
 	a.NotError(err).NotNil(s)
 
 	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/path", nil), types.NewContext())

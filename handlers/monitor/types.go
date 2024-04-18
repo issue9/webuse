@@ -38,13 +38,13 @@ type Net struct {
 	Recv uint64 `json:"recv" yaml:"recv" xml:"recv"` // 读取数量，以字节为单位。
 }
 
-func clacState(interval time.Duration) (*Stats, error) {
-	all, err := calc(interval)
+func calcState(interval time.Duration) (*Stats, error) {
+	all, err := calcOS(interval)
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := calcP()
+	p, err := calcProcess()
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func clacState(interval time.Duration) (*Stats, error) {
 	return &Stats{OS: all, Process: p}, nil
 }
 
-func calcP() (*Info, error) {
+func calcProcess() (*Info, error) {
 	p, err := process.NewProcess(int32(os.Getpid()))
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func calcP() (*Info, error) {
 	}, nil
 }
 
-func calc(interval time.Duration) (*Info, error) {
+func calcOS(interval time.Duration) (*Info, error) {
 	cpus, err := cpu.Percent(interval, true)
 	if err != nil {
 		return nil, err

@@ -46,8 +46,8 @@ func (m *Monitor) Handle(ctx *web.Context) web.Responser {
 		}
 	}()
 
-	cancel = ctx.Server().Services().AddTicker(web.Phrase("monitor system stats"), func(now time.Time) error {
-		stats, err := calc(m.dur)
+	cancel = ctx.Server().Services().AddTicker(web.Phrase("monitor system stats"), func(time.Time) error {
+		stats, err := calcState(m.dur)
 		if err != nil {
 			return err
 		}

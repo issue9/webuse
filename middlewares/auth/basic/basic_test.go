@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 
@@ -52,9 +53,9 @@ func TestNew(t *testing.T) {
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
 	})
 	a.NotError(err).NotNil(s)
 
@@ -86,9 +87,9 @@ func TestServeHTTP_ok(t *testing.T) {
 
 func TestServeHTTP_failed(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
 	})
 	a.NotError(err).NotNil(s)
 

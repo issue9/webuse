@@ -80,26 +80,28 @@ func (rbac *RBAC[T]) ResourceGroup(id string) *ResourceGroup[T] { return rbac.re
 
 func joinID(gid, id string) string { return gid + string(idSeparator) + id }
 
+func (g *ResourceGroup[T]) RBAC() *RBAC[T] { return g.rbac }
+
 // New 添加新的资源
 //
 // 返回的是用于判断是否拥有当前资源权限的中间件。
-func (r *ResourceGroup[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
-	id = joinID(r.id, id)
+func (g *ResourceGroup[T]) New(id string, desc web.LocaleStringer) web.MiddlewareFunc {
+	id = joinID(g.id, id)
 
-	if _, found := r.items[id]; found {
+	if _, found := g.items[id]; found {
 		panic(fmt.Sprintf("已经存在同名的资源 %s", id))
 	}
-	r.items[id] = desc
-	r.rbac.resources = append(r.rbac.resources, id)
+	g.items[id] = desc
+	g.RBAC().resources = append(g.rbac.resources, id)
 
 	return func(next web.HandlerFunc) web.HandlerFunc {
 		return func(ctx *web.Context) web.Responser {
-			uid, resp := r.rbac.getUID(ctx)
+			uid, resp := g.rbac.getUID(ctx)
 			if resp != nil {
 				return resp
 			}
 
-			for _, roleG := range r.rbac.roleGroups {
+			for _, roleG := range g.rbac.roleGroups {
 				if roleG.isAllow(uid, id) {
 					return next(ctx)
 				}

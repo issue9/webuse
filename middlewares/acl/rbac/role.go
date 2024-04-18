@@ -63,9 +63,11 @@ func (rbac *RBAC[T]) NewRoleGroup(id string, superID T) (*RoleGroup[T], error) {
 	return g, nil
 }
 
+func (g *RoleGroup[T]) RBAC() *RBAC[T] { return g.rbac }
+
 // Load 加载数据
 func (g *RoleGroup[T]) Load() error {
-	roles, err := g.rbac.store.Load(g.id)
+	roles, err := g.RBAC().store.Load(g.id)
 	if err != nil {
 		return err
 	}

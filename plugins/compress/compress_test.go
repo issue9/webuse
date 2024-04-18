@@ -27,7 +27,7 @@ func TestNew(t *testing.T) {
 		New(time.Millisecond, time.Microsecond, 101)
 	}, "percent 必须介于 [0,100]")
 
-	s, err := server.New("test", "1.0.0", nil)
+	s, err := server.NewHTTP("test", "1.0.0", nil)
 	a.NotError(err).NotNil(s)
 	s.SetCompress(false)
 

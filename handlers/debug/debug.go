@@ -15,9 +15,7 @@ import (
 )
 
 // Register 向 r 注册所有以 path 开头的路径作为调试
-func Register(r *web.Router, path string) {
-	r.Get(path+"{name}", New("name", web.ProblemNotFound))
-}
+func Register(r *web.Router, path string) { r.Get(path+"{name}", New("name", web.ProblemNotFound)) }
 
 // New 输出调试信息
 //

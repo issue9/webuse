@@ -10,15 +10,17 @@ import (
 	"os"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 )
 
 func New(a *assert.Assertion) web.Server {
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes:  server.JSONMimetypes(),
-		Logs:       &server.Logs{Handler: server.NewTermHandler(os.Stderr, nil)},
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
+		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
 

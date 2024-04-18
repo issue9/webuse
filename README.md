@@ -12,6 +12,7 @@
 
 位于 [handlers](handlers) 之下：
 
+- debug 调试信息的输出接口；
 - monitor 系统状态监视；
 - static 静态文件处理；
 
@@ -22,6 +23,7 @@
 - access 客户端访问记录；
 - health 接口状态的监测；
 - compress 根据 CPU 使用率决定是否启用压缩功能；
+- locales 加载本地化的文件资源；
 
 ## 中间件
 
