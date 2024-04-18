@@ -16,9 +16,10 @@ import (
 )
 
 type Stats struct {
-	XMLName struct{} `json:"-" yaml:"-" xml:"stats"`
-	OS      *Info    `json:"os" yaml:"os" xml:"os"`                // 系统级别的状态信息
-	Process *Info    `json:"process" yaml:"process" xml:"process"` // 当前进程的状态信息
+	XMLName struct{}  `json:"-" yaml:"-" xml:"stats"`
+	OS      *Info     `json:"os" yaml:"os" xml:"os"`                // 系统级别的状态信息
+	Process *Info     `json:"process" yaml:"process" xml:"process"` // 当前进程的状态信息
+	Created time.Time `json:"created" yaml:"created" xml:"created"` // 此条记录的创建时间
 }
 
 type Info struct {
@@ -38,7 +39,7 @@ type Net struct {
 	Recv uint64 `json:"recv" yaml:"recv" xml:"recv"` // 读取数量，以字节为单位。
 }
 
-func calcState(interval time.Duration) (*Stats, error) {
+func calcState(interval time.Duration, now time.Time) (*Stats, error) {
 	all, err := calcOS(interval)
 	if err != nil {
 		return nil, err
@@ -49,7 +50,7 @@ func calcState(interval time.Duration) (*Stats, error) {
 		return nil, err
 	}
 
-	return &Stats{OS: all, Process: p}, nil
+	return &Stats{OS: all, Process: p, Created: now}, nil
 }
 
 func calcProcess() (*Info, error) {
@@ -91,7 +92,7 @@ func calcProcess() (*Info, error) {
 }
 
 func calcOS(interval time.Duration) (*Info, error) {
-	cpus, err := cpu.Percent(interval, true)
+	cpus, err := cpu.Percent(interval, false)
 	if err != nil {
 		return nil, err
 	}
