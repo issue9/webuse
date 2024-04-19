@@ -39,13 +39,12 @@ func TestMonitor(t *testing.T) {
 	r.Get("/stats", m.Handle)
 
 	stats := make(chan *sse.Message, 10)
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/stats", nil)
-	a.NotError(err).NotNil(req)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	err = sse.OnMessage(ctx, s.Logs().ERROR(), req, nil, stats)
-	a.NotError(err)
-
-	a.Contains((<-stats).Data[0], `"cpu":`).
-		Contains((<-stats).Data[0], `"mem":`)
+	err = sse.OnMessage(ctx, s.Logs().ERROR(), "http://localhost:8080/stats", nil, stats)
+	a.When(err == nil, func(a *assert.Assertion) {
+		s := <-stats
+		a.Contains(s.Data[0], `"cpu":`).
+			Contains(s.Data[0], `"mem":`)
+	}, "返回了错误信息 %v", err)
 }

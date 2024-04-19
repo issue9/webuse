@@ -17,20 +17,22 @@ import (
 
 type Stats struct {
 	XMLName struct{}  `json:"-" yaml:"-" xml:"stats"`
-	OS      *Info     `json:"os" yaml:"os" xml:"os"`                // 系统级别的状态信息
-	Process *Info     `json:"process" yaml:"process" xml:"process"` // 当前进程的状态信息
+	OS      *OS       `json:"os" yaml:"os" xml:"os"`                // 系统级别的状态信息
+	Process *Process  `json:"process" yaml:"process" xml:"process"` // 当前进程的状态信息
 	Created time.Time `json:"created" yaml:"created" xml:"created"` // 此条记录的创建时间
 }
 
-type Info struct {
-	CPU float64 `json:"cpu" yaml:"cpu" xml:"cpu"` // CPU 使用百分比
-	Mem uint64  `json:"mem" yaml:"mem" xml:"mem"` // 内存使用量，以 byte 为单位。
+type OS struct {
+	CPU float64 `json:"cpu" yaml:"cpu" xml:"cpu"`                               // CPU 使用百分比
+	Mem uint64  `json:"mem" yaml:"mem" xml:"mem"`                               // 内存使用量，以 byte 为单位。
+	Net *Net    `json:"net,omitempty" yaml:"net,omitempty" xml:"net,omitempty"` // 网络相关数据
+}
 
-	// 网络相关数据
-	Net *Net `json:"net,omitempty" yaml:"net,omitempty" xml:"net,omitempty"`
-
-	// 在全局模式之下为空
-	Goroutines int `json:"goroutines,omitempty" yaml:"goroutines,omitempty" xml:"goroutines,omitempty"`
+type Process struct {
+	CPU        float64 `json:"cpu" yaml:"cpu" xml:"cpu"`    // CPU 使用百分比
+	Mem        uint64  `json:"mem" yaml:"mem" xml:"mem"`    // 内存使用量，以 byte 为单位。
+	Conn       int     `json:"conn" yaml:"conn" xml:"conn"` // 连接数量
+	Goroutines int     `json:"goroutines,omitempty" yaml:"goroutines,omitempty" xml:"goroutines,omitempty"`
 }
 
 type Net struct {
@@ -53,7 +55,7 @@ func calcState(interval time.Duration, now time.Time) (*Stats, error) {
 	return &Stats{OS: all, Process: p, Created: now}, nil
 }
 
-func calcProcess() (*Info, error) {
+func calcProcess() (*Process, error) {
 	p, err := process.NewProcess(int32(os.Getpid()))
 	if err != nil {
 		return nil, err
@@ -74,24 +76,15 @@ func calcProcess() (*Info, error) {
 		return nil, err
 	}
 
-	netIO, err := p.IOCounters()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Info{
-		CPU: cpus,
-		Mem: mems.RSS,
-		Net: &Net{
-			Conn: len(conns),
-			Sent: netIO.WriteBytes,
-			Recv: netIO.ReadBytes,
-		},
+	return &Process{
+		CPU:        cpus,
+		Mem:        mems.RSS,
+		Conn:       len(conns),
 		Goroutines: runtime.NumGoroutine(),
 	}, nil
 }
 
-func calcOS(interval time.Duration) (*Info, error) {
+func calcOS(interval time.Duration) (*OS, error) {
 	cpus, err := cpu.Percent(interval, false)
 	if err != nil {
 		return nil, err
@@ -112,7 +105,7 @@ func calcOS(interval time.Duration) (*Info, error) {
 		return nil, err
 	}
 
-	return &Info{
+	return &OS{
 		CPU: cpus[0],
 		Mem: mems.Used,
 		Net: &Net{
