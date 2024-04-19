@@ -15,6 +15,9 @@ messages:
     - key: invalid ip %s
       message:
         msg: 无效的 IP 地址 %s
+    - key: monitor system stat
+      message:
+        msg: 监控系统状态
     - key: not found jwt signing method
       message:
         msg: 未找到 JWT 签名方法
@@ -33,6 +36,6 @@ messages:
     - key: the role %s has users, can not deleted
       message:
         msg: 不能删除还有关联用户的角色 %s
-    - key: user %v obtained access to %s due to %s
+    - key: user %v obtained access to %s due to %s:%s
       message:
-        msg: 用户 %[1]v 因为 %[3]s 获得了访问 %[2] 的资格
+        msg: 用户 %[1]v 因为 %[3]s:%[4]s 获得访问 %[2]s 的权限
