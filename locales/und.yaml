@@ -36,6 +36,9 @@ messages:
     - key: the role %s has users, can not deleted
       message:
         msg: the role %s has users, can not deleted
+    - key: user %v in the parent role %s
+      message:
+        msg: user %v in the parent role %s
     - key: user %v obtained access to %s due to %s:%s
       message:
         msg: user %v obtained access to %s due to %s:%s

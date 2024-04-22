@@ -63,6 +63,17 @@ func (rbac *RBAC[T]) NewRoleGroup(id string, superID T) (*RoleGroup[T], error) {
 	return g, nil
 }
 
+// UserRoles 用户 uid 关联的角色列表
+func (g *RoleGroup[T]) UserRoles(uid T) []*Role[T] {
+	roles := make([]*Role[T], 0, 5)
+	for _, r := range g.roles {
+		if slices.Index(r.Users, uid) >= 0 {
+			roles = append(roles, r)
+		}
+	}
+	return roles
+}
+
 func (g *RoleGroup[T]) RBAC() *RBAC[T] { return g.rbac }
 
 // Load 加载数据
@@ -129,7 +140,7 @@ func (g *RoleGroup[T]) Role(id string) *Role[T] {
 	return r
 }
 
-// 当前角色是否允许该用户 uid 访问资源 res
+// 用户 uid 是否可访问资源 res
 func (g *RoleGroup[T]) isAllow(uid T, res string) bool {
 	if uid == g.superID {
 		return true
@@ -222,6 +233,14 @@ func (role *Role[T]) Del() error {
 func (role *Role[T]) Link(uid T) error {
 	if slices.Index(role.Users, uid) >= 0 { // 已经存在
 		return nil
+	}
+
+	parent := role.parent
+	for parent != nil {
+		if slices.Index(parent.Users, uid) >= 0 { // 已经存在于父角色
+			return web.NewLocaleError("user %v in the parent role %s", uid, parent.ID)
+		}
+		parent = parent.parent
 	}
 
 	role.Users = append(role.Users, uid)

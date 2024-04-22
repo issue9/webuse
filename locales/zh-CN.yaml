@@ -36,6 +36,9 @@ messages:
     - key: the role %s has users, can not deleted
       message:
         msg: 不能删除还有关联用户的角色 %s
+    - key: user %v in the parent role %s
+      message:
+        msg: 用户 %v 已经存在于父角色 %s
     - key: user %v obtained access to %s due to %s:%s
       message:
         msg: 用户 %[1]v 因为 %[3]s:%[4]s 获得访问 %[2]s 的权限

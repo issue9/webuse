@@ -55,7 +55,10 @@ func TestRole_Allow(t *testing.T) {
 	g.New("1", nil)
 	g.New("2", nil)
 
-	a.NotError(r1.Allow(res11)).Length(r1.Resources, 1)
+	a.NotError(r1.Allow(res11)).
+		NotError(r1.Link("u1")).
+		Length(r1.Resources, 1).
+		True(rg1.isAllow("u1", res11))
 
 	// r2 继承自 r1
 
@@ -107,8 +110,15 @@ func TestRole_Link(t *testing.T) {
 		NotError(r1.Link("user1")).
 		NotError(r1.Link("user2")).
 		Equal(r1.Users, []string{"user1", "user2"}).
+		Equal(rg1.UserRoles("user1"), []*Role[string]{r1}).
 		NotError(r1.Unlink("user1")).
 		Equal(r1.Users, []string{"user2"})
+
+	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
+	a.NotError(err).NotNil(r1).
+		Equal(r2.parent, r1).
+		Equal(r2.Link("user2"), web.NewLocaleError("user %v in the parent role %s", "user2", r1.ID)).
+		NotError(r2.Link("user1")) // user1 已经在上面 Unlink
 }
 
 func TestRole_Set(t *testing.T) {
