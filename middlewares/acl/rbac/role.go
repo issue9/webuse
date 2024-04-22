@@ -231,7 +231,7 @@ func (role *Role[T]) Del() error {
 }
 
 func (role *Role[T]) Link(uid T) error {
-	if slices.Index(role.Users, uid) >= 0 { // 已经存在
+	if slices.Index(role.Users, uid) >= 0 { // 已经存在于当前用户
 		return nil
 	}
 
@@ -242,6 +242,8 @@ func (role *Role[T]) Link(uid T) error {
 		}
 		parent = parent.parent
 	}
+
+	// TODO CanLink
 
 	role.Users = append(role.Users, uid)
 	return role.group.rbac.store.Set(role.group.id, role)
@@ -256,10 +258,28 @@ func (role *Role[T]) Unlink(uid T) error {
 	return nil
 }
 
-// Roles 返回所有从当前角色继承的角色
+// IsDescendant 判断角色 rid 是否为当前角色的子角色
+func (role *Role[T]) IsDescendant(rid string) bool {
+	role.group.rolesMux.RLock()
+	defer role.group.rolesMux.RUnlock()
+
+	for _, r := range role.group.roles {
+		if r.Parent != role.ID {
+			continue
+		}
+
+		if r.ID == rid || r.IsDescendant(rid) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Descendants 返回所有从当前角色继承的角色
 //
 // all 表示是否包含间接继承的角色
-func (role *Role[T]) Roles(all bool) ([]*Role[T], error) {
+func (role *Role[T]) Descendants(all bool) ([]*Role[T], error) {
 	roles := make([]*Role[T], 0, 10)
 
 	role.group.rolesMux.RLock()
@@ -276,7 +296,6 @@ func (role *Role[T]) Roles(all bool) ([]*Role[T], error) {
 	}
 
 	s := roles
-	role.group.rolesMux.RLock()
 	for len(s) > 0 {
 		ids := rolesID(s)
 		rs := make([]*Role[T], 0, 10)
@@ -289,7 +308,6 @@ func (role *Role[T]) Roles(all bool) ([]*Role[T], error) {
 		roles = append(roles, rs...)
 		s = rs
 	}
-	role.group.rolesMux.RUnlock()
 
 	return roles, nil
 }
