@@ -58,8 +58,8 @@ func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Dur
 
 func (j *JWT[T]) Logout(ctx *web.Context) error { return j.v.Logout(ctx) }
 
-// VerifiyRefresh 验证刷新令牌
-func (j *JWT[T]) VerifiyRefresh(next web.HandlerFunc) web.HandlerFunc {
+// VerifyRefresh 验证刷新令牌
+func (j *JWT[T]) VerifyRefresh(next web.HandlerFunc) web.HandlerFunc {
 	return j.v.VerifyRefresh(next)
 }
 

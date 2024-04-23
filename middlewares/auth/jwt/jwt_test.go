@@ -114,22 +114,19 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 
 	r := s.Routers().New("def", nil)
 	r.Post("/login", func(ctx *web.Context) web.Responser {
-		claims := &testClaims{
+		return j.Render(ctx, http.StatusCreated, &testClaims{
 			ID:      id,
 			Created: time.Now(),
-		}
-		return j.Render(ctx, http.StatusCreated, claims)
+		})
 	})
 
-	r.Post("/refresh", j.VerifiyRefresh(func(ctx *web.Context) web.Responser {
+	r.Post("/refresh", j.VerifyRefresh(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
-		claims, ok := j.GetInfo(ctx)
-		if !ok {
-			return ctx.Problem(web.ProblemUnauthorized)
+		if claims, ok := j.GetInfo(ctx); ok {
+			return j.Render(ctx, http.StatusCreated, &testClaims{ID: claims.ID, Created: ctx.Begin()})
 		}
-
-		return j.Render(ctx, http.StatusCreated, &testClaims{ID: claims.ID, Created: ctx.Begin()})
+		return ctx.Problem(web.ProblemUnauthorized)
 	}))
 
 	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {

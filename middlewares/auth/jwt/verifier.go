@@ -101,7 +101,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 	if refresh { // 刷新令牌是一次性的
 		baseToken := claims.BaseToken()
 		if baseToken == "" { // 不是刷新令牌
-			return ctx.Problem(web.ProblemUnauthorized)
+			return ctx.Problem(web.ProblemForbidden)
 		}
 
 		if err := j.blocker.BlockToken(token, true); err != nil {
@@ -112,7 +112,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 			ctx.Logs().ERROR().Error(err)
 		}
 
-		claims, resp = j.parseClaims(ctx, baseToken) // 拿到基本的用户信息，由之的一的 SetVar 写入上下文
+		claims, resp = j.parseClaims(ctx, baseToken)
 		if resp != nil {
 			return resp
 		}
