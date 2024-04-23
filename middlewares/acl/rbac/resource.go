@@ -5,6 +5,7 @@
 package rbac
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -120,12 +121,14 @@ func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resource {
 		for id, item := range role.items {
 			items = append(items, &Resource{ID: id, Title: item.LocaleString(p)})
 		}
+		slices.SortFunc(items, func(a, b *Resource) int { return cmp.Compare(a.ID, b.ID) })
 
 		res = append(res, &Resource{
 			ID:    role.id,
 			Title: role.title.LocaleString(p),
 			Items: items,
 		})
+		slices.SortFunc(res, func(a, b *Resource) int { return cmp.Compare(a.ID, b.ID) })
 	}
 	return res
 }
