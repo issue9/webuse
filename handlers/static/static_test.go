@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,12 +34,16 @@ func TestServeFileHandler(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/def/file.txt").
 		Do(nil).
 		Status(http.StatusOK).
-		StringBody("file\n")
+		BodyFunc(func(a *assert.Assertion, body []byte) {
+			a.Equal("file", strings.TrimSpace(string(body)))
+		})
 
 	servertest.Get(a, "http://localhost:8080/def/").
 		Do(nil).
 		Status(http.StatusOK).
-		StringBody("default.html\n")
+		BodyFunc(func(a *assert.Assertion, body []byte) {
+			a.Equal("default.html", strings.TrimSpace(string(body)))
+		})
 
 	servertest.Get(a, "http://localhost:8080/def").
 		Do(nil).
