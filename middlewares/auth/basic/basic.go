@@ -20,8 +20,6 @@ import (
 
 const prefix = "basic "
 
-const prefixLen = 6 // len(prefix)
-
 // AuthFunc 验证登录用户的函数签名
 //
 // username,password 表示用户登录信息。

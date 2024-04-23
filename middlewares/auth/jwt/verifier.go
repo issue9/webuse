@@ -17,12 +17,6 @@ import (
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
-const (
-	prefix = "bearer "
-
-	prefixLen = 7 // len(prefix)
-)
-
 type (
 	// Verifier JWT 验证器
 	//
@@ -70,7 +64,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 
 func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	if c, found := j.GetInfo(ctx); found {
-		return j.blocker.BlockToken(auth.GetToken(ctx, prefix, header.Authorization), c.BaseToken() != "")
+		return j.blocker.BlockToken(auth.GetToken(ctx, auth.Bearer, header.Authorization), c.BaseToken() != "")
 	}
 	return nil
 }
@@ -90,7 +84,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc) web.Responser {
-	token := auth.GetToken(ctx, prefix, header.Authorization)
+	token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
 	if token == "" || j.blocker.TokenIsBlocked(token) {
 		return ctx.Problem(web.ProblemUnauthorized)
 	}

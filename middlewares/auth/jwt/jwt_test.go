@@ -170,13 +170,13 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 			NotEmpty(resp.Refresh)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, prefix+resp.Access).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Access)).
 			Do(nil).
 			Status(http.StatusOK)
 
 		resp2 := &Response{}
 		servertest.Post(a, "http://localhost:8080/refresh", nil).
-			Header(header.Authorization, prefix+resp.Refresh).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Refresh)).
 			Do(nil).
 			Status(http.StatusCreated).
 			BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -193,24 +193,24 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 
 		// 旧令牌已经无法访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, prefix+resp.Access).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Access)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 新令牌可以访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, prefix+resp2.Access).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header(header.Authorization, prefix+resp2.Access).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, prefix+resp2.Access).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
