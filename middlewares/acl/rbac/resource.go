@@ -25,22 +25,22 @@ type ResourceGroup[T comparable] struct {
 }
 
 type Resource struct {
-	ID    string      `json:"id" xml:"id,attr" yaml:"id"`
-	Title string      `json:"title" xml:"title" yaml:"title"`
-	Items []*Resource `json:"items,omitempty" xml:"items>item,omitempty" yaml:"items,omitempty"`
+	ID    string      `json:"id" xml:"id,attr" yaml:"id" cbor:"id"`
+	Title string      `json:"title" xml:"title" yaml:"title" cbor:"title"`
+	Items []*Resource `json:"items,omitempty" xml:"items>item,omitempty" yaml:"items,omitempty" cbor:"items,omitempty"`
 }
 
 // RoleResource 表示某个角色所能访问的资源
 type RoleResource struct {
 	// Current 角色当前能访问的资源
-	Current []string `json:"current" xml:"current" yaml:"current"`
+	Current []string `json:"current" xml:"current" yaml:"current" cbor:"current"`
 
 	// Parent 角色的父类能访问的资源
 	//
 	// 必然也是当前角色所能访问的最大资源列表。
 	//
 	// Parent 肯定是包含了 Current 的所有值。
-	Parent []string `json:"parent" xml:"parent" yaml:"parent"`
+	Parent []string `json:"parent" xml:"parent" yaml:"parent" cbor:"parent"`
 }
 
 // resourceExists 指定的资源 ID 是否存在

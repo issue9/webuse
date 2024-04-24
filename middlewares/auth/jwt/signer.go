@@ -23,10 +23,10 @@ import (
 type BuildResponseFunc = func(access, refresh string, expires int) any
 
 type Response struct {
-	XMLName struct{} `json:"-" xml:"token"`
-	Access  string   `json:"access_token" xml:"access_token"`
-	Refresh string   `json:"refresh_token,omitempty" xml:"refresh_token,omitempty"`
-	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty"`
+	XMLName struct{} `json:"-" xml:"token" cbor:"-"`
+	Access  string   `json:"access_token" xml:"access_token" cbor:"access_token"`
+	Refresh string   `json:"refresh_token,omitempty" xml:"refresh_token,omitempty" cbor:"refresh_token,omitempty"`
+	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty" cbor:"expires,attr,omitempty"`
 }
 
 // Signer 证书的签发管理
@@ -101,7 +101,7 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 
 // Sign 对 claims 进行签名
 //
-// 算法随机从 [Signer.AddKey] 添加的库里选取。
+// 算法随机从 [Signer.Add] 添加的库里选取。
 func (s *Signer) Sign(claims Claims) (string, error) {
 	var k *key
 	switch l := len(s.keys); l {

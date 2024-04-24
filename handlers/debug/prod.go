@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//go:build !development
+
 package debug
 
 import "github.com/issue9/web"

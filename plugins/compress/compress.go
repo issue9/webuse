@@ -27,7 +27,7 @@ func New(dur, interval time.Duration, percent float64) web.Plugin {
 	}
 
 	return web.PluginFunc(func(s web.Server) {
-		s.Services().AddTicker(web.Phrase("enable compression base on cpu used"), func(now time.Time) error {
+		s.Services().AddTicker(web.Phrase("enable compression base on cpu used"), func(time.Time) error {
 			if vals, err := cpu.Percent(interval, false); err != nil {
 				s.Logs().ERROR().Error(err)
 			} else {

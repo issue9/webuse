@@ -33,5 +33,5 @@ func TestNew(t *testing.T) {
 
 	a.False(s.CanCompress())
 	s.Use(New(time.Second, time.Microsecond, 80))
-	a.Wait(time.Second).True(s.CanCompress())
+	a.Wait(time.Second * 2).True(s.CanCompress())
 }

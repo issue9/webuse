@@ -69,17 +69,20 @@ func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	return nil
 }
 
-// VerifyRefresh 验证刷新令牌
+// VerifyRefresh 验证刷新令牌的有效性
 //
-// NOTE: 可以通过 [GetValue] 获得当前刷新令牌关联的用户信息；
+// NOTE: 可以通过 [Verifier.GetInfo] 获得当前刷新令牌关联的用户信息；
 //
 // NOTE: 此操作会让现有的令牌和刷新令牌都失效。
 func (j *Verifier[T]) VerifyRefresh(next web.HandlerFunc) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser { return j.resp(ctx, true, next) }
 }
 
-// Middleware 解码用户的 token 并写入 [web.Context]
+// Middleware 验证令牌的有效性
+//
+// NOTE: 可以通过 [Verifier.GetInfo] 获得当前令牌关联的用户信息；
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+	// NOTE: 刷新令牌也可以用于普通验证，因为刷新令牌中包含了所有普通令牌的信息。
 	return func(ctx *web.Context) web.Responser { return j.resp(ctx, false, next) }
 }
 
@@ -112,7 +115,7 @@ func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc)
 			ctx.Logs().ERROR().Error(err)
 		}
 
-		claims, resp = j.parseClaims(ctx, baseToken)
+		claims, resp = j.parseClaims(ctx, token) // 拿到刷新令牌关联的 claims
 		if resp != nil {
 			return resp
 		}
