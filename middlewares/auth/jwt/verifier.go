@@ -90,17 +90,27 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
-		if baseToken := claims.BaseToken(); baseToken != "" { // 刷新令牌
+		if nbf, err := claims.GetNotBefore(); err == nil && nbf.After(ctx.Begin()) {
+			return ctx.Problem(web.ProblemForbidden)
+		}
+
+		if exp, err := claims.GetExpirationTime(); err == nil && exp.Before(ctx.Begin()) {
+			return ctx.Problem(web.ProblemForbidden)
+		}
+
+		if baseToken := claims.BaseToken(); baseToken != "" { // token 为刷新令牌
+			// 如果关联的访问令牌已经被主动丢弃，比如客户端主动退出了当前的登录等操作，
+			// 那么由该访问令牌生成的刷新令牌也将失效果。
+			if j.blocker.TokenIsBlocked(baseToken) {
+				return ctx.Problem(web.ProblemForbidden)
+			}
+
 			if err := j.blocker.BlockToken(token, true); err != nil {
 				ctx.Logs().ERROR().Error(err)
 			}
 
 			if err := j.blocker.BlockToken(baseToken, false); err != nil {
 				ctx.Logs().ERROR().Error(err)
-			}
-
-			if claims, resp = j.parseClaims(ctx, token); resp != nil { // 拿到刷新令牌关联的 claims
-				return resp
 			}
 		}
 

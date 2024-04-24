@@ -7,7 +7,7 @@ package jwt
 import (
 	"fmt"
 	"io/fs"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
 	"time"
 
@@ -110,7 +110,7 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 	case 1:
 		k = s.keys[0]
 	default:
-		k = s.keys[rand.Intn(l)]
+		k = s.keys[rand.IntN(l)]
 	}
 
 	t := jwt.NewWithClaims(k.sign, claims)
