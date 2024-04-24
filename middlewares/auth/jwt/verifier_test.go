@@ -4,13 +4,6 @@
 
 package jwt
 
-import (
-	"github.com/issue9/web"
+import "github.com/issue9/webuse/v7/middlewares/auth"
 
-	"github.com/issue9/webuse/v7/middlewares/auth"
-)
-
-var (
-	_ web.MiddlewareFunc     = (&Verifier[*testClaims]{}).VerifyRefresh
-	_ auth.Auth[*testClaims] = &Verifier[*testClaims]{}
-)
+var _ auth.Auth[*testClaims] = &Verifier[*testClaims]{}

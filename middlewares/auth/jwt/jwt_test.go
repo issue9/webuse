@@ -120,10 +120,10 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 		})
 	})
 
-	r.Post("/refresh", j.VerifyRefresh(func(ctx *web.Context) web.Responser {
+	r.Post("/refresh", j.Middleware(func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
-		if claims, ok := j.GetInfo(ctx); ok {
+		if claims, ok := j.GetInfo(ctx); ok && claims.BaseToken() != "" {
 			return j.Render(ctx, http.StatusCreated, &testClaims{ID: claims.ID, Created: ctx.Begin()})
 		}
 		return ctx.Problem(web.ProblemUnauthorized)

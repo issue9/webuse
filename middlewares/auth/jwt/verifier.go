@@ -69,74 +69,53 @@ func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	return nil
 }
 
-// VerifyRefresh 验证刷新令牌的有效性
+// Middleware 验证访问令牌和刷新令牌的有效性
 //
-// NOTE: 可以通过 [Verifier.GetInfo] 获得当前刷新令牌关联的用户信息；
-//
-// NOTE: 此操作会让现有的令牌和刷新令牌都失效。
-func (j *Verifier[T]) VerifyRefresh(next web.HandlerFunc) web.HandlerFunc {
-	return func(ctx *web.Context) web.Responser { return j.resp(ctx, true, next) }
-}
-
-// Middleware 验证令牌的有效性
-//
-// NOTE: 可以通过 [Verifier.GetInfo] 获得当前令牌关联的用户信息；
+// NOTE: 可以通过 [Verifier.GetInfo] 获得当前令牌关联的用户信息，通过 [Claims.BaseToken] 判断是否为刷新令牌；
 func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	// NOTE: 刷新令牌也可以用于普通验证，因为刷新令牌中包含了所有普通令牌的信息。
-	return func(ctx *web.Context) web.Responser { return j.resp(ctx, false, next) }
-}
 
-func (j *Verifier[T]) resp(ctx *web.Context, refresh bool, next web.HandlerFunc) web.Responser {
-	token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
-	if token == "" || j.blocker.TokenIsBlocked(token) {
-		return ctx.Problem(web.ProblemUnauthorized)
-	}
-
-	claims, resp := j.parseClaims(ctx, token)
-	if resp != nil {
-		return resp
-	}
-
-	if j.blocker.ClaimsIsBlocked(claims) {
-		return ctx.Problem(web.ProblemUnauthorized)
-	}
-
-	if refresh { // 刷新令牌是一次性的
-		baseToken := claims.BaseToken()
-		if baseToken == "" { // 不是刷新令牌
-			return ctx.Problem(web.ProblemForbidden)
+	return func(ctx *web.Context) web.Responser {
+		token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
+		if token == "" || j.blocker.TokenIsBlocked(token) {
+			return ctx.Problem(web.ProblemUnauthorized)
 		}
 
-		if err := j.blocker.BlockToken(token, true); err != nil {
-			ctx.Logs().ERROR().Error(err)
-		}
-
-		if err := j.blocker.BlockToken(baseToken, false); err != nil {
-			ctx.Logs().ERROR().Error(err)
-		}
-
-		claims, resp = j.parseClaims(ctx, token) // 拿到刷新令牌关联的 claims
+		claims, resp := j.parseClaims(ctx, token)
 		if resp != nil {
 			return resp
 		}
-	}
 
-	mauth.Set(ctx, claims)
-	return next(ctx)
+		if j.blocker.ClaimsIsBlocked(claims) {
+			return ctx.Problem(web.ProblemUnauthorized)
+		}
+
+		if baseToken := claims.BaseToken(); baseToken != "" { // 刷新令牌
+			if err := j.blocker.BlockToken(token, true); err != nil {
+				ctx.Logs().ERROR().Error(err)
+			}
+
+			if err := j.blocker.BlockToken(baseToken, false); err != nil {
+				ctx.Logs().ERROR().Error(err)
+			}
+
+			if claims, resp = j.parseClaims(ctx, token); resp != nil { // 拿到刷新令牌关联的 claims
+				return resp
+			}
+		}
+
+		mauth.Set(ctx, claims)
+		return next(ctx)
+	}
 }
 
 func (j *Verifier[T]) parseClaims(ctx *web.Context, token string) (T, web.Responser) {
 	var zero T
 
 	t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), j.keyFunc)
-	if err != nil { // 都算验证错误
+	if err != nil || !t.Valid {
 		return zero, ctx.Problem(web.ProblemUnauthorized)
 	}
-
-	if !t.Valid {
-		return zero, ctx.Problem(web.ProblemUnauthorized)
-	}
-
 	return t.Claims.(T), nil
 }
 
