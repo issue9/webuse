@@ -27,8 +27,7 @@ func TestSession(t *testing.T) {
 	a := assert.New(t, false)
 	srv := testserver.New(a)
 
-
-	store := NewCacheStore[*data](srv.Cache(), 500*time.Microsecond)
+	store := NewCacheStore[*data](srv.Cache(), time.Minute)
 	a.NotNil(store)
 
 	session := New(srv, store, 60, "sesson_id", "/", "localhost", false, false)

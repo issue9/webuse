@@ -12,7 +12,7 @@ import (
 )
 
 type testClaims struct {
-	jwt.MapClaims
+	jwt.RegisteredClaims
 	ID      int64     `json:"id"`
 	Created time.Time `json:"created"`
 	Token   string    //`json:"token"`
@@ -25,3 +25,7 @@ func (c *testClaims) BuildRefresh(token string, ctx *web.Context) Claims {
 }
 
 func (c *testClaims) Valid() error { return nil }
+
+func (c *testClaims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return jwt.NewNumericDate(c.Created), nil
+}

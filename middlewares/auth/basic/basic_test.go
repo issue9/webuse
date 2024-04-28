@@ -53,11 +53,7 @@ func TestNew(t *testing.T) {
 
 func TestServeHTTP_ok(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
-	})
-	a.NotError(err).NotNil(s)
+	s := testserver.New(a)
 
 	b := New(s, authFunc, "example.com", false)
 	a.NotNil(b)

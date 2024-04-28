@@ -42,9 +42,7 @@ func NewCacheStore[T any](c web.Cache, ttl time.Duration) Store[T] {
 func (s *cacheStore[T]) Delete(id string) error { return s.c.Delete(id) }
 
 func (s *cacheStore[T]) Get(id string) (T, bool, error) {
-	var v T
-	err := s.c.Get(id, &v)
-	switch {
+	switch v, err := cache.Get[T](s.c, id); {
 	case errors.Is(err, cache.ErrCacheMiss()):
 		return v, false, nil
 	case err != nil:
@@ -54,6 +52,4 @@ func (s *cacheStore[T]) Get(id string) (T, bool, error) {
 	}
 }
 
-func (s *cacheStore[T]) Set(id string, v T) error {
-	return s.c.Set(id, v, s.ttl)
-}
+func (s *cacheStore[T]) Set(id string, v T) error { return s.c.Set(id, v, s.ttl) }

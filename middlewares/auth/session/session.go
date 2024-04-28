@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/issue9/rands/v3"
-	"github.com/issue9/unique/v2"
 	"github.com/issue9/web"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
@@ -27,7 +26,7 @@ type contextType int
 
 // Session session 管理
 type Session[T any] struct {
-	rands *unique.Rands
+	rands *rands.Rands[byte]
 	store Store[T]
 
 	// cookie 的相关设置
@@ -42,7 +41,7 @@ func ErrSessionIDNotExists() error { return errSessionIDNotExists }
 //
 // lifetime 为 session 的有效时间，单位为秒；其它参数为 cookie 的相关设置。
 func New[T any](s web.Server, store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) *Session[T] {
-	r := unique.NewRands(100, nil, 10, 11, rands.AlphaNumber())
+	r := rands.New(nil, 100, 10, 11, rands.AlphaNumber())
 	s.Services().Add(web.Phrase("gen session id"), r)
 
 	return &Session[T]{
@@ -67,7 +66,7 @@ func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 
 		var id string
 		if c == nil {
-			id = s.rands.String()
+			id = ctx.Server().UniqueID() + s.rands.String()
 			c = &http.Cookie{
 				Name:     s.name,
 				Path:     s.path,

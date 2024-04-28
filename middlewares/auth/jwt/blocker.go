@@ -5,10 +5,8 @@
 package jwt
 
 import (
-	"errors"
 	"time"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/web"
 )
 
@@ -37,18 +35,18 @@ type (
 	cacheBlocker[T Claims] struct {
 		accessTTL  time.Duration
 		refreshTTL time.Duration
-		c          web.Cache
+		cache      web.Cache
 	}
 )
 
 // NewCacheBlocker 声明基于 [web.Cache] 的 [Blocker] 实现
 //
 // access 和 refresh 表示拉黑的令牌在多少时间之后会被释放；
-func NewCacheBlocker[T Claims](s web.Server, prefix string, access, refresh time.Duration) Blocker[T] {
+func NewCacheBlocker[T Claims](c web.Cache, access, refresh time.Duration) Blocker[T] {
 	return &cacheBlocker[T]{
 		accessTTL:  access,
 		refreshTTL: refresh,
-		c:          web.NewCache(prefix, s.Cache()),
+		cache:      c,
 	}
 }
 
@@ -57,25 +55,9 @@ func (d *cacheBlocker[T]) BlockToken(token string, refresh bool) error {
 	if refresh {
 		ttl = d.refreshTTL
 	}
-
-	err := d.c.Set(token, true, ttl)
-	if errors.Is(err, cache.ErrCacheMiss()) {
-		return nil
-	}
-	return err
+	return d.cache.Set(token, 1, ttl)
 }
 
-func (d *cacheBlocker[T]) TokenIsBlocked(token string) bool {
-	var val bool
-	err := d.c.Get(token, &val)
-	switch {
-	case errors.Is(err, cache.ErrCacheMiss()):
-		return false
-	case err != nil:
-		return false
-	default:
-		return val
-	}
-}
+func (d *cacheBlocker[T]) TokenIsBlocked(token string) bool { return d.cache.Exists(token) }
 
 func (d *cacheBlocker[T]) ClaimsIsBlocked(T) bool { return false }

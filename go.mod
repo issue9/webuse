@@ -5,13 +5,12 @@ go 1.22.0
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/issue9/assert/v4 v4.3.0
-	github.com/issue9/cache v0.12.0
+	github.com/issue9/cache v0.16.1
 	github.com/issue9/events v0.9.0
 	github.com/issue9/logs/v7 v7.6.0
 	github.com/issue9/mux/v8 v8.1.0
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/unique/v2 v2.1.0
-	github.com/issue9/web v0.92.1
+	github.com/issue9/web v0.94.1
 	github.com/shirou/gopsutil/v3 v3.24.3
 	golang.org/x/text v0.14.0
 )
@@ -28,6 +27,7 @@ require (
 	github.com/issue9/sliceutil v0.16.1 // indirect
 	github.com/issue9/source v0.9.1 // indirect
 	github.com/issue9/term/v3 v3.2.8 // indirect
+	github.com/issue9/unique/v2 v2.1.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.2.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect

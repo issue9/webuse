@@ -26,7 +26,7 @@ type Response struct {
 	XMLName struct{} `json:"-" xml:"token" cbor:"-"`
 	Access  string   `json:"access_token" xml:"access_token" cbor:"access_token"`
 	Refresh string   `json:"refresh_token,omitempty" xml:"refresh_token,omitempty" cbor:"refresh_token,omitempty"`
-	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty" cbor:"expires,attr,omitempty"`
+	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty" cbor:"expires,omitempty"`
 }
 
 // Signer 证书的签发管理

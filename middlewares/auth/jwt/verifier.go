@@ -51,7 +51,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 		if kid, found := t.Header["kid"]; found {
 			if index := slices.IndexFunc(j.keys, func(e *key) bool { return e.id == kid }); index >= 0 {
 				k := j.keys[index]
-				t.Method = k.sign // 忽略由用户指定的 header['alg']，而是有 kid 指定。
+				t.Method = k.sign // 忽略由用户指定的 header['alg']，而是由 kid 指定。
 				return k.key, nil
 			}
 		}
@@ -86,16 +86,10 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return resp
 		}
 
+		// NOTE: parseClaims 中已经对 NBF 等必要字段进行判断
+
 		if j.blocker.ClaimsIsBlocked(claims) {
 			return ctx.Problem(web.ProblemUnauthorized)
-		}
-
-		if nbf, err := claims.GetNotBefore(); err == nil && nbf.After(ctx.Begin()) {
-			return ctx.Problem(web.ProblemForbidden)
-		}
-
-		if exp, err := claims.GetExpirationTime(); err == nil && exp.Before(ctx.Begin()) {
-			return ctx.Problem(web.ProblemForbidden)
 		}
 
 		if baseToken := claims.BaseToken(); baseToken != "" { // token 为刷新令牌
@@ -120,10 +114,9 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
 }
 
 func (j *Verifier[T]) parseClaims(ctx *web.Context, token string) (T, web.Responser) {
-	var zero T
-
 	t, err := jwt.ParseWithClaims(token, j.claimsBuilder(), j.keyFunc)
 	if err != nil || !t.Valid {
+		var zero T
 		return zero, ctx.Problem(web.ProblemUnauthorized)
 	}
 	return t.Claims.(T), nil

@@ -90,11 +90,10 @@ func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
 			return ctx.Problem(web.ProblemInternalServerError)
 		}
 
+		rate.setHeader(ctx, size)
 		if size > 0 {
-			rate.setHeader(ctx, size)
 			return next(ctx)
 		}
-		rate.setHeader(ctx, size)
 		return ctx.Problem(web.ProblemTooManyRequests)
 	}
 }
@@ -107,19 +106,23 @@ func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	cntName := name + "_cnt"
 	lastName := name + "_last"
-	counter := rate.store.Counter(cntName, rate.capacity, rate.rate)
+	_, setter, found, err := rate.store.Counter(name+"_cnt", rate.rate)
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		setter(int(rate.capacity))
+	}
 
-	size, err := counter.Decr(1) // 先扣点，保证多并发情况下不会有问题。
+	size, err := setter(-1) // 先扣点，保证多并发情况下不会有问题。
 	if err != nil {
 		return 0, err
 	}
 
 	now := ctx.Begin()
 	var last time.Time
-	err = rate.store.Get(lastName, &last)
-	switch {
+	switch err = rate.store.Get(lastName, &last); {
 	case errors.Is(err, cache.ErrCacheMiss()):
 		last = now
 	case err != nil:
@@ -127,20 +130,17 @@ func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 		return size, nil // 无法确定最后日期，就以当前的数量为准
 	}
 
-	dur := now.Sub(last)           // 从上次拿令牌到现在的时间段
-	cnt := uint64(dur / rate.rate) // 计算这段时间内需要增加的令牌
-	if max := rate.capacity - size; cnt > max {
-		cnt = max
-	}
+	dur := now.Sub(last)               // 从上次拿令牌到现在的时间段
+	cnt := uint64(dur / rate.rate)     // 计算这段时间内需要增加的令牌
+	cnt = min(cnt, rate.capacity-size) // 不超过增加的量
 	if cnt > 0 {
-		if _, err = counter.Incr(cnt); err != nil {
+		if _, err = setter(int(cnt)); err != nil {
 			ctx.Logs().ERROR().Error(err)
 			return size + cnt, nil
 		}
 	}
 
-	err = rate.store.Set(lastName, now, cache.Forever)
-	if err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+	if err = rate.store.Set(lastName, now, cache.Forever); err != nil {
 		ctx.Logs().ERROR().Error(err)
 		return size + cnt, nil
 	}

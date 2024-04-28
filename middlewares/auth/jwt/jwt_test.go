@@ -32,7 +32,7 @@ func newJWT(a *assert.Assertion, expired, refresh time.Duration) (web.Server, *J
 	s := testserver.New(a)
 	a.NotError(s.Cache().Clean())
 
-	m := NewCacheBlocker[*testClaims](s, "test_", expired, refresh)
+	m := NewCacheBlocker[*testClaims](web.NewCache("test_", s.Cache()), expired, refresh)
 	b := func() *testClaims { return &testClaims{} }
 	j := New(m, b, expired, refresh, nil)
 	a.NotNil(j)

@@ -34,9 +34,8 @@ type Auth[T any] interface {
 // header 表示报头的名称；
 // prefix 表示报头内容的前缀；
 func GetToken(ctx *web.Context, prefix, header string) string {
-	l := len(prefix)
 	h := ctx.Request().Header.Get(header)
-	if len(h) > l && strings.ToLower(h[:l]) == prefix {
+	if l := len(prefix); len(h) > l && strings.ToLower(h[:l]) == prefix {
 		return h[l:]
 	}
 	ctx.Logs().DEBUG().LocaleString(web.Phrase("the client %s header %s is invalid format", header, h))
