@@ -12,6 +12,9 @@ messages:
     - key: gen session id
       message:
         msg: gen session id
+    - key: gen token id
+      message:
+        msg: gen token id
     - key: invalid ip %s
       message:
         msg: invalid ip %s

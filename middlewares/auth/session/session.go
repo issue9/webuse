@@ -41,7 +41,7 @@ func ErrSessionIDNotExists() error { return errSessionIDNotExists }
 //
 // lifetime 为 session 的有效时间，单位为秒；其它参数为 cookie 的相关设置。
 func New[T any](s web.Server, store Store[T], lifetime int, name, path, domain string, secure, httpOnly bool) *Session[T] {
-	r := rands.New(nil, 100, 10, 11, rands.AlphaNumber())
+	r := rands.New(nil, 100, 15, 16, rands.AlphaNumber())
 	s.Services().Add(web.Phrase("gen session id"), r)
 
 	return &Session[T]{

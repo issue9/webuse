@@ -60,7 +60,7 @@ func New[T UserData](
 		br = DefaultBuildResponse
 	}
 
-	r := rands.New(nil, 100, 10, 11, rands.AlphaNumber())
+	r := rands.New(nil, 100, 15, 16, rands.AlphaNumber())
 	s.Services().Add(web.Phrase("gen token id"), r)
 
 	return &Token[T]{

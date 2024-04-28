@@ -12,6 +12,9 @@ messages:
     - key: gen session id
       message:
         msg: 生成 session id
+    - key: gen token id
+      message:
+        msg: 生成令牌
     - key: invalid ip %s
       message:
         msg: 无效的 IP 地址 %s
