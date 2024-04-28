@@ -33,7 +33,7 @@ func TestToken(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
 
-	token := New(s, NewCacheStore[v](s.Cache()), time.Second, 2*time.Second, web.ProblemBadRequest)
+	token := New(s, NewCacheStore[v](s.Cache()), time.Second, 2*time.Second, web.ProblemBadRequest, nil)
 	a.NotNil(token)
 	s.Routers()
 

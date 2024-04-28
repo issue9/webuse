@@ -12,7 +12,9 @@ import (
 	"github.com/issue9/web"
 )
 
+// UserData 作为用户数据存储时需要实现的接口
 type UserData interface {
+	// GetUID 获取当前数据的关联用户 ID
 	GetUID() string
 }
 

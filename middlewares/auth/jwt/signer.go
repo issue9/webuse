@@ -13,21 +13,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/middlewares/auth/token"
 )
-
-// BuildResponseFunc 根据给定的参数返回给定客户端的对象
-//
-// access 访问令牌是必须的；
-// refresh 刷新令牌，如果为空，不会输出；
-// expires 表示 access 的过期时间；
-type BuildResponseFunc = func(access, refresh string, expires int) any
-
-type Response struct {
-	XMLName struct{} `json:"-" xml:"token" cbor:"-"`
-	Access  string   `json:"access_token" xml:"access_token" cbor:"access_token"`
-	Refresh string   `json:"refresh_token,omitempty" xml:"refresh_token,omitempty" cbor:"refresh_token,omitempty"`
-	Expires int      `json:"expires,omitempty" xml:"expires,attr,omitempty" cbor:"expires,omitempty"`
-}
 
 // Signer 证书的签发管理
 //
@@ -38,18 +26,18 @@ type Signer struct {
 	expires int
 	expired time.Duration
 
-	refresh        bool
+	refresh        int
 	refreshExpired time.Duration
 
-	br BuildResponseFunc
+	br token.BuildResponseFunc
 }
 
 // NewSigner 声明签名对象
 //
 // expired 普通令牌的过期时间；
 // refresh 刷新令牌的时间，非零表示有刷新令牌，如果为非零值，则必须大于 expired；
-// br 表示将令牌组合成一个对象用以返回给客户端，可以为空，采用返回 [Response] 作为其默认实现；
-func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
+// br 表示将令牌组合成一个对象用以返回给客户端，可以为空，采用返回 [token.DefaultBuildResponse] 作为其默认实现；
+func NewSigner(expired, refresh time.Duration, br token.BuildResponseFunc) *Signer {
 	if expired == 0 {
 		panic("expired 必须大于 0")
 	}
@@ -59,9 +47,7 @@ func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
 	}
 
 	if br == nil {
-		br = func(access, refresh string, expires int) any {
-			return &Response{Access: access, Refresh: refresh, Expires: expires}
-		}
+		br = token.DefaultBuildResponse
 	}
 
 	return &Signer{
@@ -70,7 +56,7 @@ func NewSigner(expired, refresh time.Duration, br BuildResponseFunc) *Signer {
 		expires: int(expired.Seconds()),
 		expired: expired,
 
-		refresh:        refresh > 0,
+		refresh:        int(refresh.Seconds()),
 		refreshExpired: refresh,
 
 		br: br,
@@ -89,14 +75,14 @@ func (s *Signer) Render(ctx *web.Context, status int, accessClaims Claims) web.R
 	}
 
 	var refreshToken string
-	if s.refresh {
+	if s.refresh > 0 {
 		refreshToken, err = s.Sign(accessClaims.BuildRefresh(accessToken, ctx))
 		if err != nil {
 			return ctx.Error(err, "")
 		}
 	}
 
-	return web.Response(status, s.br(accessToken, refreshToken, s.expires))
+	return web.Response(status, s.br(accessToken, refreshToken, s.expires, s.refresh))
 }
 
 // Sign 对 claims 进行签名

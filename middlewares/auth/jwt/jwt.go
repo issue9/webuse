@@ -23,6 +23,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/web"
+
+	"github.com/issue9/webuse/v7/middlewares/auth/token"
 )
 
 var errSigningMethodNotFound = web.NewLocaleError("not found jwt signing method")
@@ -50,7 +52,7 @@ func ErrSigningMethodNotFound() error { return errSigningMethodNotFound }
 // New 声明 [JWT] 对象
 //
 // 参数可参考 [NewVerifier] 和 [NewSigner]
-func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Duration, br BuildResponseFunc) *JWT[T] {
+func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Duration, br token.BuildResponseFunc) *JWT[T] {
 	v := NewVerifier(b, f)
 	s := NewSigner(expired, refresh, br)
 	return &JWT[T]{v: v, s: s}

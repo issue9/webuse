@@ -21,15 +21,6 @@ type tokenType int
 
 const tokenContext tokenType = 0
 
-// Response 申请令牌时返回的对象
-type Response struct {
-	XMLName      struct{} `json:"-" cbor:"-" xml:"token"`
-	AccessToken  string   `json:"access_token" xml:"access_token" cbor:"access_token"`    // 访问令牌
-	RefreshToken string   `json:"refresh_token" xml:"refresh_token" cbor:"refresh_token"` // 刷新令牌
-	AccessExp    int      `json:"access_exp" xml:"access_exp,attr" cbor:"access_exp"`     // 访问令牌的有效时长，单位为秒
-	RefreshExp   int      `json:"refresh_exp" xml:"refresh_exp,attr" cbor:"refresh_exp"`  // 刷新令牌的有效时长，单位为秒
-}
-
 // Token 传统的令牌管理
 //
 // 每次产生两个令牌：
@@ -43,6 +34,7 @@ type Token[T UserData] struct {
 	s     web.Server
 	rands *rands.Rands[byte]
 	store Store[T]
+	br    BuildResponseFunc
 
 	accessExp, refreshExp       time.Duration
 	accessExpInt, refreshExpInt int
@@ -53,9 +45,19 @@ type Token[T UserData] struct {
 //
 // accessExp，refreshExp 表示访问令牌和刷新令牌的有效时长，refreshExp 必须大于 accessExp；
 // invalidTokenProblemID 令牌无效时返回的错误代码。比如将访问令牌当刷新令牌使用等；
-func New[T UserData](s web.Server, store Store[T], accessExp, refreshExp time.Duration, invalidTokenProblemID string) *Token[T] {
+// br 用于生成向客户端反馈令牌信息的结构体方法，默认为 [DefaultBuildResponse]；
+func New[T UserData](
+	s web.Server,
+	store Store[T],
+	accessExp, refreshExp time.Duration,
+	invalidTokenProblemID string,
+	br BuildResponseFunc,
+) *Token[T] {
 	if accessExp >= refreshExp {
 		panic("参数 accessExp 必须小于 refreshExp")
+	}
+	if br == nil {
+		br = DefaultBuildResponse
 	}
 
 	r := rands.New(nil, 100, 10, 11, rands.AlphaNumber())
@@ -65,6 +67,7 @@ func New[T UserData](s web.Server, store Store[T], accessExp, refreshExp time.Du
 		s:     s,
 		rands: r,
 		store: store,
+		br:    br,
 
 		accessExp:             accessExp,
 		refreshExp:            refreshExp,
@@ -135,12 +138,7 @@ func (t *Token[T]) New(ctx *web.Context, v T, status int, headers ...string) web
 		return ctx.Error(err, "")
 	}
 
-	return web.Response(status, &Response{
-		AccessToken:  access,
-		RefreshToken: refresh,
-		AccessExp:    t.accessExpInt,
-		RefreshExp:   t.refreshExpInt,
-	}, headers...)
+	return web.Response(status, t.br(access, refresh, t.accessExpInt, t.refreshExpInt), headers...)
 }
 
 // Refresh 刷新令牌

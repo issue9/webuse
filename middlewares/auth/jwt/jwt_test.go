@@ -24,6 +24,7 @@ import (
 
 	"github.com/issue9/webuse/v7/internal/testserver"
 	"github.com/issue9/webuse/v7/middlewares/auth"
+	"github.com/issue9/webuse/v7/middlewares/auth/token"
 )
 
 var _ auth.Auth[*testClaims] = &JWT[*testClaims]{}
@@ -160,54 +161,54 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
 		//a.TB().Helper()
 
-		resp := &Response{}
+		resp := &token.Response{}
 		a.NotError(xjson.Unmarshal(bytes.NewBuffer(body), resp))
 		a.NotEmpty(resp).
-			NotEmpty(resp.Access).
-			NotEmpty(resp.Refresh)
+			NotEmpty(resp.AccessToken).
+			NotEmpty(resp.RefreshToken)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Access)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
 			Do(nil).
 			Status(http.StatusOK)
 
-		resp2 := &Response{}
+		resp2 := &token.Response{}
 		servertest.Post(a, "http://localhost:8080/refresh", nil).
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Refresh)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.RefreshToken)).
 			Do(nil).
 			Status(http.StatusCreated).
 			BodyFunc(func(a *assert.Assertion, body []byte) {
 				a.NotError(xjson.Unmarshal(bytes.NewBuffer(body), resp2)).
 					NotEmpty(resp2).
-					NotEmpty(resp2.Access).
-					NotEmpty(resp2.Refresh)
+					NotEmpty(resp2.AccessToken).
+					NotEmpty(resp2.RefreshToken)
 			})
 
-		a.True(j.v.blocker.TokenIsBlocked(resp.Access)).
-			True(j.v.blocker.TokenIsBlocked(resp.Refresh)).
-			False(j.v.blocker.TokenIsBlocked(resp2.Access)).
-			False(j.v.blocker.TokenIsBlocked(resp2.Refresh))
+		a.True(j.v.blocker.TokenIsBlocked(resp.AccessToken)).
+			True(j.v.blocker.TokenIsBlocked(resp.RefreshToken)).
+			False(j.v.blocker.TokenIsBlocked(resp2.AccessToken)).
+			False(j.v.blocker.TokenIsBlocked(resp2.RefreshToken))
 
 		// 旧令牌已经无法访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.Access)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 新令牌可以访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.Access)).
+			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
@@ -246,13 +247,13 @@ func TestVerifier_client(t *testing.T) {
 	servertest.Post(a, "http://localhost:8080/login", nil).
 		Do(nil).
 		Status(http.StatusCreated).BodyFunc(func(a *assert.Assertion, body []byte) {
-		m := &Response{}
+		m := &token.Response{}
 		a.NotError(json.Unmarshal(body, &m))
 		a.NotEmpty(m).
-			NotEmpty(m.Access).
-			NotEmpty(m.Refresh)
+			NotEmpty(m.AccessToken).
+			NotEmpty(m.RefreshToken)
 
-		token, parts, err := jwt.NewParser().ParseUnverified(m.Access, &jwt.RegisteredClaims{})
+		token, parts, err := jwt.NewParser().ParseUnverified(m.AccessToken, &jwt.RegisteredClaims{})
 		a.NotError(err).Equal(3, len(parts)).NotNil(token)
 		headers := decodeHeader(a, parts[0])
 		a.Equal(headers["alg"], "none").NotEmpty(headers["kid"])
