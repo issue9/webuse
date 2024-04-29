@@ -126,7 +126,7 @@ func TestToken(t *testing.T) {
 								Do(nil).
 								Status(http.StatusOK)
 
-							token.Delete("5")
+							token.Delete(v{ID: "5"})
 							servertest.Get(a, "http://localhost:8080/info").
 								Header(header.Authorization, auth.BuildToken(auth.Bearer, resp3.AccessToken)).
 								Do(nil).

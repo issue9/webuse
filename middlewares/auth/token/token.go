@@ -154,5 +154,5 @@ func (t *Token[T]) Refresh(ctx *web.Context, status int, headers ...string) web.
 	return t.New(ctx, v.UserData, status, headers...)
 }
 
-// Delete 根据 uid 删除登录信息
-func (t *Token[T]) Delete(uid string) error { return t.store.DeleteUID(uid) }
+// Delete 根据指定的用户数据
+func (t *Token[T]) Delete(u T) error { return t.store.DeleteUID(u.GetUID()) }
