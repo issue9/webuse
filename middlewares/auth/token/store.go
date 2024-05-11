@@ -48,7 +48,7 @@ type Store[V UserData] interface {
 type cacheStore[T UserData] struct {
 	item    web.Cache // token: item
 	access  web.Cache // uid: access token
-	refresh web.Cache // uid: refersh token
+	refresh web.Cache // uid: refresh token
 }
 
 // NewCacheStore 声明基于 [web.Cache] 的 [Store] 实现

@@ -7,12 +7,12 @@ require (
 	github.com/issue9/assert/v4 v4.3.0
 	github.com/issue9/cache v0.16.1
 	github.com/issue9/events v0.9.0
-	github.com/issue9/logs/v7 v7.6.0
-	github.com/issue9/mux/v8 v8.1.0
+	github.com/issue9/logs/v7 v7.6.1
+	github.com/issue9/mux/v8 v8.1.1
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/web v0.94.1
+	github.com/issue9/web v0.94.2
 	github.com/shirou/gopsutil/v3 v3.24.3
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.15.0
 )
 
 require (
@@ -21,12 +21,12 @@ require (
 	github.com/issue9/config v0.6.2 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
-	github.com/issue9/localeutil v0.26.5 // indirect
+	github.com/issue9/localeutil v0.26.9 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
-	github.com/issue9/scheduled v0.19.5 // indirect
+	github.com/issue9/scheduled v0.20.0 // indirect
 	github.com/issue9/sliceutil v0.16.1 // indirect
-	github.com/issue9/source v0.9.1 // indirect
-	github.com/issue9/term/v3 v3.2.8 // indirect
+	github.com/issue9/source v0.11.1 // indirect
+	github.com/issue9/term/v3 v3.2.9 // indirect
 	github.com/issue9/unique/v2 v2.1.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.2.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
@@ -37,8 +37,8 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
