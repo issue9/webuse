@@ -11,6 +11,7 @@ package ratelimit
 
 import (
 	"errors"
+	"slices"
 	"strconv"
 	"time"
 
@@ -24,12 +25,13 @@ import (
 // 用于区分令牌桶所属的用户
 type GenFunc = func(*web.Context) (string, error)
 
-type ratelimit struct {
+type Ratelimit struct {
 	store    web.Cache
 	capacity uint64
 	rate     time.Duration
 	ttl      time.Duration
 	gen      GenFunc
+	unlimit  []string
 
 	limit, remaining, reset string
 }
@@ -51,7 +53,7 @@ func GenIP(ctx *web.Context) (string, error) {
 //   - X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
 //   - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
 //   - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
-func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers map[string]string) web.Middleware {
+func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers map[string]string) *Ratelimit {
 	ttl := rate * time.Duration(capacity)
 	if ttl < time.Second {
 		panic("capacity*rate 必须大于 1 秒")
@@ -75,12 +77,13 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 		headers[header.XRateLimitReset] = header.XRateLimitReset
 	}
 
-	return &ratelimit{
+	return &Ratelimit{
 		store:    c,
 		capacity: capacity,
 		rate:     rate,
 		ttl:      ttl,
 		gen:      gen,
+		unlimit:  make([]string, 0, 10),
 
 		limit:     headers[header.XRateLimitLimit],
 		remaining: headers[header.XRateLimitRemaining],
@@ -88,7 +91,13 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 	}
 }
 
-func (rate *ratelimit) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
+func buildID(method, path string) string { return method + path }
+
+func (rate *Ratelimit) Middleware(next web.HandlerFunc, method, path string) web.HandlerFunc {
+	if slices.Index(rate.unlimit, buildID(method, path)) >= 0 { //
+		return next
+	}
+
 	return func(ctx *web.Context) web.Responser {
 		size, err := rate.allow(ctx)
 		if err != nil {
@@ -103,10 +112,18 @@ func (rate *ratelimit) Middleware(next web.HandlerFunc, _, _ string) web.Handler
 	}
 }
 
+// Unlimit 返回一个脱离当前限制的中间件
+func (rate *Ratelimit) Unlimit() web.Middleware {
+	return web.MiddlewareFunc(func(next func(*web.Context) web.Responser, method, path string) func(*web.Context) web.Responser {
+		rate.unlimit = append(rate.unlimit, buildID(method, path))
+		return next
+	})
+}
+
 // 是否允许当前请求
 //
 // 如果允许，则返回当前可用的数量。
-func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
+func (rate *Ratelimit) allow(ctx *web.Context) (uint64, error) {
 	name, err := rate.gen(ctx)
 	if err != nil {
 		return 0, err
@@ -157,7 +174,7 @@ func (rate *ratelimit) allow(ctx *web.Context) (uint64, error) {
 	return size + incr, nil
 }
 
-func (rate *ratelimit) setHeader(ctx *web.Context, size uint64) {
+func (rate *Ratelimit) setHeader(ctx *web.Context, size uint64) {
 	t := time.Duration(rate.capacity-size) * rate.rate
 	rest := ctx.Begin().Add(t).Unix()
 
