@@ -4,7 +4,7 @@
 
 // Package ratelimit API 限流中间件
 //
-// 这是以用户或是客户端为单位的限流中间件，并不能按 API 进行细化的限流。
+// 这是以用户或是客户端为单位的限流中间件，如果需要按路由进行限流，需为每个路由指定一个实例。
 //
 // NOTE: 所有数据保存在 [web.Cache] 之中，缓存服务重启后数据也将重置。
 package ratelimit
@@ -88,7 +88,7 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 	}
 }
 
-func (rate *ratelimit) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (rate *ratelimit) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		size, err := rate.allow(ctx)
 		if err != nil {

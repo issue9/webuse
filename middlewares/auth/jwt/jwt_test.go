@@ -121,16 +121,16 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 		})
 	})
 
-	r.Post("/refresh", j.Middleware(func(ctx *web.Context) web.Responser {
+	r.Post("/refresh", func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
 		if claims, ok := j.GetInfo(ctx); ok && claims.BaseToken() != "" {
 			return j.Render(ctx, http.StatusCreated, &testClaims{ID: claims.ID, Created: ctx.Begin()})
 		}
 		return ctx.Problem(web.ProblemUnauthorized)
-	}))
+	}, j)
 
-	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
+	r.Get("/info", func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 
 		val, found := j.GetInfo(ctx)
@@ -143,15 +143,15 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 		}
 
 		return web.OK(nil)
-	}))
+	}, j)
 
-	r.Delete("/login", j.Middleware(func(ctx *web.Context) web.Responser {
+	r.Delete("/login", func(ctx *web.Context) web.Responser {
 		a.TB().Helper()
 		if err := j.Logout(ctx); err != nil {
 			return ctx.Error(err, web.ProblemInternalServerError)
 		}
 		return web.NoContent()
-	}))
+	}, j)
 
 	defer servertest.Run(a, s)()
 	defer s.Close(0)
@@ -228,7 +228,7 @@ func TestVerifier_client(t *testing.T) {
 		return j.Render(ctx, http.StatusCreated, claims)
 	})
 
-	r.Get("/info", j.Middleware(func(ctx *web.Context) web.Responser {
+	r.Get("/info", func(ctx *web.Context) web.Responser {
 		val, found := j.GetInfo(ctx)
 		if !found {
 			return web.Status(http.StatusNotFound)
@@ -239,7 +239,7 @@ func TestVerifier_client(t *testing.T) {
 		}
 
 		return web.OK(nil)
-	}))
+	}, j)
 
 	defer servertest.Run(a, s)()
 	defer s.Close(0)

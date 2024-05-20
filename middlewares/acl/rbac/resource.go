@@ -95,7 +95,7 @@ func (g *ResourceGroup[T]) New(id string, desc web.LocaleStringer) web.Middlewar
 	g.items[id] = desc
 	g.RBAC().resources = append(g.rbac.resources, id)
 
-	return func(next web.HandlerFunc) web.HandlerFunc {
+	return func(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 		return func(ctx *web.Context) web.Responser {
 			uid, resp := g.rbac.getUID(ctx)
 			if resp != nil {

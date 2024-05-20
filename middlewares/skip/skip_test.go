@@ -25,7 +25,8 @@ func TestSkip(t *testing.T) {
 	}
 
 	router := s.Routers().New("def", nil)
-	router.Any("/test", New(func(ctx *web.Context) bool { return ctx.Request().Method != http.MethodHead }, web.ProblemBadRequest).Middleware(next))
+	cond := func(ctx *web.Context) bool { return ctx.Request().Method != http.MethodHead }
+	router.Any("/test", next, New(cond, web.ProblemBadRequest))
 
 	defer servertest.Run(a, s)()
 	defer s.Close(0)

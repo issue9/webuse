@@ -8,10 +8,10 @@ require (
 	github.com/issue9/cache v0.16.1
 	github.com/issue9/events v0.9.0
 	github.com/issue9/logs/v7 v7.6.1
-	github.com/issue9/mux/v8 v8.1.1
+	github.com/issue9/mux/v8 v8.2.0
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/web v0.94.2
-	github.com/shirou/gopsutil/v3 v3.24.3
+	github.com/issue9/web v0.95.0
+	github.com/shirou/gopsutil/v3 v3.24.4
 	golang.org/x/text v0.15.0
 )
 
@@ -25,7 +25,7 @@ require (
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/scheduled v0.20.0 // indirect
 	github.com/issue9/sliceutil v0.16.1 // indirect
-	github.com/issue9/source v0.11.1 // indirect
+	github.com/issue9/source v0.11.3 // indirect
 	github.com/issue9/term/v3 v3.2.9 // indirect
 	github.com/issue9/unique/v2 v2.1.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.2.0 // indirect

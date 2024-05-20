@@ -98,7 +98,7 @@ func (l *common) match(ip string) bool {
 	return false
 }
 
-func (l *white) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (l *white) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		host, err := splitIP(ctx.ClientIP())
 		if err != nil {
@@ -112,7 +112,7 @@ func (l *white) Middleware(next web.HandlerFunc) web.HandlerFunc {
 	}
 }
 
-func (l *black) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (l *black) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		host, err := splitIP(ctx.ClientIP())
 		if err != nil {

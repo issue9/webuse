@@ -80,7 +80,7 @@ func TestResources_New(t *testing.T) {
 	router := s.Routers().New("def", nil)
 	router.Get("/test", m1(func(*web.Context) web.Responser {
 		return web.Created(nil, "")
-	}))
+	}, http.MethodGet, "/test"))
 
 	// super
 	servertest.Get(a, "http://localhost:8080/test?id=1").Do(nil).Status(http.StatusCreated)

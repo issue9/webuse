@@ -77,7 +77,7 @@ func New[T UserData](
 	}
 }
 
-func (t *Token[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (t *Token[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
 		if token == "" {

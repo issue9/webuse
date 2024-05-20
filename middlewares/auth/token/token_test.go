@@ -42,16 +42,16 @@ func TestToken(t *testing.T) {
 		return token.New(ctx, v{ID: "5"}, http.StatusCreated)
 	})
 
-	r.Get("/info", token.Middleware(func(ctx *web.Context) web.Responser {
+	r.Get("/info", func(ctx *web.Context) web.Responser {
 		if info, ok := token.GetInfo(ctx); ok {
 			return web.OK(info) // info == /login 中传递的值 v{ID:"5"}
 		}
 		panic("永远不可能达到此处")
-	}))
+	}, token)
 
-	r.Post("/refresh", token.Middleware(func(ctx *web.Context) web.Responser {
+	r.Post("/refresh", func(ctx *web.Context) web.Responser {
 		return token.Refresh(ctx, http.StatusOK)
-	}))
+	}, token)
 
 	defer servertest.Run(a, s)()
 	defer s.Close(0)

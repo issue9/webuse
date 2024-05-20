@@ -74,7 +74,7 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth
 	}
 }
 
-func (b *basic[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (b *basic[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := auth.GetToken(ctx, prefix, b.authorization)
 

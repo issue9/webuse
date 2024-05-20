@@ -72,7 +72,7 @@ func (j *Verifier[T]) Logout(ctx *web.Context) error {
 // Middleware 验证访问令牌和刷新令牌的有效性
 //
 // NOTE: 可以通过 [Verifier.GetInfo] 获得当前令牌关联的用户信息，通过 [Claims.BaseToken] 判断是否为刷新令牌；
-func (j *Verifier[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (j *Verifier[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	// NOTE: 刷新令牌也可以用于普通验证，因为刷新令牌中包含了所有普通令牌的信息。
 
 	return func(ctx *web.Context) web.Responser {

@@ -57,7 +57,7 @@ func New[T any](s web.Server, store Store[T], lifetime int, name, path, domain s
 	}
 }
 
-func (s *Session[T]) Middleware(next web.HandlerFunc) web.HandlerFunc {
+func (s *Session[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		c, err := ctx.Request().Cookie(s.name)
 		if err != nil && !errors.Is(err, http.ErrNoCookie) { // 不退出，给定默认值。
