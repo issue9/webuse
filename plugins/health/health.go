@@ -42,10 +42,8 @@ func New(store Store) *Health { return &Health{Enabled: true, store: store} }
 
 func (h *Health) Plugin(s web.Server) {
 	s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
-		if method != http.MethodOptions && method != "" && method != http.MethodHead &&
-			pattern != "" &&
-			h.store.Get(router, method, pattern) == nil {
-			h.store.Save(newState(router, method, pattern))
+		if method != http.MethodOptions && method != "" && method != http.MethodHead && pattern != "" {
+			h.store.Get(router, method, pattern) // Get 带初始化功能
 		}
 		return next
 	}))

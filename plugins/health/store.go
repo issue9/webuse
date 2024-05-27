@@ -16,7 +16,7 @@ import (
 type Store interface {
 	// Get 获取指定 API 的数据
 	//
-	// 如果还不存在，则应该将只有 route、method 和 pattern 不为空的 [State] 对象写入当前接口并返回。
+	// 如果还不存在，则应该将只有 route、method 和 pattern 不为空的 [State] 对象写入 [Store] 并返回。
 	Get(route, method, pattern string) *State
 
 	// Save 保存数据内容
