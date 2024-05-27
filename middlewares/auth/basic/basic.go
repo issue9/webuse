@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"encoding/base64"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/web"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
@@ -74,7 +74,7 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth
 	}
 }
 
-func (b *basic[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
+func (b *basic[T]) Middleware(next web.HandlerFunc, _, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		h := auth.GetToken(ctx, prefix, b.authorization)
 

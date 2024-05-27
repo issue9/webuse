@@ -9,7 +9,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/rands/v3"
 	"github.com/issue9/web"
 
@@ -77,7 +77,7 @@ func New[T UserData](
 	}
 }
 
-func (t *Token[T]) Middleware(next web.HandlerFunc, _, _ string) web.HandlerFunc {
+func (t *Token[T]) Middleware(next web.HandlerFunc, _, _, _ string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
 		if token == "" {

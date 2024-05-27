@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/web"
 )
 
@@ -91,10 +91,10 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 	}
 }
 
-func buildID(method, path string) string { return method + path }
+func buildID(method, path, router string) string { return router + method + path }
 
-func (rate *Ratelimit) Middleware(next web.HandlerFunc, method, path string) web.HandlerFunc {
-	if slices.Index(rate.unlimit, buildID(method, path)) >= 0 { //
+func (rate *Ratelimit) Middleware(next web.HandlerFunc, method, path, router string) web.HandlerFunc {
+	if slices.Index(rate.unlimit, buildID(method, path, router)) >= 0 { //
 		return next
 	}
 
@@ -114,8 +114,8 @@ func (rate *Ratelimit) Middleware(next web.HandlerFunc, method, path string) web
 
 // Unlimit 返回一个脱离当前限制的中间件
 func (rate *Ratelimit) Unlimit() web.Middleware {
-	return web.MiddlewareFunc(func(next func(*web.Context) web.Responser, method, path string) func(*web.Context) web.Responser {
-		rate.unlimit = append(rate.unlimit, buildID(method, path))
+	return web.MiddlewareFunc(func(next func(*web.Context) web.Responser, method, path, router string) func(*web.Context) web.Responser {
+		rate.unlimit = append(rate.unlimit, buildID(method, path, router))
 		return next
 	})
 }

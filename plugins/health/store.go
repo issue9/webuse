@@ -67,7 +67,7 @@ func (c *cacheStore) Get(route, method, pattern string) *State {
 }
 
 func (c *cacheStore) Save(state *State) {
-	key := c.getID(state.Route, state.Method, state.Pattern)
+	key := c.getID(state.Router, state.Method, state.Pattern)
 	if err := c.cache.Set(key, state, cache.Forever); err != nil {
 		c.errlog.Error(err)
 	}

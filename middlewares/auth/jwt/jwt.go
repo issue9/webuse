@@ -61,8 +61,8 @@ func New[T Claims](b Blocker[T], f BuildClaimsFunc[T], expired, refresh time.Dur
 func (j *JWT[T]) Logout(ctx *web.Context) error { return j.v.Logout(ctx) }
 
 // Middleware 解码用户的 token 并写入 [web.Context]
-func (j *JWT[T]) Middleware(next web.HandlerFunc, m, p string) web.HandlerFunc {
-	return j.v.Middleware(next, m, p)
+func (j *JWT[T]) Middleware(next web.HandlerFunc, m, p, r string) web.HandlerFunc {
+	return j.v.Middleware(next, m, p, r)
 }
 
 func (j *JWT[T]) GetInfo(ctx *web.Context) (T, bool) { return j.v.GetInfo(ctx) }

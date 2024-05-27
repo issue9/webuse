@@ -15,7 +15,7 @@ import (
 // State 实际存在的数据类型
 type State struct {
 	XMLName      struct{}      `xml:"state" yaml:"-" json:"-" cbor:"-"`
-	Route        string        `xml:"route" yaml:"route" json:"route" cbor:"route"`                                  // 多个路由时，表示的路由名称
+	Router       string        `xml:"router" yaml:"router" json:"router" cbor:"router"`                              // 多个路由时，表示的路由名称
 	Method       string        `xml:"method,attr" yaml:"method" json:"method" cbor:"method"`                         // 请求方法
 	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern" cbor:"pattern"`                          // 路由
 	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min" cbor:"min"`                                     // 最小的执行时间
@@ -34,51 +34,27 @@ type Health struct {
 }
 
 func newState(route, method, path string) *State {
-	return &State{Route: route, Method: method, Pattern: path}
+	return &State{Router: route, Method: method, Pattern: path}
 }
 
 // New 声明 [Health] 实例
 func New(store Store) *Health { return &Health{Enabled: true, store: store} }
 
 func (h *Health) Plugin(s web.Server) {
+	s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
+		if method != http.MethodOptions && method != "" && method != http.MethodHead &&
+			pattern != "" &&
+			h.store.Get(router, method, pattern) == nil {
+			h.store.Save(newState(router, method, pattern))
+		}
+		return next
+	}))
+
 	s.OnExitContext(func(ctx *web.Context, status int) {
 		if h.Enabled {
 			h.save(ctx, status)
 		}
 	})
-}
-
-// Register 注册一条路由项
-//
-// 这不是一个必须的操作。
-// [web.Server] 的路由是可以动态加载的，无法预加载所有的路由项，
-// 当路由项被第一次访问时，才会将该路由项的信息进行保存。
-// 此操作可以让指定的路由项出现在 [Health.States] 中。
-//
-// NOTE: 只有在路由项还不存在于 [Health] 时才会填一个零值对象。
-func (h *Health) Register(route, method, pattern string) {
-	if h.store.Get(route, method, pattern) == nil {
-		h.store.Save(newState(route, method, pattern))
-	}
-}
-
-// Fill 将 [web.Server.Routers] 当前所拥有的路由项填充到 [Health]
-//
-// [web.Server] 的路由是可以动态加载的，无法预加载所有的路由项，
-// 当路由项被第一次访问时，才会将该路由项的信息进行保存。
-// 此操作可以让所有路由都出现在 States() 中。
-//
-// NOTE: 只有在路由项还不存在于 [Health] 时才会填一个零值对象。
-func (h *Health) Fill(s web.Server) {
-	for _, r := range s.Routers().Routers() {
-		for pattern, methods := range r.Routes() {
-			for _, method := range methods {
-				if h.store.Get(r.Name(), method, pattern) == nil {
-					h.store.Save(newState(r.Name(), method, pattern))
-				}
-			}
-		}
-	}
 }
 
 // States 返回所有的状态列表

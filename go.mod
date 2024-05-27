@@ -8,9 +8,9 @@ require (
 	github.com/issue9/cache v0.16.1
 	github.com/issue9/events v0.9.0
 	github.com/issue9/logs/v7 v7.6.1
-	github.com/issue9/mux/v8 v8.2.0
+	github.com/issue9/mux/v9 v9.0.0-beta.1
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/web v0.95.0
+	github.com/issue9/web v0.96.1
 	github.com/shirou/gopsutil/v3 v3.24.4
 	golang.org/x/text v0.15.0
 )

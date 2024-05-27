@@ -21,7 +21,7 @@ func Test(a *assert.Assertion, s health.Store) {
 		Zero(state1.Count)
 
 	state := &health.State{
-		Route:        "r1",
+		Router:       "r1",
 		Method:       "GET",
 		Pattern:      "/users/{id}",
 		Min:          100,
