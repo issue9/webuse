@@ -46,59 +46,55 @@ type Store[V UserData] interface {
 }
 
 type cacheStore[T UserData] struct {
-	item    web.Cache // token: item
-	access  web.Cache // uid: access token
-	refresh web.Cache // uid: refresh token
+	tokenItem  web.Cache // token: item
+	uidAccess  web.Cache // uid: access token
+	uidRefresh web.Cache // uid: refresh token
 }
 
 // NewCacheStore 声明基于 [web.Cache] 的 [Store] 实现
 func NewCacheStore[T UserData](c web.Cache) Store[T] {
 	return &cacheStore[T]{
-		item:    cache.Prefix(c, "i_"),
-		access:  cache.Prefix(c, "a_"),
-		refresh: cache.Prefix(c, "r_"),
+		tokenItem:  cache.Prefix(c, "i_"),
+		uidAccess:  cache.Prefix(c, "a_"),
+		uidRefresh: cache.Prefix(c, "r_"),
 	}
 }
 
 func (s *cacheStore[T]) Save(token string, v Item[T], ttl time.Duration) error {
-	// 保存了两条记录：
-	// token: item
-	// UserData.GetUID: token
-
-	c := s.access
+	c := s.uidAccess
 	if v.Access != "" {
-		c = s.refresh
+		c = s.uidRefresh
 	}
-	return errors.Join(s.item.Set(token, v, ttl), c.Set(v.UserData.GetUID(), token, ttl))
+	return errors.Join(s.tokenItem.Set(token, v, ttl), c.Set(v.UserData.GetUID(), token, ttl))
 }
 
 func (s *cacheStore[T]) DeleteToken(token string) error {
-	item, err := cache.Get[Item[T]](s.item, token)
+	item, err := cache.Get[Item[T]](s.tokenItem, token)
 	if err != nil {
 		return err
 	}
 
-	c := s.access
+	c := s.uidAccess
 	if item.Access != "" {
-		c = s.refresh
+		c = s.uidRefresh
 	}
-	return errors.Join(s.item.Delete(token), c.Delete(item.UserData.GetUID()))
+	return errors.Join(s.tokenItem.Delete(token), c.Delete(item.UserData.GetUID()))
 }
 
 func (s *cacheStore[T]) DeleteUID(uid string) error {
-	access, err := cache.Get[string](s.access, uid)
+	access, err := cache.Get[string](s.uidAccess, uid)
 	if err != nil {
 		return err
 	}
-	refresh, err := cache.Get[string](s.refresh, uid)
+	refresh, err := cache.Get[string](s.uidRefresh, uid)
 	if err != nil {
 		return err
 	}
-	return errors.Join(s.access.Delete(uid), s.refresh.Delete(uid), s.item.Delete(access), s.item.Delete(refresh))
+	return errors.Join(s.uidAccess.Delete(uid), s.uidRefresh.Delete(uid), s.tokenItem.Delete(access), s.tokenItem.Delete(refresh))
 }
 
 func (s *cacheStore[T]) Get(token string) (Item[T], bool, error) {
-	v, err := cache.Get[Item[T]](s.item, token)
+	v, err := cache.Get[Item[T]](s.tokenItem, token)
 	switch {
 	case errors.Is(err, cache.ErrCacheMiss()):
 		return Item[T]{}, false, nil

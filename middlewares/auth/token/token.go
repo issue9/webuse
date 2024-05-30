@@ -91,7 +91,7 @@ func (t *Token[T]) Middleware(next web.HandlerFunc, _, _, _ string) web.HandlerF
 			return ctx.Problem(web.ProblemUnauthorized)
 		default:
 			mauth.Set(ctx, v)
-			ctx.SetVar(tokenContext, token) // 先保存到上下文环境中，再从存储系统中删除令牌信息。
+			ctx.SetVar(tokenContext, token)
 
 			if v.Access != "" { // 刷新令牌
 				// 删除令牌出错，不防碍其它功能的继承执行，所以只记录日志，不退出。

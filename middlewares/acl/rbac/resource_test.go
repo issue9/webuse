@@ -127,7 +127,7 @@ func TestRole_Resource(t *testing.T) {
 	r2, err := rg1.NewRole("r2", "r2 desc", r1.ID)
 	a.NotError(err).NotNil(r2)
 
-	a.Equal(r1.Resource(), &RoleResource{
+	a.Equal(r1.Resource(), &RoleResources{
 		Current: []string{joinID(g1.id, "id1"), joinID(g2.id, "id2")},
 		Parent: []string{ // 没有父角色，则用全局的。
 			joinID(g1.id, "id1"),
@@ -137,7 +137,7 @@ func TestRole_Resource(t *testing.T) {
 		},
 	})
 
-	a.Equal(r2.Resource(), &RoleResource{
+	a.Equal(r2.Resource(), &RoleResources{
 		Parent: []string{joinID(g1.id, "id1"), joinID(g2.id, "id2")},
 	})
 }

@@ -16,7 +16,7 @@ import (
 
 const idSeparator = '_'
 
-// ResourceGroup 表示一组资源
+// ResourceGroup 资源组
 type ResourceGroup[T comparable] struct {
 	rbac  *RBAC[T]
 	id    string
@@ -24,14 +24,21 @@ type ResourceGroup[T comparable] struct {
 	items map[string]web.LocaleStringer
 }
 
-type Resource struct {
+// Resources 资源
+type Resources struct {
 	ID    string      `json:"id" xml:"id,attr" yaml:"id" cbor:"id"`
 	Title string      `json:"title" xml:"title" yaml:"title" cbor:"title"`
 	Items []*Resource `json:"items,omitempty" xml:"items>item,omitempty" yaml:"items,omitempty" cbor:"items,omitempty"`
 }
 
-// RoleResource 表示某个角色所能访问的资源
-type RoleResource struct {
+// Resource 单个资源
+type Resource struct {
+	ID    string `json:"id" xml:"id,attr" yaml:"id" cbor:"id"`
+	Title string `json:"title" xml:"title" yaml:"title" cbor:"title"`
+}
+
+// RoleResources 表示某个角色所能访问的资源
+type RoleResources struct {
 	// Current 角色当前能访问的资源
 	Current []string `json:"current" xml:"current" yaml:"current" cbor:"current"`
 
@@ -114,8 +121,8 @@ func (g *ResourceGroup[T]) New(id string, desc web.LocaleStringer) web.Middlewar
 }
 
 // Resources 所有资源的列表
-func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resource {
-	res := make([]*Resource, 0, len(rbac.resourceGroups))
+func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resources {
+	res := make([]*Resources, 0, len(rbac.resourceGroups))
 	for _, role := range rbac.resourceGroups {
 		items := make([]*Resource, 0, len(role.items))
 		for id, item := range role.items {
@@ -123,18 +130,18 @@ func (rbac *RBAC[T]) Resources(p *message.Printer) []*Resource {
 		}
 		slices.SortFunc(items, func(a, b *Resource) int { return cmp.Compare(a.ID, b.ID) })
 
-		res = append(res, &Resource{
+		res = append(res, &Resources{
 			ID:    role.id,
 			Title: role.title.LocaleString(p),
 			Items: items,
 		})
-		slices.SortFunc(res, func(a, b *Resource) int { return cmp.Compare(a.ID, b.ID) })
+		slices.SortFunc(res, func(a, b *Resources) int { return cmp.Compare(a.ID, b.ID) })
 	}
 	return res
 }
 
 // Resource 当前角色的资源信息
-func (role *Role[T]) Resource() *RoleResource {
+func (role *Role[T]) Resource() *RoleResources {
 	var parent []string
 	if role.parent == nil {
 		parent = role.group.rbac.resources
@@ -147,7 +154,7 @@ func (role *Role[T]) Resource() *RoleResource {
 		current = role.Resources
 	}
 
-	return &RoleResource{
+	return &RoleResources{
 		Current: slices.Clone(current),
 		Parent:  slices.Clone(parent),
 	}

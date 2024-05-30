@@ -15,6 +15,7 @@ import (
 	"github.com/shirou/gopsutil/v3/process"
 )
 
+// Stats 监视的状态信息
 type Stats struct {
 	XMLName struct{}  `json:"-" yaml:"-" xml:"stats" cbor:"-"`
 	OS      *OS       `json:"os" yaml:"os" xml:"os" cbor:"os"`                     // 系统级别的状态信息
@@ -22,12 +23,14 @@ type Stats struct {
 	Created time.Time `json:"created" yaml:"created" xml:"created" cbor:"created"` // 此条记录的创建时间
 }
 
+// OS 与系统相关的信息
 type OS struct {
 	CPU float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu"`                                         // CPU 使用百分比
 	Mem uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem"`                                         // 内存使用量，以 byte 为单位。
 	Net *Net    `json:"net,omitempty" yaml:"net,omitempty" xml:"net,omitempty" cbor:"net,omitempty"` // 网络相关数据
 }
 
+// Process 与进程相关的信息
 type Process struct {
 	CPU        float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu"`         // CPU 使用百分比
 	Mem        uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem"`         // 内存使用量，以 byte 为单位。
@@ -35,6 +38,7 @@ type Process struct {
 	Goroutines int     `json:"goroutines,omitempty" yaml:"goroutines,omitempty" xml:"goroutines,omitempty" cbor:"goroutines,omitempty"`
 }
 
+// Net 与网络相关的信息
 type Net struct {
 	Conns int    `json:"conns" yaml:"conns" xml:"conns"` // 连接数量
 	Sent  uint64 `json:"sent" yaml:"sent" xml:"sent"`    // 发送数量，以字节为单位。
