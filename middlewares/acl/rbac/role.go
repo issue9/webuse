@@ -243,8 +243,6 @@ func (role *Role[T]) Link(uid T) error {
 		parent = parent.parent
 	}
 
-	// TODO CanLink
-
 	role.Users = append(role.Users, uid)
 	return role.group.rbac.store.Set(role.group.id, role)
 }

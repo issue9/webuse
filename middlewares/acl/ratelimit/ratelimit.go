@@ -54,7 +54,7 @@ func GenIP(ctx *web.Context) (string, error) {
 //   - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
 //   - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
 func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers map[string]string) *Ratelimit {
-	ttl := rate * time.Duration(capacity)
+	ttl := rate * time.Duration(capacity) // 填满令牌桶的时候，当桶是满的时候，不需要缓存这些数据。
 	if ttl < time.Second {
 		panic("capacity*rate 必须大于 1 秒")
 	}
