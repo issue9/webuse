@@ -23,7 +23,6 @@
 - access 客户端访问记录；
 - health 接口状态的监测；
 - compress 根据 CPU 使用率决定是否启用压缩功能；
-- locales 加载本地化的文件资源；
 
 ## 中间件
 
@@ -37,6 +36,7 @@
 - auth/jwt JSON Web Tokens 中间件；
 - auth/session session 管理；
 - auth/token 传统方式的令牌管理；
+- empty 提供了一个不作任何操作的中间件；
 - skip 根据条件跳过路由的执行；
 
 ## 安装
