@@ -60,6 +60,10 @@ func (h *Health) States() []*State { return h.store.All() }
 
 func (h *Health) save(ctx *web.Context, status int) {
 	route := ctx.Route()
+	if route.Node() == nil { // 保证接口是真实存在的。404 未必是接口不存在。
+		return
+	}
+
 	state := h.store.Get(route.RouterName(), ctx.Request().Method, route.Node().Pattern())
 
 	dur := time.Since(ctx.Begin())
