@@ -10,6 +10,7 @@ package basic
 import (
 	"bytes"
 	"encoding/base64"
+	"net/http"
 
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/web"
@@ -74,7 +75,11 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth
 	}
 }
 
-func (b *basic[T]) Middleware(next web.HandlerFunc, _, _, _ string) web.HandlerFunc {
+func (b *basic[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.HandlerFunc {
+	if method == http.MethodOptions {
+		return next
+	}
+
 	return func(ctx *web.Context) web.Responser {
 		h := auth.GetToken(ctx, prefix, b.authorization)
 
