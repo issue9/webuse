@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/web"
-	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 // New 根据 CPU 使用率决定是否启用压缩功能
