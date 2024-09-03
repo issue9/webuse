@@ -10,8 +10,8 @@ require (
 	github.com/issue9/logs/v7 v7.6.2
 	github.com/issue9/mux/v9 v9.1.0
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/web v0.96.4
-	github.com/shirou/gopsutil/v4 v4.24.7
+	github.com/issue9/web v0.96.5
+	github.com/shirou/gopsutil/v4 v4.24.8
 	golang.org/x/text v0.17.0
 )
 
@@ -28,7 +28,7 @@ require (
 	github.com/issue9/source v0.11.4 // indirect
 	github.com/issue9/term/v3 v3.3.0 // indirect
 	github.com/issue9/unique/v2 v2.1.0 // indirect
-	github.com/jellydator/ttlcache/v3 v3.2.0 // indirect
+	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect

@@ -199,7 +199,7 @@ func (role *Role[T]) Allow(res ...string) error {
 
 // Set 修改指定的角色信息
 func (role *Role[T]) Set(name, desc string) error {
-	if role.Name == name && role.Desc == role.Desc {
+	if role.Name == name && role.Desc == desc {
 		return nil
 	}
 
