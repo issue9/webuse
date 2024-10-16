@@ -52,7 +52,9 @@ func TestServeFileHandler(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/not/").
 		Do(nil).
 		Status(http.StatusOK).
-		StringBody(`<pre>
+		StringBody(`<!doctype html>
+<meta name="viewport" content="width=device-width">
+<pre>
 <a href="default.html">default.html</a>
 <a href="file.txt">file.txt</a>
 <a href="index.html">index.html</a>
