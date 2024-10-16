@@ -1,4 +1,5 @@
-id: und
+languages:
+    - und
 messages:
     - key: can not get the ip
       message:
