@@ -1,0 +1,28 @@
+{{- define "swagger" -}}
+<!DOCTYPE html>
+<html lang="{{.XLanguage}}">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{.Info.Title}}</title>
+
+        {{if .Info.Description}}<meta name="description" content="{{.Info.Description}}" />{{end}}
+        {{if .XFavicon}}<link rel="icon" href="{{.XFavicon}}">{{end}}
+
+        <link rel="stylesheet" href="{{.XAssets}}/swagger-ui.css" />
+    </head>
+    <body>
+        <div id="swagger-ui"></div>
+        <script src="{{.XAssets}}/swagger-ui-bundle.js" crossorigin></script>
+        <script>
+        window.onload = () => {
+            window.ui = SwaggerUIBundle({
+                spec: {{ json . }},
+                dom_id: '#swagger-ui',
+                displayOperationId: true,
+            });
+        };
+        </script>
+    </body>
+</html>
+{{- end -}}

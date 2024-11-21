@@ -5,6 +5,7 @@
 package rbac
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/issue9/assert/v4"
@@ -32,7 +33,7 @@ func TestRoleGroup_New(t *testing.T) {
 
 	// rbac.Roles
 
-	a.Length(g.Roles(), 2)
+	a.Length(slices.Collect(g.Roles()), 2)
 }
 
 func TestRole_Allow(t *testing.T) {
@@ -155,16 +156,15 @@ func TestRole_Descendants(t *testing.T) {
 	r3, err := rg1.NewRole("r3", "r3 desc", r2.ID)
 	a.NotError(err).NotNil(r3).Equal(r3.parent, r2)
 
-	roles, err := r1.Descendants(false)
-	a.NotError(err).
-		Length(roles, 1).
+	roles := r1.Descendants(false)
+	a.Length(roles, 1).
 		Equal(roles[0].ID, r2.ID).
 		True(r1.IsDescendant(r2.ID)).
 		True(r1.IsDescendant(r3.ID)).
 		True(r2.IsDescendant(r3.ID))
 
-	roles, err = r1.Descendants(true)
-	a.NotError(err).Length(roles, 2).
+	roles = r1.Descendants(true)
+	a.Length(roles, 2).
 		Equal(roles[0].ID, r2.ID).
 		Equal(roles[1].ID, r3.ID)
 }

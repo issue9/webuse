@@ -6,6 +6,7 @@ package rbac
 
 import (
 	"fmt"
+	"iter"
 	"slices"
 	"sync"
 
@@ -119,15 +120,16 @@ func (g *RoleGroup[T]) NewRole(name, desc, parent string) (*Role[T], error) {
 }
 
 // Roles 当前的所有角色
-func (g *RoleGroup[T]) Roles() []*Role[T] {
-	roles := make([]*Role[T], 0, len(g.roles))
-	g.rolesMux.RLock()
-	for _, v := range g.roles {
-		roles = append(roles, v)
+func (g *RoleGroup[T]) Roles() iter.Seq[*Role[T]] {
+	return func(yield func(*Role[T]) bool) {
+		g.rolesMux.RLock()
+		for _, v := range g.roles {
+			if !yield(v) {
+				break
+			}
+		}
+		g.rolesMux.RUnlock()
 	}
-	g.rolesMux.RUnlock()
-
-	return roles
 }
 
 // Role 返回指定的角色
@@ -277,7 +279,7 @@ func (role *Role[T]) IsDescendant(rid string) bool {
 // Descendants 返回所有从当前角色继承的角色
 //
 // all 表示是否包含间接继承的角色
-func (role *Role[T]) Descendants(all bool) ([]*Role[T], error) {
+func (role *Role[T]) Descendants(all bool) []*Role[T] {
 	roles := make([]*Role[T], 0, 10)
 
 	role.group.rolesMux.RLock()
@@ -290,7 +292,7 @@ func (role *Role[T]) Descendants(all bool) ([]*Role[T], error) {
 	}
 
 	if !all {
-		return roles, nil
+		return roles
 	}
 
 	s := roles
@@ -307,7 +309,7 @@ func (role *Role[T]) Descendants(all bool) ([]*Role[T], error) {
 		s = rs
 	}
 
-	return roles, nil
+	return roles
 }
 
 func rolesID[T comparable](roles []*Role[T]) []string {
