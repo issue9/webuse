@@ -33,11 +33,11 @@ func Install(s web.Server) {
 // 可用来代替 [openapi.WithHTML]
 //
 // assets swagger 的页面资源，可以直接引用 [OnlineAssets]，也可以指向自有的服务器；
-// favicon 图标，
+// logo 图标；
 //
 // [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation/
-func WithHTML(assets, favicon string) openapi.Option {
-	return openapi.WithHTML("swagger", assets, favicon)
+func WithHTML(assets, logo string) openapi.Option {
+	return openapi.WithHTML("swagger", assets, logo)
 }
 
 // WithOnlineHTML 采用 [OnlineAssets] 作为参数的 [WithHTML] 版本

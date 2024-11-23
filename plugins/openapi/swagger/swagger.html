@@ -7,7 +7,7 @@
         <title>{{.Info.Title}}</title>
 
         {{if .Info.Description}}<meta name="description" content="{{.Info.Description}}" />{{end}}
-        {{if .XFavicon}}<link rel="icon" href="{{.XFavicon}}">{{end}}
+        {{if .XLogo}}<link rel="icon" href="{{.XLogo}}">{{end}}
 
         <link rel="stylesheet" href="{{.XAssets}}/swagger-ui.css" />
     </head>
@@ -19,7 +19,6 @@
             window.ui = SwaggerUIBundle({
                 spec: {{ json . }},
                 dom_id: '#swagger-ui',
-                displayOperationId: true,
             });
         };
         </script>
