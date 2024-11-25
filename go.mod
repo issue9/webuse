@@ -10,7 +10,7 @@ require (
 	github.com/issue9/logs/v7 v7.6.4
 	github.com/issue9/mux/v9 v9.1.0
 	github.com/issue9/rands/v3 v3.0.1
-	github.com/issue9/web v0.99.1
+	github.com/issue9/web v0.99.3
 	github.com/shirou/gopsutil/v4 v4.24.10
 	golang.org/x/text v0.20.0
 	gopkg.in/yaml.v3 v3.0.1

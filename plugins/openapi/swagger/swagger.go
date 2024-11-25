@@ -24,16 +24,20 @@ var tpl embed.FS
 const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.18.2"
 
 // Install 安装模板
-func Install(s web.Server) { html.Install(s, internal.Funcs, "*.html", tpl) }
+//
+// NOTE: 此操作会同时安装 json 和 yaml 两个方法用于解决 openapi 对象
+func Install(s web.Server) { html.Install(s, internal.Funcs, nil, "*.html", tpl) }
 
 // WithHTML 指定 [swagger] 的 HTML 模板
 //
 // 可用来代替 [openapi.WithHTML]
 //
-// assets swagger 的页面资源，可以直接引用 [CDNAssets]，也可以指向自有的服务器；
-// logo 图标；
+// assets swagger 的页面资源，可以直接引用 [CDNAssets]，
+// 或是采用 [files] 与 [static] 搭建一个本地的静态文件服务；
 //
 // [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation/
+// [static]: github.com/issue9/webuse/handlers/static
+// [files]: https://github.com/swaggo/files
 func WithHTML(assets, logo string) openapi.Option {
 	return openapi.WithHTML("swagger", assets, logo)
 }

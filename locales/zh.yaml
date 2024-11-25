@@ -1,6 +1,7 @@
 languages:
     - zh-Hans
     - cmn-Hans
+    - zh-CN
 messages:
     - key: access token
       message:
@@ -25,7 +26,7 @@ messages:
         msg: 创建时间
     - key: enable compression base on cpu used
       message:
-        msg: 基于 CPU 使用率决定是否启用压缩功能:w
+        msg: 基于 CPU 使用率决定是否启用压缩功能
     - key: gen session id
       message:
         msg: 生成 session id
