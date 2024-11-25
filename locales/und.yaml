@@ -1,12 +1,27 @@
 languages:
     - und
 messages:
+    - key: access token
+      message:
+        msg: access token
+    - key: access token expired
+      message:
+        msg: access token expired
     - key: can not get the ip
       message:
         msg: can not get the ip
     - key: child role has resource %s can not be deleted
       message:
         msg: child role has resource %s can not be deleted
+    - key: connects number
+      message:
+        msg: connects number
+    - key: cpu usage rate
+      message:
+        msg: cpu usage rate
+    - key: created time
+      message:
+        msg: created time
     - key: enable compression base on cpu used
       message:
         msg: enable compression base on cpu used
@@ -16,30 +31,78 @@ messages:
     - key: gen token id
       message:
         msg: gen token id
+    - key: goroutines number
+      message:
+        msg: goroutines number
     - key: invalid ip %s
       message:
         msg: invalid ip %s
+    - key: mem usage rate
+      message:
+        msg: mem usage rate
     - key: monitor system stat
       message:
         msg: monitor system stat
+    - key: net stats
+      message:
+        msg: net stats
     - key: not found jwt signing method
       message:
         msg: not found jwt signing method
     - key: not found resource %s
       message:
         msg: not found resource %s
+    - key: os stats
+      message:
+        msg: os stats
+    - key: process stats
+      message:
+        msg: process stats
+    - key: recv bytes
+      message:
+        msg: recv bytes
+    - key: refresh token
+      message:
+        msg: refresh token
+    - key: refresh token expired
+      message:
+        msg: refresh token expired
+    - key: resources
+      message:
+        msg: resources
+    - key: resources of current role
+      message:
+        msg: resources of current role
+    - key: resources of role parent
+      message:
+        msg: resources of role parent
+    - key: sent bytes
+      message:
+        msg: sent bytes
     - key: session id not exists in context
       message:
         msg: session id not exists in context
     - key: the client %s header %s is invalid format
       message:
         msg: the client %s header %s is invalid format
+    - key: the id of resource
+      message:
+        msg: the id of resource
+    - key: the id of resource group
+      message:
+        msg: the id of resource group
     - key: the role %s has children role, can not deleted
       message:
         msg: the role %s has children role, can not deleted
     - key: the role %s has users, can not deleted
       message:
         msg: the role %s has users, can not deleted
+    - key: the title of resource
+      message:
+        msg: the title of resource
+    - key: the title of resource group
+      message:
+        msg: the title of resource group
     - key: user %v in the parent role %s
       message:
         msg: user %v in the parent role %s

@@ -20,19 +20,17 @@ import (
 //go:embed *.html
 var tpl embed.FS
 
-// OnlineAssets swagger 的 CDN 资源
-const OnlineAssets = "https://unpkg.com/swagger-ui-dist@5.18.2"
+// CDNAssets swagger 的 CDN 资源
+const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.18.2"
 
 // Install 安装模板
-func Install(s web.Server) {
-	html.Install(s, internal.Funcs, "*.html", tpl)
-}
+func Install(s web.Server) { html.Install(s, internal.Funcs, "*.html", tpl) }
 
 // WithHTML 指定 [swagger] 的 HTML 模板
 //
 // 可用来代替 [openapi.WithHTML]
 //
-// assets swagger 的页面资源，可以直接引用 [OnlineAssets]，也可以指向自有的服务器；
+// assets swagger 的页面资源，可以直接引用 [CDNAssets]，也可以指向自有的服务器；
 // logo 图标；
 //
 // [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation/
@@ -40,12 +38,12 @@ func WithHTML(assets, logo string) openapi.Option {
 	return openapi.WithHTML("swagger", assets, logo)
 }
 
-// WithOnlineHTML 采用 [OnlineAssets] 作为参数的 [WithHTML] 版本
+// WithCDN 采用 [CDNAssets] 作为参数的 [WithHTML] 版本
 //
-// 如果 favicon 为空，则会采用 [OnlineAssets] 下的默认图标。
-func WithOnlineHTML(favicon string) openapi.Option {
-	if favicon == "" {
-		favicon = OnlineAssets + "/favicon-32x32.png"
+// 如果 logo 为空，则会采用 [CDNAssets] 下的默认图标。
+func WithCDN(logo string) openapi.Option {
+	if logo == "" {
+		logo = CDNAssets + "/favicon-32x32.png"
 	}
-	return WithHTML(OnlineAssets, favicon)
+	return WithHTML(CDNAssets, logo)
 }
