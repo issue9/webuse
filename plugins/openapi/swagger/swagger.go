@@ -35,8 +35,8 @@ func Install(s web.Server) { html.Install(s, internal.Funcs, nil, "*.html", tpl)
 // assets swagger 的页面资源，可以直接引用 [CDNAssets]，
 // 或是采用 [files] 与 [static] 搭建一个本地的静态文件服务；
 //
-// [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation/
-// [static]: github.com/issue9/webuse/handlers/static
+// [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation
+// [static]: https://github.com/issue9/webuse/handlers/static
 // [files]: https://github.com/swaggo/files
 func WithHTML(assets, logo string) openapi.Option {
 	return openapi.WithHTML("swagger", assets, logo)

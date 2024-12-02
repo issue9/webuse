@@ -25,7 +25,7 @@ func TestRatelimit_Middleware(t *testing.T) {
 	s := testserver.New(a)
 
 	// 由 gen 方法限定在同一个请求
-	rate := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil }, nil)
+	rate := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
 	a.NotNil(rate)
 
 	r := s.Routers().New("def", nil)
@@ -67,7 +67,7 @@ func TestRatelimit_Unlimit(t *testing.T) {
 	a := assert.New(t, false)
 	s := testserver.New(a)
 
-	rate := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil }, nil)
+	rate := New(cache.Prefix(s.Cache(), "rl-"), 4, 10*time.Second, func(*web.Context) (string, error) { return "1", nil })
 	a.NotNil(rate)
 
 	r := s.Routers().New("def", nil)

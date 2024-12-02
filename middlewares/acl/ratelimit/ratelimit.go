@@ -32,8 +32,6 @@ type Ratelimit struct {
 	ttl      time.Duration
 	gen      GenFunc
 	unlimit  []string
-
-	limit, remaining, reset string
 }
 
 // GenIP 用于生成区分令牌桶的 IP 地址
@@ -49,11 +47,7 @@ func GenIP(ctx *web.Context) (string, error) {
 // capacity 桶的容量；
 // rate 发放令牌的时间间隔；
 // gen 为令牌桶名称的产生方法，默认为用户的 IP；
-// headers 自定义报头名称，可以指定以下值：
-//   - X-Rate-Limit-Limit: 同一个时间段所允许的请求的最大数目;
-//   - X-Rate-Limit-Remaining: 在当前时间段内剩余的请求的数量;
-//   - X-Rate-Limit-Reset: 为了得到最大请求数所需等待的 UNIX 时间。
-func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers map[string]string) *Ratelimit {
+func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc) *Ratelimit {
 	ttl := rate * time.Duration(capacity) // 填满令牌桶的时候，当桶是满的时候，不需要缓存这些数据。
 	if ttl < time.Second {
 		panic("capacity*rate 必须大于 1 秒")
@@ -63,20 +57,6 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 		gen = GenIP
 	}
 
-	if headers == nil {
-		headers = map[string]string{}
-	}
-
-	if _, found := headers[header.XRateLimitLimit]; !found {
-		headers[header.XRateLimitLimit] = header.XRateLimitLimit
-	}
-	if _, found := headers[header.XRateLimitRemaining]; !found {
-		headers[header.XRateLimitRemaining] = header.XRateLimitRemaining
-	}
-	if _, found := headers[header.XRateLimitReset]; !found {
-		headers[header.XRateLimitReset] = header.XRateLimitReset
-	}
-
 	return &Ratelimit{
 		store:    c,
 		capacity: capacity,
@@ -84,10 +64,6 @@ func New(c web.Cache, capacity uint64, rate time.Duration, gen GenFunc, headers 
 		ttl:      ttl,
 		gen:      gen,
 		unlimit:  make([]string, 0, 10),
-
-		limit:     headers[header.XRateLimitLimit],
-		remaining: headers[header.XRateLimitRemaining],
-		reset:     headers[header.XRateLimitReset],
 	}
 }
 
@@ -179,7 +155,7 @@ func (rate *Ratelimit) setHeader(ctx *web.Context, size uint64) {
 	rest := ctx.Begin().Add(t).Unix()
 
 	h := ctx.Header()
-	h.Set(rate.limit, strconv.FormatUint(rate.capacity, 10))
-	h.Set(rate.remaining, strconv.FormatUint(size, 10))
-	h.Set(rate.reset, strconv.FormatInt(rest, 10))
+	h.Set(header.XRateLimitLimit, strconv.FormatUint(rate.capacity, 10))
+	h.Set(header.XRateLimitRemaining, strconv.FormatUint(size, 10))
+	h.Set(header.XRateLimitReset, strconv.FormatInt(rest, 10))
 }
