@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
 
 	"github.com/issue9/webuse/v7/middlewares/auth/token"
 )
@@ -142,4 +143,15 @@ func (j *JWT[T]) Add(id string, sign SigningMethod, pub, pvt []byte) {
 func (j *JWT[T]) AddFromFS(id string, sign SigningMethod, fsys fs.FS, pub, pvt string) {
 	j.v.AddFromFS(id, sign, fsys, pub)
 	j.s.AddFromFS(id, sign, fsys, pvt)
+}
+
+// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+	return &openapi.SecurityScheme{
+		ID:           id,
+		Type:         openapi.SecuritySchemeTypeHTTP,
+		Description:  desc,
+		Scheme:       "bearer",
+		BearerFormat: "JWT",
+	}
 }

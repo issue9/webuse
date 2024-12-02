@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
 	"github.com/issue9/webuse/v7/middlewares/auth"
@@ -111,3 +112,13 @@ func (b *basic[T]) unauthorization(ctx *web.Context) web.Responser {
 }
 
 func (b *basic[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
+
+// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+	return &openapi.SecurityScheme{
+		ID:          id,
+		Type:        openapi.SecuritySchemeTypeHTTP,
+		Description: desc,
+		Scheme:      "basic",
+	}
+}

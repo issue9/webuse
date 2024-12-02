@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/rands/v3"
 	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
 	"github.com/issue9/webuse/v7/middlewares/auth"
@@ -161,3 +162,13 @@ func (t *Token[T]) Refresh(ctx *web.Context, status int, headers ...string) web.
 
 // Delete 根据指定的用户数据
 func (t *Token[T]) Delete(u T) error { return t.store.DeleteUID(u.GetUID()) }
+
+// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+	return &openapi.SecurityScheme{
+		ID:          id,
+		Type:        openapi.SecuritySchemeTypeHTTP,
+		Description: desc,
+		Scheme:      "bearer",
+	}
+}

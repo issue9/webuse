@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/rands/v3"
 	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
 
 	"github.com/issue9/webuse/v7/internal/mauth"
 )
@@ -140,3 +141,14 @@ func (s *Session[T]) Save(ctx *web.Context, val T) error {
 }
 
 func (s *Session[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
+
+// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+func SecurityScheme[T any](s *Session[T], id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+	return &openapi.SecurityScheme{
+		ID:          id,
+		Type:        openapi.SecuritySchemeTypeAPIKey,
+		Description: desc,
+		Name:        s.name,
+		In:          openapi.InCookie,
+	}
+}
