@@ -75,8 +75,12 @@ func ServeFileHandler(fsys fs.FS, name, index string) web.HandlerFunc {
 		}
 
 		index = path.Join(p, index)
-		if stat, err = fs.Stat(fsys, index); err == nil && !stat.IsDir() {
-			http.ServeFileFS(ctx, ctx.Request(), fsys, index)
+		if stat, err = fs.Stat(fsys, index); err == nil {
+			if stat.IsDir() {
+				http.ServeFileFS(ctx, ctx.Request(), fsys, p)
+			} else {
+				http.ServeFileFS(ctx, ctx.Request(), fsys, index)
+			}
 			return nil
 		} else if errors.Is(err, fs.ErrNotExist) || !stat.IsDir() {
 			http.ServeFileFS(ctx, ctx.Request(), fsys, p) // 没找到 index 指向的文件，返回上一层的目录结构 p
