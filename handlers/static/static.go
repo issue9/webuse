@@ -54,9 +54,6 @@ func AttachmentReaderHandler(filename string, inline bool, modtime time.Time, co
 //
 // fsys 为文件系统；
 // name 表示地址中表示文件名部分的参数名称。
-// 以 val 表示 name 指定的参数，依以下规则读取内容：
-//   - val 以 / 结尾，读取 val + index 指向的文件，若不存在返回 404;
-//   - val 不以 / 结尾，则被当作普通的文件读取，若不存在返回 404，如果实际表示目录，则读取目录结构；
 func ServeFileHandler(fsys fs.FS, name, index string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		p, _ := ctx.Route().Params().Get(name) // 空值也是允许的值
@@ -64,23 +61,16 @@ func ServeFileHandler(fsys fs.FS, name, index string) web.HandlerFunc {
 			p = "."
 		}
 
-		stat, err := fs.Stat(fsys, p)
-		if err != nil {
+		if stat, err := fs.Stat(fsys, p); err != nil {
 			return ctx.Error(err, "")
-		}
-
-		if !stat.IsDir() {
+		} else if !stat.IsDir() || index == "" { // p 为文件或是 p 为目录但 index 为空
 			http.ServeFileFS(ctx, ctx.Request(), fsys, p)
 			return nil
 		}
 
 		index = path.Join(p, index)
-		if stat, err = fs.Stat(fsys, index); err == nil {
-			if stat.IsDir() {
-				http.ServeFileFS(ctx, ctx.Request(), fsys, p)
-			} else {
-				http.ServeFileFS(ctx, ctx.Request(), fsys, index)
-			}
+		if stat, err := fs.Stat(fsys, index); err == nil {
+			http.ServeFileFS(ctx, ctx.Request(), fsys, index)
 			return nil
 		} else if errors.Is(err, fs.ErrNotExist) || !stat.IsDir() {
 			http.ServeFileFS(ctx, ctx.Request(), fsys, p) // 没找到 index 指向的文件，返回上一层的目录结构 p
