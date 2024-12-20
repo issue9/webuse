@@ -6,14 +6,13 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/webuse/v7)](https://pkg.go.dev/github.com/issue9/webuse/v7)
 [![Go version](https://img.shields.io/github/go-mod/go-version/issue9/webuse)](https://golang.org)
 
- 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件和一些常用的路由函数；
+ 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件、服务以及常用的路由函数；
 
 ## handlers
 
 位于 [handlers](handlers) 之下：
 
 - debug 调试信息的输出接口；
-- monitor 系统状态监视；
 - static 静态文件处理；
 
 ## 插件
@@ -38,6 +37,12 @@
 - auth/token 传统方式的令牌管理；
 - empty 提供了一个不作任何操作的中间件；
 - skip 根据条件跳过路由的执行；
+
+## 服务
+
+服务位于 [services](services) 目录之下：
+
+- systat 系统状态监视；
 
 ## 安装
 

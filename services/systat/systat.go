@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2024 caixw
+//
+// SPDX-License-Identifier: MIT
+
+// Package systat 系统状态检测
+package systat
+
+import (
+	"context"
+	"time"
+
+	"github.com/issue9/events"
+	"github.com/issue9/web"
+)
+
+// 系统状态监视服务
+type service struct {
+	events *events.Event[*Stats]
+}
+
+// Init 初始化监视系统状态的服务
+//
+// 这将返回一个用于订阅状态变化的接口，用户可根据该接口订阅信息。
+//
+// dur 为监视数据的频率；
+// interval 为每次监视数据的时间；
+func Init(s web.Server, dur, interval time.Duration) events.Subscriber[*Stats] {
+	srv := &service{
+		events: events.New[*Stats](),
+	}
+
+	job := func(now time.Time) error {
+		if srv.events.Len() == 0 { // 没有订阅，就没必要计算状态了。
+			return nil
+		}
+
+		stat, err := calcState(interval, now)
+		if err == nil {
+			srv.events.Publish(true, stat)
+		}
+		return err
+	}
+
+	s.Services().AddTicker(web.Phrase("monitor system stat"), job, dur, true, true)
+
+	return srv
+}
+
+// Subscribe 订阅状态变化的通知
+func (s *service) Subscribe(f events.SubscribeFunc[*Stats]) context.CancelFunc {
+	return s.events.Subscribe(f)
+}

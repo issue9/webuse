@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package monitor
+package systat
 
 import (
 	"os"
@@ -17,7 +17,8 @@ import (
 
 // Stats 监视的状态信息
 type Stats struct {
-	XMLName struct{}  `json:"-" yaml:"-" xml:"stats" cbor:"-"`
+	XMLName struct{} `json:"-" yaml:"-" xml:"stats" cbor:"-"`
+
 	OS      *OS       `json:"os" yaml:"os" xml:"os" cbor:"os" comment:"os stats"`                          // 系统级别的状态信息
 	Process *Process  `json:"process" yaml:"process" xml:"process" cbor:"process" comment:"process stats"` // 当前进程的状态信息
 	Created time.Time `json:"created" yaml:"created" xml:"created" cbor:"created" comment:"created time"`  // 此条记录的创建时间
@@ -46,7 +47,7 @@ type Net struct {
 }
 
 func calcState(interval time.Duration, now time.Time) (*Stats, error) {
-	all, err := calcOS(interval)
+	os, err := calcOS(interval)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func calcState(interval time.Duration, now time.Time) (*Stats, error) {
 		return nil, err
 	}
 
-	return &Stats{OS: all, Process: p, Created: now}, nil
+	return &Stats{OS: os, Process: p, Created: now}, nil
 }
 
 func calcProcess() (*Process, error) {
