@@ -35,19 +35,24 @@ func TestService(t *testing.T) {
 	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
-	sub := Init(s, time.Second, time.Second)
+	sub := Init(s, time.Second, time.Second, 10)
 	o1 := &bytes.Buffer{}
 	o2 := &bytes.Buffer{}
 
 	sub.Subscribe(func(data *Stats) {
 		o1.Write([]byte(data.Created.String()))
 	})
+	time.Sleep(2 * time.Second)
+	a.NotZero(o1.Len()).
+		Zero(o2.Len())
+
+	// 后订阅，但是内容应该和之前 o1 是一样的
+
 	sub.Subscribe(func(data *Stats) {
 		o2.Write([]byte(data.Created.String()))
 	})
 
-	time.Sleep(2 * time.Second)
-
 	a.NotZero(o1.Len()).
-		NotZero(o2.Len())
+		NotZero(o2.Len()).
+		Equal(o1.String(), o2.String())
 }

@@ -6,6 +6,7 @@
 package systat
 
 import (
+	"container/ring"
 	"context"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 // 系统状态监视服务
 type service struct {
 	events *events.Event[*Stats]
+	ring   *ring.Ring
 }
 
 // Init 初始化监视系统状态的服务
@@ -24,9 +26,11 @@ type service struct {
 //
 // dur 为监视数据的频率；
 // interval 为每次监视数据的时间；
-func Init(s web.Server, dur, interval time.Duration) events.Subscriber[*Stats] {
+// size 缓存监控数据的数量；
+func Init(s web.Server, dur, interval time.Duration, size int) events.Subscriber[*Stats] {
 	srv := &service{
 		events: events.New[*Stats](),
+		ring:   ring.New(size),
 	}
 
 	job := func(now time.Time) error {
@@ -36,6 +40,8 @@ func Init(s web.Server, dur, interval time.Duration) events.Subscriber[*Stats] {
 
 		stat, err := calcState(interval, now)
 		if err == nil {
+			srv.ring.Value = stat
+			srv.ring = srv.ring.Next()
 			srv.events.Publish(true, stat)
 		}
 		return err
@@ -48,5 +54,11 @@ func Init(s web.Server, dur, interval time.Duration) events.Subscriber[*Stats] {
 
 // Subscribe 订阅状态变化的通知
 func (s *service) Subscribe(f events.SubscribeFunc[*Stats]) context.CancelFunc {
+	s.ring.Next().Do(func(v any) { // 一次性发送所有缓存的数据
+		if v != nil {
+			f(v.(*Stats))
+		}
+	})
+
 	return s.events.Subscribe(f)
 }
