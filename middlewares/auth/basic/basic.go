@@ -80,7 +80,7 @@ func (b *basic[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.Han
 	}
 
 	return func(ctx *web.Context) web.Responser {
-		h := auth.GetToken(ctx, auth.Basic, b.authorization)
+		h := auth.GetBasicToken(ctx, b.authorization)
 
 		secret, err := base64.StdEncoding.DecodeString(h)
 		if err != nil {

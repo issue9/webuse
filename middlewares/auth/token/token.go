@@ -84,7 +84,7 @@ func (t *Token[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.Han
 	}
 
 	return func(ctx *web.Context) web.Responser {
-		token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
+		token := auth.GetBearerToken(ctx, header.Authorization)
 		if token == "" {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}

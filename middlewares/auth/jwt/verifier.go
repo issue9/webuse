@@ -65,7 +65,7 @@ func NewVerifier[T Claims](b Blocker[T], f BuildClaimsFunc[T]) *Verifier[T] {
 
 func (j *Verifier[T]) Logout(ctx *web.Context) error {
 	if c, found := j.GetInfo(ctx); found {
-		return j.blocker.BlockToken(auth.GetToken(ctx, auth.Bearer, header.Authorization), c.BaseToken() != "")
+		return j.blocker.BlockToken(auth.GetBearerToken(ctx, header.Authorization), c.BaseToken() != "")
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func (j *Verifier[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.
 	// NOTE: 刷新令牌也可以用于普通验证，因为刷新令牌中包含了所有普通令牌的信息。
 
 	return func(ctx *web.Context) web.Responser {
-		token := auth.GetToken(ctx, auth.Bearer, header.Authorization)
+		token := auth.GetBearerToken(ctx, header.Authorization)
 		if token == "" || j.blocker.TokenIsBlocked(token) {
 			return ctx.Problem(web.ProblemUnauthorized)
 		}

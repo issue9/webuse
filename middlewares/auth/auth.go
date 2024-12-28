@@ -45,6 +45,14 @@ func GetToken(ctx *web.Context, prefix, header string) string {
 	return ""
 }
 
+func GetBasicToken(ctx *web.Context, header string) string {
+	return GetToken(ctx, Basic, header)
+}
+
+func GetBearerToken(ctx *web.Context, header string) string {
+	return GetToken(ctx, Bearer, header)
+}
+
 // BuildToken 生成一个完整的令牌
 func BuildToken(prefix, token string) string { return prefix + token }
 
