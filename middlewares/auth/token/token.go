@@ -30,8 +30,7 @@ const tokenContext tokenType = 0
 // 刷新令牌也可以用于验证，但是是一次性的，验证完，刷新令牌和关联的访问令牌都将失效果，
 // 所以刷新令牌一般只能用于申请下一次的令牌；
 //
-// T 为每次登录之后需要与令牌关联的数据，在登录失效之前，
-// [Store] 将一直保留该数据，不用再次访问数据系统。
+// T 为每次登录之后需要与令牌关联的数据，在登录失效之前，[Store] 将一直保留该数据，不会再次访问数据系统。
 type Token[T UserData] struct {
 	s     web.Server
 	rands *rands.Rands[byte]
@@ -163,12 +162,12 @@ func (t *Token[T]) Refresh(ctx *web.Context, status int, headers ...string) web.
 // Delete 根据指定的用户数据
 func (t *Token[T]) Delete(u T) error { return t.store.DeleteUID(u.GetUID()) }
 
-// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+// SecurityScheme 声明支持 openapi 的 [openapi.SecurityScheme] 对象
 func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
 	return &openapi.SecurityScheme{
 		ID:          id,
 		Type:        openapi.SecuritySchemeTypeHTTP,
 		Description: desc,
-		Scheme:      "bearer",
+		Scheme:      auth.Bearer,
 	}
 }

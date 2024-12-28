@@ -20,8 +20,6 @@ import (
 	"github.com/issue9/webuse/v7/middlewares/auth"
 )
 
-const prefix = "basic "
-
 // AuthFunc 验证登录用户的函数签名
 //
 // username,password 表示用户登录信息。
@@ -50,8 +48,8 @@ type basic[T any] struct {
 // T 表示验证成功之后，向用户传递的一些额外信息。之后可通过 [GetValue] 获取。
 //
 // [Basic 验证]: https://datatracker.ietf.org/doc/html/rfc7617
-func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth.Auth[T] {
-	if auth == nil {
+func New[T any](srv web.Server, af AuthFunc[T], realm string, proxy bool) auth.Auth[T] {
+	if af == nil {
 		panic("auth 参数不能为空")
 	}
 
@@ -67,8 +65,8 @@ func New[T any](srv web.Server, auth AuthFunc[T], realm string, proxy bool) auth
 	return &basic[T]{
 		srv: srv,
 
-		auth:  auth,
-		realm: `Basic realm="` + realm + `"`,
+		auth:  af,
+		realm: auth.BasicToken(`realm="` + realm + `"`),
 
 		authorization: authorization,
 		authenticate:  authenticate,
@@ -82,7 +80,7 @@ func (b *basic[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.Han
 	}
 
 	return func(ctx *web.Context) web.Responser {
-		h := auth.GetToken(ctx, prefix, b.authorization)
+		h := auth.GetToken(ctx, auth.Basic, b.authorization)
 
 		secret, err := base64.StdEncoding.DecodeString(h)
 		if err != nil {
@@ -113,12 +111,12 @@ func (b *basic[T]) unauthorization(ctx *web.Context) web.Responser {
 
 func (b *basic[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
 
-// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+// SecurityScheme 声明支持 openapi 的 [openapi.SecurityScheme] 对象
 func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
 	return &openapi.SecurityScheme{
 		ID:          id,
 		Type:        openapi.SecuritySchemeTypeHTTP,
 		Description: desc,
-		Scheme:      "basic",
+		Scheme:      auth.Basic,
 	}
 }

@@ -11,7 +11,10 @@ import (
 	"github.com/issue9/web"
 )
 
-const Bearer = "bearer "
+const (
+	Bearer = "bearer "
+	Basic  = "basic "
+)
 
 // Auth 登录凭证的验证接口
 //
@@ -44,3 +47,13 @@ func GetToken(ctx *web.Context, prefix, header string) string {
 
 // BuildToken 生成一个完整的令牌
 func BuildToken(prefix, token string) string { return prefix + token }
+
+// BearerToken 生成 Bearer 的令牌
+//
+// 等同于 BuildToken(Bearer, token)
+func BearerToken(token string) string { return Bearer + token }
+
+// BasicToken 生成 Basic 的令牌
+//
+// 等同于 BuildToken(Basic, token)
+func BasicToken(token string) string { return Basic + token }

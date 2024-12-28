@@ -71,12 +71,12 @@ func TestServeHTTP_ok(t *testing.T) {
 
 	servertest.Get(a, "http://localhost:8080/path").
 		Do(nil).
-		Header(header.WWWAuthenticate, `Basic realm="example.com"`).
+		Header(header.WWWAuthenticate, auth.BasicToken(`realm="example.com"`)).
 		Status(http.StatusUnauthorized)
 
 	// 正确的访问
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.Authorization, "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
+		Header(header.Authorization, auth.BasicToken("QWxhZGRpbjpvcGVuIHNlc2FtZQ==")). // Aladdin, open sesame，来自 https://zh.wikipedia.org/wiki/HTTP基本认证
 		Do(nil).
 		Status(http.StatusCreated)
 }
@@ -105,12 +105,12 @@ func TestServeHTTP_failed(t *testing.T) {
 
 	servertest.Get(a, "http://localhost:8080/path").
 		Do(nil).
-		Header(header.WWWAuthenticate, `Basic realm="example.com"`).
+		Header(header.WWWAuthenticate, auth.BasicToken(`realm="example.com"`)).
 		Status(http.StatusUnauthorized)
 
 	// 错误的编码
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.Authorization, "Basic aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===").
+		Header(header.Authorization, auth.BasicToken("aaQWxhZGRpbjpvcGVuIHNlc2FtZQ===")).
 		Do(nil).
 		Status(http.StatusUnauthorized)
 }

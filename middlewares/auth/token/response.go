@@ -6,7 +6,7 @@ package token
 
 // Response 申请令牌时返回的对象
 type Response struct {
-	XMLName      struct{} `json:"-" cbor:"-" xml:"token"`
+	XMLName      struct{} `json:"-" cbor:"-" xml:"token" yaml:"-"`
 	AccessToken  string   `json:"access_token" xml:"access_token" cbor:"access_token" comment:"access token"`            // 访问令牌
 	RefreshToken string   `json:"refresh_token" xml:"refresh_token" cbor:"refresh_token" comment:"refresh token"`        // 刷新令牌
 	AccessExp    int      `json:"access_exp" xml:"access_exp,attr" cbor:"access_exp" comment:"access token expired"`     // 访问令牌的有效时长，单位为秒

@@ -74,14 +74,14 @@ func TestToken(t *testing.T) {
 
 			// 正常访问
 			servertest.Get(a, "http://localhost:8080/info").
-				Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
+				Header(header.Authorization, auth.BearerToken(resp.AccessToken)).
 				Do(nil).
 				Status(http.StatusOK).
 				StringBody(`{"ID":"5"}`)
 
 			// 刷新令牌
 			servertest.Post(a, "http://localhost:8080/refresh", nil).
-				Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.RefreshToken)).
+				Header(header.Authorization, auth.BearerToken(resp.RefreshToken)).
 				Do(nil).
 				Status(http.StatusOK).
 				BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -94,25 +94,25 @@ func TestToken(t *testing.T) {
 
 					// 旧的访问令牌已经不能访问
 					servertest.Get(a, "http://localhost:8080/info").
-						Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
+						Header(header.Authorization, auth.BearerToken(resp.AccessToken)).
 						Do(nil).
 						Status(http.StatusUnauthorized) // token 在 /refresh 中已经被删除
 
 					// 旧的刷新令牌已经不能访问
 					servertest.Post(a, "http://localhost:8080/refresh", nil).
-						Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.RefreshToken)).
+						Header(header.Authorization, auth.BearerToken(resp.RefreshToken)).
 						Do(nil).
 						Status(http.StatusUnauthorized)
 
 					// 采用新的令牌访问
 
 					servertest.Get(a, "http://localhost:8080/info").
-						Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
+						Header(header.Authorization, auth.BearerToken(resp2.AccessToken)).
 						Do(nil).
 						Status(http.StatusOK)
 
 					servertest.Post(a, "http://localhost:8080/refresh", nil).
-						Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.RefreshToken)).
+						Header(header.Authorization, auth.BearerToken(resp2.RefreshToken)).
 						Do(nil).
 						Status(http.StatusOK).
 						BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -122,13 +122,13 @@ func TestToken(t *testing.T) {
 							// 删除了该用户的登录信息
 
 							servertest.Get(a, "http://localhost:8080/info").
-								Header(header.Authorization, auth.BuildToken(auth.Bearer, resp3.AccessToken)).
+								Header(header.Authorization, auth.BearerToken(resp3.AccessToken)).
 								Do(nil).
 								Status(http.StatusOK)
 
 							token.Delete(v{ID: "5"})
 							servertest.Get(a, "http://localhost:8080/info").
-								Header(header.Authorization, auth.BuildToken(auth.Bearer, resp3.AccessToken)).
+								Header(header.Authorization, auth.BearerToken(resp3.AccessToken)).
 								Do(nil).
 								Status(http.StatusUnauthorized)
 						})

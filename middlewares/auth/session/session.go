@@ -142,7 +142,7 @@ func (s *Session[T]) Save(ctx *web.Context, val T) error {
 
 func (s *Session[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
 
-// SecurityScheme 声明支持 openapi 的 SecurityScheme 对象
+// SecurityScheme 声明支持 openapi 的 [openapi.SecurityScheme] 对象
 func SecurityScheme[T any](s *Session[T], id string, desc web.LocaleStringer) *openapi.SecurityScheme {
 	return &openapi.SecurityScheme{
 		ID:          id,

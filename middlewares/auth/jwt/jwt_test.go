@@ -168,13 +168,13 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 			NotEmpty(resp.RefreshToken)
 
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
+			Header(header.Authorization, auth.BearerToken(resp.AccessToken)).
 			Do(nil).
 			Status(http.StatusOK)
 
 		resp2 := &token.Response{}
 		servertest.Post(a, "http://localhost:8080/refresh", nil).
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.RefreshToken)).
+			Header(header.Authorization, auth.BearerToken(resp.RefreshToken)).
 			Do(nil).
 			Status(http.StatusCreated).
 			BodyFunc(func(a *assert.Assertion, body []byte) {
@@ -191,24 +191,24 @@ func verifierMiddleware(a *assert.Assertion, s web.Server, j *JWT[*testClaims]) 
 
 		// 旧令牌已经无法访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp.AccessToken)).
+			Header(header.Authorization, auth.BearerToken(resp.AccessToken)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
 		// 新令牌可以访问
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
+			Header(header.Authorization, auth.BearerToken(resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusOK)
 
 		servertest.Delete(a, "http://localhost:8080/login").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
+			Header(header.Authorization, auth.BearerToken(resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusNoContent)
 
 		// token 已经在 delete /login 中被弃用
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, auth.BuildToken(auth.Bearer, resp2.AccessToken)).
+			Header(header.Authorization, auth.BearerToken(resp2.AccessToken)).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
@@ -262,7 +262,7 @@ func TestVerifier_client(t *testing.T) {
 		headers["alg"] = "ES256"
 		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, auth.BearerToken(strings.Join(parts, "."))).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
@@ -272,7 +272,7 @@ func TestVerifier_client(t *testing.T) {
 		headers["alg"] = "none"
 		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, auth.BearerToken(strings.Join(parts, "."))).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 
@@ -281,7 +281,7 @@ func TestVerifier_client(t *testing.T) {
 		headers["alg"] = "none"
 		parts[0] = encodeHeader(a, headers)
 		servertest.Get(a, "http://localhost:8080/info").
-			Header(header.Authorization, "BEARER "+strings.Join(parts, ".")).
+			Header(header.Authorization, auth.BearerToken(strings.Join(parts, "."))).
 			Do(nil).
 			Status(http.StatusUnauthorized)
 	})
