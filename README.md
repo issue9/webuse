@@ -34,6 +34,7 @@
 - auth/basic 基本的验证处理；
 - auth/jwt JSON Web Tokens 中间件；
 - auth/session session 管理；
+- auth/temporary 临时令牌；
 - auth/token 传统方式的令牌管理；
 - empty 提供了一个不作任何操作的中间件；
 - skip 根据条件跳过路由的执行；
