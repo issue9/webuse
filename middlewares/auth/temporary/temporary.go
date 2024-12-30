@@ -144,6 +144,6 @@ func SecurityScheme(id string, desc web.LocaleStringer, query string) *openapi.S
 		ID:          id,
 		Type:        openapi.SecuritySchemeTypeHTTP,
 		Description: desc,
-		Scheme:      auth.Bearer,
+		Scheme:      auth.Bearer[:len(auth.Bearer)-1],
 	}
 }

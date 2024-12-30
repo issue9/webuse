@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	Bearer = "bearer "
-	Basic  = "basic "
+	Bearer = "bearer " // bearer 验证类型的前缀，属部带空格。
+	Basic  = "basic "  // basic 验证类型的前缀，属部带空格。
 )
 
 // Auth 登录凭证的验证接口

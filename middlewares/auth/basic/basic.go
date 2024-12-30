@@ -117,6 +117,6 @@ func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme 
 		ID:          id,
 		Type:        openapi.SecuritySchemeTypeHTTP,
 		Description: desc,
-		Scheme:      auth.Basic,
+		Scheme:      auth.Basic[:len(auth.Basic)-1],
 	}
 }
