@@ -150,13 +150,17 @@ func TestTemporary_query(t *testing.T) {
 		})
 }
 
-func TestSecurityScheme(t *testing.T) {
+func TestTemporary_SecurityScheme(t *testing.T) {
 	a := assert.New(t, false)
+	s := testserver.New(a)
 
-	s := SecurityScheme("id", web.Phrase("ss"), "")
-	a.Equal(s.Type, openapi.SecuritySchemeTypeHTTP)
+	temp := New[string](s, time.Second, true, "", web.ProblemForbidden, web.ProblemBadRequest)
+	ss := temp.SecurityScheme("id", web.Phrase("ss"))
+	a.Equal(ss.Type, openapi.SecuritySchemeTypeHTTP)
 
-	s = SecurityScheme("id", web.Phrase("ss"), "query")
-	a.Equal(s.Type, openapi.SecuritySchemeTypeAPIKey).
-		Equal(s.In, openapi.InQuery)
+	temp = New[string](s, time.Second, true, "token", web.ProblemForbidden, web.ProblemBadRequest)
+	ss = temp.SecurityScheme("id", web.Phrase("ss"))
+	a.Equal(ss.Type, openapi.SecuritySchemeTypeAPIKey).
+		Equal(ss.In, openapi.InQuery).
+		Equal(ss.Name, temp.QueryName())
 }

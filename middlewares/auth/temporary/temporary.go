@@ -43,7 +43,7 @@ type Temporary[T any] struct {
 //
 // ttl 表示令牌的过期时间。
 // once 是否为一次性令牌，如果为 true，在验证成功之后，该令牌将自动失效；
-// query 如果不为空，那么将由查询参数传递验证；
+// query 如果不为空，那么将由查询参数传递验证，否则表示 Bearer 类型的令牌传递；
 // unauthProblemID 验证不通过时的错误代码；
 // invalidTokenProblemID 令牌无效时返回的错误代码；
 func New[T any](s web.Server, ttl time.Duration, once bool, query string, unauthProblemID, invalidTokenProblemID string) *Temporary[T] {
@@ -119,7 +119,14 @@ func (t *Temporary[T]) Logout(ctx *web.Context) error {
 	return nil
 }
 
+// QueryName 查询参数的名称
+func (t *Temporary[T]) QueryName() string { return t.query }
+
 func (t *Temporary[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
+
+func (t *Temporary[T]) SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+	return SecurityScheme(id, desc, t.QueryName())
+}
 
 // SecurityScheme 声明支持 openapi 的 [openapi.SecurityScheme] 对象
 func SecurityScheme(id string, desc web.LocaleStringer, query string) *openapi.SecurityScheme {
