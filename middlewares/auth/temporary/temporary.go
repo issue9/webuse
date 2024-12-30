@@ -34,6 +34,7 @@ type Temporary[T any] struct {
 	ttl                   time.Duration
 	expire                int
 	once                  bool
+	query                 string
 	unauthProblemID       string
 	invalidTokenProblemID string
 }
@@ -42,14 +43,16 @@ type Temporary[T any] struct {
 //
 // ttl 表示令牌的过期时间。
 // once 是否为一次性令牌，如果为 true，在验证成功之后，该令牌将自动失效；
+// query 如果不为空，那么将由查询参数传递验证；
 // unauthProblemID 验证不通过时的错误代码；
 // invalidTokenProblemID 令牌无效时返回的错误代码；
-func New[T any](s web.Server, ttl time.Duration, once bool, unauthProblemID, invalidTokenProblemID string) *Temporary[T] {
+func New[T any](s web.Server, ttl time.Duration, once bool, query string, unauthProblemID, invalidTokenProblemID string) *Temporary[T] {
 	return &Temporary[T]{
 		cache:                 web.NewCache(s.UniqueID(), s.Cache()),
 		ttl:                   ttl,
 		expire:                int(ttl.Seconds()),
 		once:                  once,
+		query:                 query,
 		unauthProblemID:       unauthProblemID,
 		invalidTokenProblemID: invalidTokenProblemID,
 	}
@@ -73,7 +76,16 @@ func (t *Temporary[T]) Middleware(next web.HandlerFunc, method, _, _ string) web
 	}
 
 	return func(ctx *web.Context) web.Responser {
-		token := auth.GetBearerToken(ctx, header.Authorization)
+		var token string
+		if t.query != "" {
+			q, err := ctx.Queries(true)
+			if err != nil {
+				return ctx.Problem(t.invalidTokenProblemID)
+			}
+			token = q.String(t.query, "")
+		} else {
+			token = auth.GetBearerToken(ctx, header.Authorization)
+		}
 		if token == "" {
 			return ctx.Problem(t.unauthProblemID)
 		}
@@ -107,12 +119,20 @@ func (t *Temporary[T]) Logout(ctx *web.Context) error {
 	return nil
 }
 
-func (t *Temporary[T]) GetInfo(ctx *web.Context) (T, bool) {
-	return mauth.Get[T](ctx)
-}
+func (t *Temporary[T]) GetInfo(ctx *web.Context) (T, bool) { return mauth.Get[T](ctx) }
 
 // SecurityScheme 声明支持 openapi 的 [openapi.SecurityScheme] 对象
-func SecurityScheme(id string, desc web.LocaleStringer) *openapi.SecurityScheme {
+func SecurityScheme(id string, desc web.LocaleStringer, query string) *openapi.SecurityScheme {
+	if query != "" {
+		return &openapi.SecurityScheme{
+			ID:          id,
+			Type:        openapi.SecuritySchemeTypeAPIKey,
+			Description: desc,
+			In:          openapi.InQuery,
+			Name:        query,
+		}
+	}
+
 	return &openapi.SecurityScheme{
 		ID:          id,
 		Type:        openapi.SecuritySchemeTypeHTTP,
