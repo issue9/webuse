@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/openapi"
 
-	"github.com/issue9/webuse/v7/plugins/openapi/internal"
+	"github.com/issue9/webuse/v7/internal/openapifuncs"
 )
 
 //go:embed *.html
@@ -25,8 +25,8 @@ const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.18.2"
 
 // Install 安装模板
 //
-// NOTE: 此操作会同时安装 json 和 yaml 两个方法用于解决 openapi 对象
-func Install(s web.Server) { html.Install(s, internal.Funcs, nil, "*.html", tpl) }
+// NOTE: 此操作会同时安装 json 和 yaml 两个模板函数
+func Install(s web.Server) { html.Install(s, openapifuncs.Funcs, nil, "*.html", tpl) }
 
 // WithHTML 指定 [swagger] 的 HTML 模板
 //

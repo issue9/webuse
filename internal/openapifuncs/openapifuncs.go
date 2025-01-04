@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package internal
+package openapifuncs
 
 import (
 	"encoding/json"
