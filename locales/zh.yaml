@@ -1,113 +1,113 @@
 languages:
-    - zh-Hans
-    - cmn-Hans
-    - zh-CN
+  - zh-Hans
+  - cmn-Hans
+  - zh-CN
 messages:
-    - key: access token
-      message:
-        msg: 访问令牌
-    - key: access token expired
-      message:
-        msg: 访问令牌的过期时间
-    - key: can not get the ip
-      message:
-        msg: 无法获取客户的 IP 地址
-    - key: child role has resource %s can not be deleted
-      message:
-        msg: 子角色占有了资源 %s，不能被删，不能被删除
-    - key: connects number
-      message:
-        msg: 连接数量
-    - key: cpu usage rate
-      message:
-        msg: CPU 使用频率
-    - key: created time
-      message:
-        msg: 创建时间
-    - key: enable compression base on cpu used
-      message:
-        msg: 基于 CPU 使用率决定是否启用压缩功能
-    - key: gen session id
-      message:
-        msg: 生成 session id
-    - key: gen token id
-      message:
-        msg: 生成令牌
-    - key: goroutines number
-      message:
-        msg: Goroutines 数量
-    - key: invalid ip %s
-      message:
-        msg: 无效的 IP 地址 %s
-    - key: mem usage rate
-      message:
-        msg: 内存使用频率
-    - key: monitor system stat
-      message:
-        msg: 监控系统状态
-    - key: net stats
-      message:
-        msg: 网络状态
-    - key: not found jwt signing method
-      message:
-        msg: 未找到 JWT 签名方法
-    - key: not found resource %s
-      message:
-        msg: 未定义的资源 %s
-    - key: os stats
-      message:
-        msg: 系统状态
-    - key: process stats
-      message:
-        msg: 进程状态
-    - key: recv bytes
-      message:
-        msg: recv bytes
-    - key: refresh token
-      message:
-        msg: 刷新令牌
-    - key: refresh token expired
-      message:
-        msg: 刷新令牌的过期时间
-    - key: resources
-      message:
-        msg: 资源
-    - key: resources of current role
-      message:
-        msg: 当前角色的资源
-    - key: resources of role parent
-      message:
-        msg: 父角色的资源
-    - key: sent bytes
-      message:
-        msg: 发送的字节数
-    - key: session id not exists in context
-      message:
-        msg: 当前对话中未找到 session id
-    - key: the client %s header %s is invalid format
-      message:
-        msg: 客户端的请求报头 %s 提交的数据 %s 格式错误
-    - key: the id of resource
-      message:
-        msg: 资源的 ID
-    - key: the id of resource group
-      message:
-        msg: 资源组的 ID
-    - key: the role %s has children role, can not deleted
-      message:
-        msg: 不能删除拥有子角色的角色 %s
-    - key: the role %s has users, can not deleted
-      message:
-        msg: 不能删除还有关联用户的角色 %s
-    - key: the title of resource
-      message:
-        msg: 资源名称
-    - key: the title of resource group
-      message:
-        msg: 资源组的名称
-    - key: user %v in the parent role %s
-      message:
-        msg: 用户 %v 已经存在于父角色 %s
-    - key: user %v obtained access to %s due to %s:%s
-      message:
-        msg: 用户 %[1]v 因为 %[3]s:%[4]s 获得访问 %[2]s 的权限
+  - key: access token
+    message:
+      msg: 访问令牌
+  - key: access token expired
+    message:
+      msg: 访问令牌的过期时间
+  - key: can not get the ip
+    message:
+      msg: 无法获取客户的 IP 地址
+  - key: child role has resource %s can not be deleted
+    message:
+      msg: 子角色占有了资源 %s，不能被删，不能被删除
+  - key: connects number
+    message:
+      msg: 连接数量
+  - key: cpu usage rate
+    message:
+      msg: CPU 使用频率
+  - key: created time
+    message:
+      msg: 创建时间
+  - key: enable compression base on cpu used
+    message:
+      msg: 基于 CPU 使用率决定是否启用压缩功能
+  - key: gen session id
+    message:
+      msg: 生成 session id
+  - key: gen token id
+    message:
+      msg: 生成令牌
+  - key: goroutines number
+    message:
+      msg: Goroutines 数量
+  - key: invalid ip %s
+    message:
+      msg: 无效的 IP 地址 %s
+  - key: mem usage rate
+    message:
+      msg: 内存使用频率
+  - key: monitor system stat
+    message:
+      msg: 监控系统状态
+  - key: net stats
+    message:
+      msg: 网络状态
+  - key: not found jwt signing method
+    message:
+      msg: 未找到 JWT 签名方法
+  - key: not found resource %s
+    message:
+      msg: 未定义的资源 %s
+  - key: os stats
+    message:
+      msg: 系统状态
+  - key: process stats
+    message:
+      msg: 进程状态
+  - key: recv bytes
+    message:
+      msg: 接收的字节数
+  - key: refresh token
+    message:
+      msg: 刷新令牌
+  - key: refresh token expired
+    message:
+      msg: 刷新令牌的过期时间
+  - key: resources
+    message:
+      msg: 资源
+  - key: resources of current role
+    message:
+      msg: 当前角色的资源
+  - key: resources of role parent
+    message:
+      msg: 父角色的资源
+  - key: sent bytes
+    message:
+      msg: 发送的字节数
+  - key: session id not exists in context
+    message:
+      msg: 当前对话中未找到 session id
+  - key: the client %s header %s is invalid format
+    message:
+      msg: 客户端的请求报头 %s 提交的数据 %s 格式错误
+  - key: the id of resource
+    message:
+      msg: 资源的 ID
+  - key: the id of resource group
+    message:
+      msg: 资源组的 ID
+  - key: the role %s has children role, can not deleted
+    message:
+      msg: 不能删除拥有子角色的角色 %s
+  - key: the role %s has users, can not deleted
+    message:
+      msg: 不能删除还有关联用户的角色 %s
+  - key: the title of resource
+    message:
+      msg: 资源名称
+  - key: the title of resource group
+    message:
+      msg: 资源组的名称
+  - key: user %v in the parent role %s
+    message:
+      msg: 用户 %v 已经存在于父角色 %s
+  - key: user %v obtained access to %s due to %s:%s
+    message:
+      msg: 用户 %[1]v 因为 %[3]s:%[4]s 获得访问 %[2]s 的权限

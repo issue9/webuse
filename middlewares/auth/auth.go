@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,9 +59,9 @@ func BuildToken(prefix, token string) string { return prefix + token }
 // BearerToken 生成 Bearer 的令牌
 //
 // 等同于 BuildToken(Bearer, token)
-func BearerToken(token string) string { return Bearer + token }
+func BearerToken(token string) string { return BuildToken(Bearer, token) }
 
 // BasicToken 生成 Basic 的令牌
 //
 // 等同于 BuildToken(Basic, token)
-func BasicToken(token string) string { return Basic + token }
+func BasicToken(token string) string { return BuildToken(Basic, token) }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +25,7 @@ type service struct {
 // 这将返回一个用于订阅状态变化的接口，用户可根据该接口订阅信息。
 //
 // dur 为监视数据的频率；
-// interval 为每次监视数据的时间；
+// interval 为每次监视数据的时间，可以为 0，表示从最后一次调用开始计算；
 // size 缓存监控数据的数量；
 func Init(s web.Server, dur, interval time.Duration, size int) events.Subscriber[*Stats] {
 	srv := &service{
@@ -47,7 +47,8 @@ func Init(s web.Server, dur, interval time.Duration, size int) events.Subscriber
 		return err
 	}
 
-	s.Services().AddTicker(web.Phrase("monitor system stat"), job, dur, true, true)
+	// 此时 events.Len 必然为空，没必要将 true 传递给 imm。
+	s.Services().AddTicker(web.Phrase("monitor system stat"), job, dur, false, true)
 
 	return srv
 }
