@@ -8,7 +8,11 @@
 
  适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件、服务以及常用的路由函数；
 
-## handlers
+## 过滤器
+
+位于 [filters](filters) 之下，提供了大量的过滤器实现。
+
+## 路由函数
 
 位于 [handlers](handlers) 之下：
 

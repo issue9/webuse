@@ -4,12 +4,14 @@ go 1.24.0
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/google/uuid v1.6.0
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.19.0
 	github.com/issue9/events v0.9.1
 	github.com/issue9/logs/v7 v7.6.5
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/rands/v3 v3.1.0
+	github.com/issue9/version v1.0.8
 	github.com/issue9/web v0.102.7
 	github.com/shirou/gopsutil/v4 v4.25.2
 	golang.org/x/text v0.23.0
