@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,14 +11,13 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v9/types"
-	"github.com/issue9/web/server"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 func TestGetSet(t *testing.T) {
 	a := assert.New(t, false)
-
-	s, err := server.NewHTTP("test", "1.0.0", nil)
-	a.NotError(err).NotNil(s)
+	s := testserver.New(a)
 
 	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/path", nil), types.NewContext())
 	val, found := Get[int](ctx)

@@ -19,6 +19,7 @@ import (
 	"github.com/issue9/web/mimetype/sse"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
+	"golang.org/x/text/language"
 )
 
 var _ events.Subscriber[*Stats] = &service{}
@@ -26,6 +27,7 @@ var _ events.Subscriber[*Stats] = &service{}
 func TestSystat(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
+		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Codec:      web.NewCodec().AddMimetype(sse.Mimetype, nop.Marshal, nop.Unmarshal, ""),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLevels(logs.AllLevels()...)),

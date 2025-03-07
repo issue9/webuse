@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/web/server"
+
+	"github.com/issue9/webuse/v7/internal/testserver"
 )
 
 func TestNew(t *testing.T) {
@@ -27,8 +28,7 @@ func TestNew(t *testing.T) {
 		New(time.Millisecond, time.Microsecond, 101)
 	}, "percent 必须介于 [0,100]")
 
-	s, err := server.NewHTTP("test", "1.0.0", nil)
-	a.NotError(err).NotNil(s)
+	s := testserver.New(a)
 	s.SetCompress(false)
 
 	a.False(s.CanCompress())
