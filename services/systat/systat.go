@@ -25,9 +25,8 @@ type service struct {
 // 这将返回一个用于订阅状态变化的接口，用户可根据该接口订阅信息。
 //
 // dur 为监视数据的频率；
-// interval 为每次监视数据的时间，可以为 0，表示从最后一次调用开始计算；
 // size 缓存监控数据的数量；
-func Init(s web.Server, dur, interval time.Duration, size int) events.Subscriber[*Stats] {
+func Init(s web.Server, dur time.Duration, size int) events.Subscriber[*Stats] {
 	srv := &service{
 		events: events.New[*Stats](),
 		ring:   ring.New(size),
@@ -38,7 +37,7 @@ func Init(s web.Server, dur, interval time.Duration, size int) events.Subscriber
 			return nil
 		}
 
-		stat, err := calcState(interval, now)
+		stat, err := calcState(now)
 		if err == nil {
 			srv.ring.Value = stat
 			srv.ring = srv.ring.Next()

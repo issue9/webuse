@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ import (
 
 var _ events.Subscriber[*Stats] = &service{}
 
-func TestService(t *testing.T) {
+func TestSystat(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
@@ -35,7 +35,7 @@ func TestService(t *testing.T) {
 	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
-	sub := Init(s, time.Second, time.Second, 10)
+	sub := Init(s, time.Second, 10)
 	o1 := &bytes.Buffer{}
 	o2 := &bytes.Buffer{}
 

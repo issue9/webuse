@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -46,8 +46,8 @@ type Net struct {
 	Recv  uint64 `json:"recv" yaml:"recv" xml:"recv" comment:"recv bytes"`         // 读取数量，以字节为单位。
 }
 
-func calcState(interval time.Duration, now time.Time) (*Stats, error) {
-	os, err := calcOS(interval)
+func calcState(now time.Time) (*Stats, error) {
+	os, err := calcOS()
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +89,8 @@ func calcProcess() (*Process, error) {
 	}, nil
 }
 
-func calcOS(interval time.Duration) (*OS, error) {
-	cpus, err := cpu.Percent(interval, false)
+func calcOS() (*OS, error) {
+	cpus, err := cpu.Percent(0, false)
 	if err != nil {
 		return nil, err
 	}
