@@ -13,8 +13,6 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/webuse/v7/filters/gb11643"
-	"github.com/issue9/webuse/v7/filters/gb32100"
 	"github.com/issue9/webuse/v7/filters/luhn"
 	"github.com/issue9/webuse/v7/filters/strength"
 	"github.com/issue9/webuse/v7/internal/isbn"
@@ -71,15 +69,6 @@ func ISBN(val string) bool { return isbn.IsValid([]byte(val)) }
 func ISBN10(val string) bool { return isbn.ISBN10([]byte(val)) }
 
 func ISBN13(val string) bool { return isbn.ISBN13([]byte(val)) }
-
-// GB11643 判断一个身份证是否符合 gb11643 标准
-//
-// 若是 15 位则当作一代身份证，仅简单地判断各位是否都是数字；
-// 若是 18 位则当作二代身份证，会计算校验位是否正确；
-func GB11643(val string) bool { return gb11643.IsValid([]byte(val)) }
-
-// GB32100 统一信用代码校验
-func GB32100(val string) bool { return gb32100.IsValid([]byte(val)) }
 
 // BankCard 是否为正确的银行卡号
 func BankCard(val string) bool { return Luhn(val) }
