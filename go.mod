@@ -12,13 +12,14 @@ require (
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/rands/v3 v3.1.0
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.102.7
+	github.com/issue9/web v0.102.8
 	github.com/shirou/gopsutil/v4 v4.25.2
 	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
