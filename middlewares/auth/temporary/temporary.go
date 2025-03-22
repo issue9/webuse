@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 202402025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,9 +24,9 @@ type tokenType int
 const tokenContext tokenType = 0
 
 type Response struct {
-	XMLName struct{} `json:"-" cbor:"-" xml:"token" yaml:"-"`
-	Token   string   `json:"token" xml:"token" cbor:"token" comment:"access token"`                 // 访问令牌
-	Expire  int      `json:"expire" xml:"expire,attr" cbor:"expire" comment:"access token expired"` // 访问令牌的有效时长，单位为秒
+	XMLName struct{} `json:"-" cbor:"-" xml:"token" yaml:"-" toml:"-"`
+	Token   string   `json:"token" xml:"token" cbor:"token" yaml:"token" toml:"token" comment:"access token"`                   // 访问令牌
+	Expire  int      `json:"expire" xml:"expire,attr" cbor:"expire" yaml:"expire" toml:"expire" comment:"access token expired"` // 访问令牌的有效时长，单位为秒
 }
 
 type Temporary[T any] struct {

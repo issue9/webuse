@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,11 +6,11 @@ package token
 
 // Response 申请令牌时返回的对象
 type Response struct {
-	XMLName      struct{} `json:"-" cbor:"-" xml:"token" yaml:"-"`
-	AccessToken  string   `json:"access_token" xml:"access_token" cbor:"access_token" comment:"access token"`            // 访问令牌
-	RefreshToken string   `json:"refresh_token" xml:"refresh_token" cbor:"refresh_token" comment:"refresh token"`        // 刷新令牌
-	AccessExp    int      `json:"access_exp" xml:"access_exp,attr" cbor:"access_exp" comment:"access token expired"`     // 访问令牌的有效时长，单位为秒
-	RefreshExp   int      `json:"refresh_exp" xml:"refresh_exp,attr" cbor:"refresh_exp" comment:"refresh token expired"` // 刷新令牌的有效时长，单位为秒
+	XMLName      struct{} `json:"-" cbor:"-" xml:"token" yaml:"-" toml:"-"`
+	AccessToken  string   `json:"access_token" xml:"access_token" cbor:"access_token" yaml:"access_token" toml:"access_token" comment:"access token"`          // 访问令牌
+	RefreshToken string   `json:"refresh_token" xml:"refresh_token" cbor:"refresh_token" yaml:"refresh_token" toml:"refresh_token" comment:"refresh token"`    // 刷新令牌
+	AccessExp    int      `json:"access_exp" xml:"access_exp,attr" cbor:"access_exp" yaml:"access_exp" toml:"access_exp" comment:"access token expired"`       // 访问令牌的有效时长，单位为秒
+	RefreshExp   int      `json:"refresh_exp" xml:"refresh_exp,attr" cbor:"refresh_exp" yaml:"refresh_exp" toml:"refresh_exp" comment:"refresh token expired"` // 刷新令牌的有效时长，单位为秒
 }
 
 // BuildResponseFunc 构建将令牌返回给客户的结构体

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,7 +21,7 @@ import (
 var tpl embed.FS
 
 // CDNAssets swagger 的 CDN 资源
-const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.18.2"
+const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.20.1"
 
 // Install 安装模板
 //

@@ -6,20 +6,20 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/issue9/assert/v4 v4.3.1
-	github.com/issue9/cache v0.19.0
+	github.com/issue9/cache v0.19.1
 	github.com/issue9/events v0.9.1
 	github.com/issue9/logs/v7 v7.6.5
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/rands/v3 v3.1.0
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.102.8
+	github.com/issue9/web v0.102.10
 	github.com/shirou/gopsutil/v4 v4.25.2
 	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
