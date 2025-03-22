@@ -3,7 +3,7 @@ module github.com/issue9/webuse/v7
 go 1.24.0
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.19.0
