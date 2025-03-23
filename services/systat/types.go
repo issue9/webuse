@@ -17,33 +17,33 @@ import (
 
 // Stats 监视的状态信息
 type Stats struct {
-	XMLName struct{} `json:"-" yaml:"-" xml:"stats" cbor:"-" toml:"-"`
+	XMLName struct{} `json:"-" yaml:"-" xml:"stats" cbor:"-"`
 
-	OS      *OS       `json:"os" yaml:"os" xml:"os" cbor:"os" toml:"os" comment:"os stats"`                               // 系统级别的状态信息
-	Process *Process  `json:"process" yaml:"process" xml:"process" cbor:"process" toml:"process" comment:"process stats"` // 当前进程的状态信息
-	Created time.Time `json:"created" yaml:"created" xml:"created" cbor:"created" toml:"created" comment:"created time"`  // 此条记录的创建时间
+	OS      *OS       `json:"os" yaml:"os" xml:"os" cbor:"os" comment:"os stats"`                          // 系统级别的状态信息
+	Process *Process  `json:"process" yaml:"process" xml:"process" cbor:"process" comment:"process stats"` // 当前进程的状态信息
+	Created time.Time `json:"created" yaml:"created" xml:"created" cbor:"created" comment:"created time"`  // 此条记录的创建时间
 }
 
 // OS 与系统相关的信息
 type OS struct {
-	CPU float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu" toml:"cpu" comment:"cpu usage rate"`                                              // CPU 使用百分比
-	Mem uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem" toml:"mem" comment:"mem usage rate"`                                              // 内存使用量，以 byte 为单位。
-	Net *Net    `json:"net,omitempty" yaml:"net,omitempty" xml:"net,omitempty" cbor:"net,omitempty" toml:"net,omitempty" comment:"net stats"` // 网络相关数据
+	CPU float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu" comment:"cpu usage rate"`                                    // CPU 使用百分比
+	Mem uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem" comment:"mem usage rate"`                                    // 内存使用量，以 byte 为单位。
+	Net *Net    `json:"net,omitempty" yaml:"net,omitempty" xml:"net,omitempty" cbor:"net,omitempty" comment:"net stats"` // 网络相关数据
 }
 
 // Process 与进程相关的信息
 type Process struct {
-	CPU        float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu" toml:"cpu" comment:"cpu usage rate"`            // CPU 使用百分比
-	Mem        uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem" toml:"mem" comment:"mem usage rate"`            // 内存使用量，以 byte 为单位。
-	Conns      int     `json:"conns" yaml:"conns" xml:"conns" cbor:"conns" toml:"conns" comment:"connects number"` // 连接数量
-	Goroutines int     `json:"goroutines,omitempty" yaml:"goroutines,omitempty" xml:"goroutines,omitempty" cbor:"goroutines,omitempty" toml:"goroutines,omitempty" comment:"goroutines number"`
+	CPU        float64 `json:"cpu" yaml:"cpu" xml:"cpu" cbor:"cpu" comment:"cpu usage rate"`          // CPU 使用百分比
+	Mem        uint64  `json:"mem" yaml:"mem" xml:"mem" cbor:"mem" comment:"mem usage rate"`          // 内存使用量，以 byte 为单位。
+	Conns      int     `json:"conns" yaml:"conns" xml:"conns" cbor:"conns" comment:"connects number"` // 连接数量
+	Goroutines int     `json:"goroutines,omitempty" yaml:"goroutines,omitempty" xml:"goroutines,omitempty" cbor:"goroutines,omitempty" comment:"goroutines number"`
 }
 
 // Net 与网络相关的信息
 type Net struct {
-	Conns int    `json:"conns" yaml:"conns" xml:"conns" cbor:"conns" toml:"conns" comment:"connects number"` // 连接数量
-	Sent  uint64 `json:"sent" yaml:"sent" xml:"sent" cbor:"sent" toml:"sent" comment:"sent bytes"`           // 发送数量，以字节为单位。
-	Recv  uint64 `json:"recv" yaml:"recv" xml:"recv" cbor:"recv" toml:"recv" comment:"recv bytes"`           // 读取数量，以字节为单位。
+	Conns int    `json:"conns" yaml:"conns" xml:"conns" cbor:"conns" comment:"connects number"` // 连接数量
+	Sent  uint64 `json:"sent" yaml:"sent" xml:"sent" cbor:"sent" comment:"sent bytes"`          // 发送数量，以字节为单位。
+	Recv  uint64 `json:"recv" yaml:"recv" xml:"recv" cbor:"recv" comment:"recv bytes"`          // 读取数量，以字节为单位。
 }
 
 func calcState(now time.Time) (*Stats, error) {

@@ -14,17 +14,17 @@ import (
 
 // State 实际存在的数据类型
 type State struct {
-	XMLName      struct{}      `xml:"state" yaml:"-" json:"-" cbor:"-" toml:"-"`
-	Router       string        `xml:"router" yaml:"router" json:"router" cbor:"router" toml:"router"`                                    // 多个路由时，表示的路由名称
-	Method       string        `xml:"method,attr" yaml:"method" json:"method" cbor:"method" toml:"method"`                               // 请求方法
-	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern" cbor:"pattern" toml:"pattern"`                               // 路由
-	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min" cbor:"min" toml:"min"`                                              // 最小的执行时间
-	Max          time.Duration `xml:"max,attr" yaml:"max" json:"max" cbor:"max" toml:"max"`                                              // 最大的执行时间
-	Count        int           `xml:"count,attr" yaml:"count" json:"count" cbor:"count" toml:"count"`                                    // 总的请求次数
-	UserErrors   int           `xml:"userErrors,attr" yaml:"userErrors" json:"userErrors" cbor:"userErrors" toml:"userErrors"`           // 用户端出错次数，400-499
-	ServerErrors int           `xml:"serverErrors,attr" yaml:"serverErrors" json:"serverErrors" cbor:"serverErrors" toml:"serverErrors"` // 服务端出错次数，>500
-	Last         time.Time     `xml:"last" yaml:"last" json:"last" cbor:"last" toml:"last"`                                              // 最后的访问时间
-	Spend        time.Duration `xml:"spend,attr" yaml:"spend" json:"spend" cbor:"spend" toml:"spend"`                                    // 总花费的时间
+	XMLName      struct{}      `xml:"state" yaml:"-" json:"-" cbor:"-"`
+	Router       string        `xml:"router" yaml:"router" json:"router" cbor:"router"`                              // 多个路由时，表示的路由名称
+	Method       string        `xml:"method,attr" yaml:"method" json:"method" cbor:"method"`                         // 请求方法
+	Pattern      string        `xml:"pattern" yaml:"pattern" json:"pattern" cbor:"pattern"`                          // 路由
+	Min          time.Duration `xml:"min,attr" yaml:"min" json:"min" cbor:"min"`                                     // 最小的执行时间
+	Max          time.Duration `xml:"max,attr" yaml:"max" json:"max" cbor:"max"`                                     // 最大的执行时间
+	Count        int           `xml:"count,attr" yaml:"count" json:"count" cbor:"count"`                             // 总的请求次数
+	UserErrors   int           `xml:"userErrors,attr" yaml:"userErrors" json:"userErrors" cbor:"userErrors"`         // 用户端出错次数，400-499
+	ServerErrors int           `xml:"serverErrors,attr" yaml:"serverErrors" json:"serverErrors" cbor:"serverErrors"` // 服务端出错次数，>500
+	Last         time.Time     `xml:"last" yaml:"last" json:"last" cbor:"last"`                                      // 最后的访问时间
+	Spend        time.Duration `xml:"spend,attr" yaml:"spend" json:"spend" cbor:"spend"`                             // 总花费的时间
 }
 
 // Health API 状态检测
