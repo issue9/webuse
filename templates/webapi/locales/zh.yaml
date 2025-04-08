@@ -1,0 +1,20 @@
+languages:
+  - cmn-Hans
+  - zh-Hans
+  - zh-CN
+messages:
+  - key: The api doc of %s
+    message:
+      msg: "%s 的 openapi 文档"
+  - key: |
+      problems response:
+
+      %s
+    message:
+      msg: |
+        返回的错误代码:
+
+        %s
+  - key: token auth
+    message:
+      msg: 令牌验证

@@ -1,0 +1,18 @@
+languages:
+- und
+messages:
+- key: The api doc of %s
+  message:
+    msg: The api doc of %s
+- key: |
+    problems response:
+    
+    %s
+  message:
+    msg: |
+      problems response:
+      
+      %s
+- key: token auth
+  message:
+    msg: token auth

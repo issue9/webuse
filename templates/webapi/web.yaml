@@ -1,0 +1,63 @@
+# web.yaml
+
+encodings:
+  - id: deflate-default
+    type: "*"
+  - id: gzip-default
+    type: "*"
+  - id: br-default
+    type: "*"
+  - id: compress-msb-8
+    type: "*"
+
+mimetypes:
+  - type: "application/json"
+    target: json
+    problem: "application/problem+json"
+  - type: "application/yaml"
+    target: yaml
+    problem: "application/problem+yaml"
+  - type: "application/cbor"
+    target: cbor
+    problem: "application/problem+cbor"
+  - type: "application/xml"
+    target: xml
+    problem: "application/problem+xml"
+  - type: "text/xml"
+    target: xml
+    problem: "text/problem+xml"
+  - type: "text/html"
+    target: html
+    problem: "text/html"
+  - type: "text/event-stream"
+    target: nop
+  - type: "multipart/form-data"
+    target: nop
+
+fileSerializers:
+  - json
+  - xml
+  - yaml
+  - toml
+
+http:
+  port: ":8080"
+  url: "http://192.168.10.10:8080"
+  cors:
+    maxAge: 3600
+    origins: ["*"]
+    allowHeaders: ["*"]
+
+logs:
+  created: "15:04:05.000"
+  caller: true
+  location: true
+  handlers:
+    - type: file
+      args:
+        - "./logs"
+        - "20060102-%i.log"
+        - 10485760
+    - type: term
+      args:
+        - stdout
