@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,16 +8,16 @@ import (
 	"encoding/json"
 	"html/template"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 var Funcs = template.FuncMap{
-	"json": func(v interface{}) template.JS {
+	"json": func(v any) template.JS {
 		a, _ := json.Marshal(v)
 		return template.JS(a)
 	},
 
-	"yaml": func(v interface{}) template.JS {
+	"yaml": func(v any) template.JS {
 		a, _ := yaml.Marshal(v)
 		return template.JS(a)
 	},
