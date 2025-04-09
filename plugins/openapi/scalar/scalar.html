@@ -1,0 +1,25 @@
+{{- define "scalar" -}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{.Info.Title}}</title>
+    {{if .Info.Description}}<meta name="description" content="{{.Info.Description}}" />{{end}}
+    {{if .XLogo}}<link rel="icon" href="{{.XLogo}}">{{end}}
+  </head>
+
+  <body>
+    <div id="app"></div>
+
+    <script src="{{.XAssets}}"></script>
+    <script>
+      Scalar.createApiReference('#app', {
+          content: {{ json . }},
+          {{if .XLogo}}favicon: {{ .XLogo }},{{end}}
+          proxyUrl: 'https://proxy.scalar.com'
+      })
+    </script>
+  </body>
+</html>
+{{- end -}}

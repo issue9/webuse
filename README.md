@@ -24,8 +24,10 @@
 插件位于 [plugins](plugins) 目录之下：
 
 - access 客户端访问记录；
-- health 接口状态的监测；
 - compress 根据 CPU 使用率决定是否启用压缩功能；
+- health 接口状态的监测；
+- openapi/swagger swagger 的 openapi 文档查看器；
+- openapi/scalar scalar 的 openapi 文档查看器；
 
 ## 中间件
 
@@ -51,7 +53,7 @@
 
 ## 模板
 
-位于 [templates](templates) 目录之下，提供了适用于 `web new` 子命令的模板。
+模板位于 [templates](templates) 目录之下，提供了适用于 `web new` 子命令的模板。
 
 - webapi 简单的 API 服务；
 
