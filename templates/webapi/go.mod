@@ -1,4 +1,4 @@
-module github.com/issue9/webuse/templates/webapi
+module github.com/issue9/webuse/v7/templates/webapi
 
 go 1.24.0
 

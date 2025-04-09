@@ -6,7 +6,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/webuse/v7)](https://pkg.go.dev/github.com/issue9/webuse/v7)
 [![Go version](https://img.shields.io/github/go-mod/go-version/issue9/webuse)](https://golang.org)
 
- 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件、服务以及常用的路由函数；
+ 适用于 [web](https://pkg.go.dev/github.com/issue9/web) 的中间件、插件、服务等功能；
 
 ## 过滤器
 
@@ -48,6 +48,12 @@
 服务位于 [services](services) 目录之下：
 
 - systat 系统状态监视；
+
+## 模板
+
+位于 [templates](templates) 目录之下，提供了适用于 `web new` 子命令的模板。
+
+- webapi 简单的 API 服务；
 
 ## 安装
 
