@@ -13,7 +13,7 @@ require (
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/rands/v3 v3.1.0
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.103.0
+	github.com/issue9/web v0.103.1
 	github.com/shirou/gopsutil/v4 v4.25.3
 	golang.org/x/text v0.24.0
 )
