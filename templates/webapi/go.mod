@@ -1,9 +1,9 @@
-module github.com/issue9/webuse/v7/templates/webapi
+module github.com/issue9/webuse/templates/webapi
 
 go 1.24.0
 
 require (
-	github.com/issue9/web v0.103.0
+	github.com/issue9/web v0.103.1
 	github.com/issue9/webuse/v7 v7.0.0-20250326164340-b6f8f20e01e0
 	github.com/kardianos/service v1.2.2
 )

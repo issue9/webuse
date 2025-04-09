@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2025 caixw
-#
-# SPDX-License-Identifier: MIT
-
 .PHONY: gen build install watch test
 
 ROOT = .
