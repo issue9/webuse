@@ -21,18 +21,22 @@
 
 ## 插件
 
-插件位于 [plugins](plugins) 目录之下：
+位于 [plugins](plugins) 目录之下：
 
 - access 客户端访问记录；
 - compress 根据 CPU 使用率决定是否启用压缩功能；
 - health 接口状态的监测；
-- openapi OpenAPI 文档阅读器；
-- openapi/swagger swagger 的 OpenAPI 文档阅读器；
-- openapi/scalar scalar 的 OpenAPI 文档阅读器；
+
+## openapis
+
+位于 [openapis](openapis) 目录之下：
+
+- swagger swagger 的 OpenAPI 文档阅读器；
+- scalar scalar 的 OpenAPI 文档阅读器；
 
 ## 中间件
 
-中间件位于 [middlewares](middlewares) 目录之下：
+位于 [middlewares](middlewares) 目录之下：
 
 - acl/iplist 黑白名单；
 - acl/ratelimit x-rate-limit 的相关实现；
@@ -48,13 +52,13 @@
 
 ## 服务
 
-服务位于 [services](services) 目录之下：
+位于 [services](services) 目录之下：
 
 - systat 系统状态监视；
 
 ## 模板
 
-模板位于 [templates](templates) 目录之下，提供了适用于 `web new` 子命令的模板。
+位于 [templates](templates) 目录之下，提供了适用于 `web new` 子命令的模板。
 
 - webapi 简单的 API 服务；
 
