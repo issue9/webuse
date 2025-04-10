@@ -53,8 +53,8 @@ github.com/issue9/unique/v2 v2.1.1 h1:M0gOxKnv/d7W02cNqBH8/TNvwOj9MzW0vTpckhi7Q+
 github.com/issue9/unique/v2 v2.1.1/go.mod h1:zbKt6oIoc7um/dwJBzbPmMIohD9DWocMsTd6uwmZdNc=
 github.com/issue9/version v1.0.8 h1:IsNdDYdV8UGDGwwgp8H4RszJE0Ko26HjWg9pZzyOivs=
 github.com/issue9/version v1.0.8/go.mod h1:w8bQwODBOG5+iaS3qIJbElxxpp3Uo4x5F39qKBqwpdc=
-github.com/issue9/web v0.103.1 h1:VEy0IiWzACdFpiB+YVPWCC+d29PMbOmPYMQ9jX3s3bk=
-github.com/issue9/web v0.103.1/go.mod h1:/1v2mQlrAZplw30hXK0/NMTSzv6D4cKo8zSeDEcJ8Wc=
+github.com/issue9/web v0.103.2 h1:Zaj/uXbw1Q9MZCC98SYvzHp3bePgIO3gyIa1+OqY8lk=
+github.com/issue9/web v0.103.2/go.mod h1:/1v2mQlrAZplw30hXK0/NMTSzv6D4cKo8zSeDEcJ8Wc=
 github.com/jellydator/ttlcache/v3 v3.3.0 h1:BdoC9cE81qXfrxeb9eoJi9dWrdhSuwXMAnHTbnBm4Wc=
 github.com/jellydator/ttlcache/v3 v3.3.0/go.mod h1:bj2/e0l4jRnQdrnSTaGTsh4GSXvMjQcy41i7th0GVGw=
 github.com/klauspost/compress v1.18.0 h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=
