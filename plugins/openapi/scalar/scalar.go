@@ -33,14 +33,17 @@ func Install(s web.Server) { html.Install(s, openapifuncs.Funcs, nil, "*.html", 
 // 可用来代替 [openapi.WithHTML]
 //
 // assets scalar 的页面资源，可以直接引用 [CDNAssets]，
-// 或是采用 [files] 与 [static] 搭建一个本地的静态文件服务；
+// 或是将 [CDNAssets] 指向的内容拉到本地与 [static] 搭建一个本地的静态文件服务；
+//
+// NOTE: 需要 [Install] 安装模板方法
 //
 // [scalar]: https://github.com/scalar/scalar/blob/main/documentation/configuration.md
 // [static]: https://github.com/issue9/webuse/handlers/static
-// [files]: https://github.com/swaggo/files
 func WithHTML(assets, logo string) openapi.Option {
 	return openapi.WithHTML("scalar", assets, logo)
 }
 
 // WithCDN 采用 [CDNAssets] 作为参数的 [WithHTML] 版本
+//
+// NOTE: 需要 [Install] 安装模板方法
 func WithCDN(logo string) openapi.Option { return WithHTML(CDNAssets, logo) }

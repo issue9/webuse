@@ -35,6 +35,8 @@ func Install(s web.Server) { html.Install(s, openapifuncs.Funcs, nil, "*.html", 
 // assets swagger 的页面资源，可以直接引用 [CDNAssets]，
 // 或是采用 [files] 与 [static] 搭建一个本地的静态文件服务；
 //
+// NOTE: 需要 [Install] 安装模板方法
+//
 // [swagger]: https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation
 // [static]: https://github.com/issue9/webuse/handlers/static
 // [files]: https://github.com/swaggo/files
@@ -45,6 +47,8 @@ func WithHTML(assets, logo string) openapi.Option {
 // WithCDN 采用 [CDNAssets] 作为参数的 [WithHTML] 版本
 //
 // 如果 logo 为空，则会采用 [CDNAssets] 下的默认图标。
+//
+// NOTE: 需要 [Install] 安装模板方法
 func WithCDN(logo string) openapi.Option {
 	if logo == "" {
 		logo = CDNAssets + "/favicon-32x32.png"

@@ -26,8 +26,9 @@
 - access 客户端访问记录；
 - compress 根据 CPU 使用率决定是否启用压缩功能；
 - health 接口状态的监测；
-- openapi/swagger swagger 的 openapi 文档查看器；
-- openapi/scalar scalar 的 openapi 文档查看器；
+- openapi OpenAPI 文档阅读器；
+- openapi/swagger swagger 的 OpenAPI 文档阅读器；
+- openapi/scalar scalar 的 OpenAPI 文档阅读器；
 
 ## 中间件
 
