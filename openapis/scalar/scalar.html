@@ -17,6 +17,7 @@
       Scalar.createApiReference('#app', {
           content: {{ json . }},
           {{if .XLogo}}favicon: {{ .XLogo }},{{end}}
+          hideClientButton: true,
           proxyUrl: 'https://proxy.scalar.com'
       })
     </script>

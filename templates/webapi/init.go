@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/web/server/app"
 	"github.com/issue9/webuse/v7/handlers/debug"
 	"github.com/issue9/webuse/v7/middlewares/auth/token"
-	"github.com/issue9/webuse/v7/plugins/openapi/swagger"
+	"github.com/issue9/webuse/v7/openapis"
 	"github.com/kardianos/service"
 )
 
@@ -50,9 +50,8 @@ func initServer(id, ver string, o *server.Options, u struct{}, action string) (w
 		openapi.WithMediaType(json.Mimetype, cbor.Mimetype),
 		openapi.WithProblemResponse(),
 		openapi.WithSecurityScheme(token.SecurityScheme("token", web.Phrase("token auth"))),
-		swagger.WithCDN(""),
+		openapis.WithCDNViewer(s, "scalar", ""),
 	)
-	s.Use(web.PluginFunc(swagger.Install))
 	router.Get("/openapi", doc.Handler())
 
 	switch action {

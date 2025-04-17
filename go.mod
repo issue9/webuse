@@ -13,7 +13,7 @@ require (
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/rands/v3 v3.1.0
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.103.2
+	github.com/issue9/web v0.103.3
 	github.com/shirou/gopsutil/v4 v4.25.3
 	golang.org/x/text v0.24.0
 )
@@ -26,7 +26,7 @@ require (
 	github.com/issue9/config v0.9.1 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
-	github.com/issue9/localeutil v0.29.4 // indirect
+	github.com/issue9/localeutil v0.30.0 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/scheduled v0.22.1 // indirect
 	github.com/issue9/sliceutil v0.17.0 // indirect
