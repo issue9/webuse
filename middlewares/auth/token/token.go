@@ -99,7 +99,7 @@ func (t *Token[T]) Middleware(next web.HandlerFunc, method, _, _ string) web.Han
 			ctx.SetVar(tokenContext, token)
 
 			if v.Access != "" { // 刷新令牌
-				// 删除令牌出错，不防碍其它功能的继承执行，所以只记录日志，不退出。
+				// 删除令牌出错，不妨碍其它功能的继承执行，所以只记录日志，不退出。
 				if err := errors.Join(t.store.DeleteToken(v.Access), t.store.DeleteToken(token)); err != nil {
 					t.s.Logs().ERROR().Error(err)
 				}
