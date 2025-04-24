@@ -21,7 +21,7 @@ func New(a *assert.Assertion) web.Server {
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype),
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype, true, true),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)

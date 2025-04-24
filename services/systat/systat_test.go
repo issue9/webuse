@@ -29,7 +29,7 @@ func TestSystat(t *testing.T) {
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(sse.Mimetype, nop.Marshal, nop.Unmarshal, ""),
+		Codec:      web.NewCodec().AddMimetype(sse.Mimetype, nop.Marshal, nop.Unmarshal, "", false, false),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLevels(logs.AllLevels()...)),
 	})
 	a.NotError(err).NotNil(s)
