@@ -3,8 +3,8 @@ module github.com/issue9/webuse/templates/webapi
 go 1.24.0
 
 require (
-	github.com/issue9/web v0.103.3
-	github.com/issue9/webuse/v7 v7.0.0-20250410073754-21625f803dca
+	github.com/issue9/web v0.104.0
+	github.com/issue9/webuse/v7 v7.0.0-20250424010614-8ba084a94356
 	github.com/kardianos/service v1.2.2
 )
 
@@ -23,7 +23,7 @@ require (
 	github.com/issue9/errwrap v0.3.2 // indirect
 	github.com/issue9/localeutil v0.30.0 // indirect
 	github.com/issue9/logs/v7 v7.6.6 // indirect
-	github.com/issue9/mux/v9 v9.1.4 // indirect
+	github.com/issue9/mux/v9 v9.2.0 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/rands/v3 v3.1.0 // indirect
 	github.com/issue9/scheduled v0.22.1 // indirect
