@@ -21,7 +21,7 @@ import (
 var tpl embed.FS
 
 // CDNAssets scalar 的 CDN 资源
-const CDNAssets = "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.28.22"
+const CDNAssets = "https://cdn.jsdelivr.net/npm/@scalar/api-reference"
 
 // Install 安装模板
 //
