@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2015-2024 caixw
+// SPDX-FileCopyrightText: 2015-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -92,10 +92,9 @@ func (s *Session[T]) Middleware(next web.HandlerFunc, _, _, _ string) web.Handle
 		if err != nil {
 			return ctx.Error(err, web.ProblemInternalServerError)
 		} else if !found {
-			var zero T
 			// BUG 多层指针？
-			if t := reflect.TypeOf(zero); t.Kind() == reflect.Pointer {
-				v = reflect.New(t.Elem()).Interface().(T)
+			if t := reflect.TypeFor[T](); t.Kind() == reflect.Pointer {
+				v, _ = reflect.TypeAssert[T](reflect.New(t.Elem()))
 			}
 
 			// 生成 v，需要保存
