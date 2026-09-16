@@ -9,8 +9,8 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
+	"uuid"
 
-	"github.com/google/uuid"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/webuse/v7/filters/luhn"
@@ -166,7 +166,10 @@ func Digit(val string) bool {
 }
 
 // UUID 验证 UUID 格式是否正确
-func UUID(val string) bool { return uuid.Validate(val) == nil }
+func UUID(val string) bool {
+	_, err := uuid.Parse(val)
+	return err == nil
+}
 
 // Empty 字符串是否为空
 func Empty(val string) bool { return val == "" }

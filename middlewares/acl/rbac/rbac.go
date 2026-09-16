@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,11 +10,11 @@
 //	view := group.New("view", web.Phrase("view info")) // 返回判断权限的中间件
 //	del := group.New("del", web.Phrase("delete user")) // 返回判断权限的中间件
 //	router.Get("/users", view(func(*web.Context)web.Responser{
-//	    // do somthing
+//	    // do something
 //	}))
 //
 //	router.Delete("/users/{id}", del(func(*web.Context)web.Responser{
-//	    // do somthing
+//	    // do something
 //	}))
 package rbac
 

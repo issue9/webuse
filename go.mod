@@ -5,7 +5,6 @@ go 1.27.0
 require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/google/uuid v1.6.0
 	github.com/issue9/assert/v5 v5.0.0
 	github.com/issue9/cache v0.20.0
 	github.com/issue9/events v0.10.0

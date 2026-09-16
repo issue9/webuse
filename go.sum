@@ -4,8 +4,6 @@ github.com/andybalholm/brotli v1.2.3 h1:8H1qwOkl2LPfjf3YezB90JnCliZb6SInJ/OJkEbA
 github.com/andybalholm/brotli v1.2.3/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/ebitengine/purego v0.10.0 h1:QIw4xfpWT6GWTzaW5XEKy3HXoqrJGx1ijYHzTF0/ISU=
-github.com/ebitengine/purego v0.10.0/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/ebitengine/purego v0.10.2 h1:W809HbnvzAxgdm+aOvlSekrM16wGCdT/e76+9tS7gzE=
 github.com/ebitengine/purego v0.10.2/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/fxamacker/cbor/v2 v2.9.3 h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q=
@@ -19,10 +17,6 @@ github.com/golang-jwt/jwt/v5 v5.3.1 h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63Y
 github.com/golang-jwt/jwt/v5 v5.3.1/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
-github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/issue9/assert/v4 v4.3.1 h1:dHYODk1yV7j/1baIB6K6UggI4r1Hfuljqic7PaDbwLg=
-github.com/issue9/assert/v4 v4.3.1/go.mod h1:v7qDRXi7AsaZZNh8eAK2rkLJg5/clztqQGA1DRv9Lv4=
 github.com/issue9/assert/v5 v5.0.0 h1:Wii6hVeJGtYJwFzfvMbz6pxESV2pg2URvwkWoR0xSec=
 github.com/issue9/assert/v5 v5.0.0/go.mod h1:JqsxtACdhRx1QhpUzH/kweZQe3bmCNvYVJPgu0qDrM0=
 github.com/issue9/cache v0.20.0 h1:YZTsf0i5vcplm2SD1zbGLLdyJuM74bobbfBNT7J1zJA=
@@ -33,8 +27,6 @@ github.com/issue9/conv v1.4.0 h1:x7OylWPnjC1A4TVssDxB0qfS7lwBiomqcp0C3T3CiPs=
 github.com/issue9/conv v1.4.0/go.mod h1:7vY7wsVqUALmxeGwrfoMMX7zJ3QIlugPyKFx0LIQgKA=
 github.com/issue9/errwrap v0.4.0 h1:tU2s1vsH6L+1oSWhsHt7oH+8pxEmyOw4lqB/lylKOPQ=
 github.com/issue9/errwrap v0.4.0/go.mod h1:L3dqdeTN+L/Uv9VW/QPsQLq61/xsnM4yZ1taj/gAxXE=
-github.com/issue9/events v0.9.3 h1:8cnct3Z2KoMc1hJZ0j/dWVrj3d0vIQFmXPmJKn4Hn0w=
-github.com/issue9/events v0.9.3/go.mod h1:Ah4f3a67+2wgUoV0MEUbsTiat2orImGtH0jPa7tyemI=
 github.com/issue9/events v0.10.0 h1:eDrBrCvQ7uFRMuJvN6vGNexq9GV1dEICMdg8FdekKB0=
 github.com/issue9/events v0.10.0/go.mod h1:npq07r5UtW7Ivfn2h5Kgi91izMeyaudcXVuDqcvCNrg=
 github.com/issue9/localeutil v0.34.0 h1:/AG0X7kM4frerbmapIcsOWnnKxUiZfIprxBT1aKg/Sg=
@@ -73,8 +65,6 @@ github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 h1:o4JXh1EVt
 github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
 github.com/puzpuzpuz/xsync/v4 v4.5.0 h1:vOSWu6b57/emh+L/Cw0BeQfvxa/cogFywXHeGUxQxAg=
 github.com/puzpuzpuz/xsync/v4 v4.5.0/go.mod h1:VJDmTCJMBt8igNxnkQd86r+8KUeN1quSfNKu5bLYFQo=
-github.com/shirou/gopsutil/v4 v4.26.3 h1:2ESdQt90yU3oXF/CdOlRCJxrP+Am1aBYubTMTfxJ1qc=
-github.com/shirou/gopsutil/v4 v4.26.3/go.mod h1:LZ6ewCSkBqUpvSOf+LsTGnRinC6iaNUNMGBtDkJBaLQ=
 github.com/shirou/gopsutil/v4 v4.26.8 h1:YQMTF/1J50B5+Y0vlo1eDRf5DoR7Gk69hY+8wjYkQeo=
 github.com/shirou/gopsutil/v4 v4.26.8/go.mod h1:5O9FjBiXoTDFatIWjZZosqj4pV0DRtLx598xGbBehzM=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=

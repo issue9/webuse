@@ -12,6 +12,8 @@
 // [luhn]: https://en.wikipedia.org/wiki/Luhn_algorithm
 package luhn
 
+import "slices"
+
 // IsValid 传入 []byte 验证是否正确
 func IsValid(v []byte) bool { return (checksum(v, false) % 10) == 0 }
 
@@ -25,8 +27,8 @@ func Build(prefix []byte) []byte {
 // v 需要计算的字符串
 // alt 如果是验证，则是 false，如果是计算验证位，则为 true。
 func checksum(v []byte, alt bool) (sum int) {
-	for i := len(v) - 1; i >= 0; i-- {
-		n := int(v[i] - '0')
+	for _, v0 := range slices.Backward(v) {
+		n := int(v0 - '0')
 		if alt {
 			n *= 2
 			if n > 9 {
