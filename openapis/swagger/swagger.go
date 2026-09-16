@@ -21,7 +21,7 @@ import (
 var tpl embed.FS
 
 // CDNAssets swagger 的 CDN 资源
-const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.32.1"
+const CDNAssets = "https://unpkg.com/swagger-ui-dist@5.32.15"
 
 // Install 安装模板
 //

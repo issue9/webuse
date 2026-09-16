@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022-2025 caixw
+// SPDX-FileCopyrightText: 2022-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ package strength
 import (
 	"testing"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 )
 
 func TestStrength_Gen(t *testing.T) {

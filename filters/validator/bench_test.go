@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022-2024 caixw
+// SPDX-FileCopyrightText: 2022-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ package validator
 import "testing"
 
 func BenchmarkCNMobile(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		CNMobile("15011111111")
 	}
 }

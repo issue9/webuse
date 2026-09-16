@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022-2024 caixw
+// SPDX-FileCopyrightText: 2022-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,17 +11,17 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/issue9/web/filter"
+	"github.com/issue9/web"
 )
 
-// S 同 [filter.S]
-func S[T any](f ...func(*T)) filter.Rule[T] { return filter.S(f...) }
+// S 同 [web.SanitizeRule]
+func S[T any](f ...func(*T)) web.Rule[T] { return web.SanitizerRule(f...) }
 
-// SS 同 [filter.SS]
-func SS[S ~[]T, T any](f ...func(*T)) filter.Rule[S] { return filter.SS[S](f...) }
+// SS 同 [web.SliceSanitizeRule]
+func SS[S ~[]T, T any](f ...func(*T)) web.Rule[S] { return web.SliceSanitizerRule[S](f...) }
 
-// MS 同 [filter.MS]
-func MS[M ~map[K]V, K comparable, V any](f func(*V)) filter.Rule[M] { return filter.MS[M](f) }
+// MS 同 [web.MapSanitizeRule]
+func MS[M ~map[K]V, K comparable, V any](f func(*V)) web.Rule[M] { return web.MapSanitizerRule[M](f) }
 
 // Sanitizers 将多个修正函数合并为一个
 func Sanitizers[T any](f ...func(*T)) func(*T) {

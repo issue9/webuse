@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2015-2024 caixw
+// SPDX-FileCopyrightText: 2015-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/web"
 	xjson "github.com/issue9/web/mimetype/json"
