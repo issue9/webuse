@@ -9,17 +9,17 @@ require (
 	github.com/issue9/cache v0.20.0
 	github.com/issue9/events v0.10.0
 	github.com/issue9/logs/v7 v7.7.0
-	github.com/issue9/mux/v9 v9.3.0
+	github.com/issue9/mux/v9 v9.4.0
 	github.com/issue9/rands/v3 v3.2.0
 	github.com/issue9/version v1.1.0
-	github.com/issue9/web v0.105.0
+	github.com/issue9/web v0.105.1
 	github.com/shirou/gopsutil/v4 v4.26.8
 	golang.org/x/text v0.41.0
 )
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
-	github.com/andybalholm/brotli v1.2.3 // indirect
+	github.com/andybalholm/brotli v1.2.4 // indirect
 	github.com/ebitengine/purego v0.10.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/issue9/config v0.10.0 // indirect

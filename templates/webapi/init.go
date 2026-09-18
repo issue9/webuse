@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/cbor"
@@ -13,7 +12,6 @@ import (
 	"github.com/issue9/webuse/v7/handlers/debug"
 	"github.com/issue9/webuse/v7/middlewares/auth/token"
 	"github.com/issue9/webuse/v7/openapis"
-	"github.com/kardianos/service"
 )
 
 func Exec(id, version string) error {
@@ -23,18 +21,16 @@ func Exec(id, version string) error {
 		NewServer:      initServer,
 		ConfigDir:      "./",
 		ConfigFilename: "web.yaml",
-		ServeActions:   []string{"serve"},
 		ErrorHandling:  flag.ExitOnError,
-		Daemon: &service.Config{
-			Name:        id,
-			DisplayName: id,
-			Description: id,
+		Daemon: &app.DaemonConfig{
+			DisplayName: web.Phrase("TODO"),
+			Description: web.Phrase("TODO"),
 			Arguments:   []string{"-a=serve"},
 		},
 	}).Exec()
 }
 
-func initServer(id, ver string, o *server.Options, u struct{}, action string) (web.Server, error) {
+func initServer(id, ver string, o *server.Options, u struct{}) (web.Server, error) {
 	s, err := server.NewHTTP(id, ver, o)
 	if err != nil {
 		return nil, err
@@ -54,19 +50,13 @@ func initServer(id, ver string, o *server.Options, u struct{}, action string) (w
 	)
 	router.Get("/openapi", doc.Handler())
 
-	switch action {
-	case "serve":
-		// TODO 初始化服务
+	// TODO 初始化服务
 
-		// 在所有模块加载完成之后调用，需要等待其它模块里的私有错误代码加载完成。
-		doc.WithDescription(nil, web.Phrase(`problems response:
+	// 在所有模块加载完成之后调用，需要等待其它模块里的私有错误代码加载完成。
+	doc.WithDescription(nil, web.Phrase(`problems response:
 
 %s
 `, openapi.MarkdownProblems(s, 4)))
-	case "install":
-		// TODO 初始化安装代码
-	default:
-		panic(fmt.Sprintf("invalid action %s", action))
-	}
+
 	return s, nil
 }

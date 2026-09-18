@@ -17,7 +17,7 @@ import (
 // V 同 [web.ValidatorRule]
 func V[T any](v func(T) bool, msg web.LocaleStringer) web.Rule[T] { return web.ValidatorRule(v, msg) }
 
-// SV 同 [web.SliceValidator]
+// SV 同 [web.SliceValidatorRule]
 func SV[S ~[]T, T any](v func(T) bool, msg web.LocaleStringer) web.Rule[S] {
 	return web.SliceValidatorRule[S](v, msg)
 }
